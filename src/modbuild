@@ -1,0 +1,1580 @@
+#!/opt/psi/Tools/Pmodules/2.1.0/libexec/bash
+#
+# The following build specific variables are set and used in libpbuild.bash:
+#       ARGS
+#       BUILD_SCRIPT
+#       BUILDBLOCK_DIR
+#
+#.............................................................................
+
+declare -r VERSION='2.1.0'
+
+unset CDPATH	# unset CDPATH, otherwise 'cd' prints the directoy!
+unset IFS	# use default IFS
+
+#set -e		# exit on error
+set   -o pipefail
+set   -o nounset
+shopt -s nocaseglob
+shopt -s extglob
+shopt -s nullglob
+
+# get absolute path of script
+mydir=$(cd "$(/usr/bin/dirname "$0")" && pwd -P)
+prefix=$(/usr/bin/dirname "${mydir}")
+
+PATH="${prefix}/bin:${prefix}/libexec:/bin:/usr/bin:/sbin:/usr/sbin:/opt/psi/Tools/Modules/5.6.1/bin"
+source "${prefix}/lib/libstd.bash" || {
+        echo "Oops: cannot source library -- '$_'" 1>&2; exit 3;
+}
+source "${prefix}/lib/libpmodules.bash"  || \
+        std::die 3 "Oops: cannot source library -- '$_'"
+source "${prefix}/lib/libpbuild.bash"    || \
+        std::die 3 "Oops: cannot source library -- '$_'"
+unset mydir
+unset prefix
+
+##############################################################################
+#
+usage() {
+	std::error "
+USAGE:
+        $0 [options..] [build_script] version
+
+MANDATORY ARGUMENTS:
+
+version
+        Version of module to build.
+
+SELECT VARIANT TO BUILD:
+
+--system
+        Specify the system for selecting a variants. Defaults to the
+	OS version and release like 'rhel6'.
+
+--with=P/V
+        Select variant to compile. Use multiple '--with' arguments
+	to make the selected variant unique.
+
+BUILD-STEPS OPTIONS:
+
+--clean-install
+	Remove module if already exist before building.
+
+--prep
+	Prepare sources: unpack sources and apply patches only.
+
+--configure
+	Prepare and configure sources.
+
+--compile
+	Prepare, configure and compile everything.
+
+--install
+	Prepare, configure and compile everything. Finally run install
+	step. Do not cleanup build and source directory.
+
+--all
+	Run throu all steps including cleanup.
+
+--update-modulefiles
+	Only install the modulefile and set the release.
+
+--cleanup-modulefiles
+	Remove modulefiles in other overlays.
+
+MISCELLANEOUS OPTIONS:
+
+-? | -h | --help
+        Print usage.
+
+-V | --version )
+        Print version.
+
+-v | --verbose )
+        Verbose output.
+
+--debug )
+	Run in debug mode.
+
+-j N | --jobs=N
+        Run N parallel make jobs.
+
+-f | --force-rebuild
+        Force rebuild of module.
+
+--dry-run
+	Dry run.
+
+--disable-cleanup-build
+--disable-cleanup-src
+--disable-cleanup
+	Disable the cleanup of files in the build and/or source
+	directory. Default is to remove all files in the build
+	respective source directory at the beginning of a build
+	and after a successful build.
+
+--distdir
+	Directory where to store and lookup downloaded files.
+
+--tmpdir
+        Directory used for building a module.
+
+DOCUMENTATION:
+	Full documentation is available at 
+	http://pmodules.gitpages.psi.ch
+"
+	exit 1
+}
+
+##############################################################################
+#
+# parse options and arguments
+#
+# command line arguments are taken first
+# then configuration file
+# last default
+
+# save arguments, required for building dependencies
+declare -ra	ARGS=( "$@" )
+
+# versions to be build, '.*' or none means all
+declare -a      versions_to_build=()
+declare         opt_build_target='all'
+declare         opt_dry_run='no'
+declare         opt_enable_cleanup_build='yes'
+declare         opt_enable_cleanup_src='yes'
+declare         opt_force_rebuild='no'
+declare -i      opt_jobs=0
+declare         opt_update_modulefiles='no'
+declare		opt_cleanup_modulefiles='no'
+declare         opt_system=''
+declare -i      opt_verbose=0
+# array collecting all modules specified on the command line via '--with=module'
+declare -a      opt_with_modules=()
+declare -A	opt_with_dict=()
+declare --	opt_config_file=''
+declare --	opt_debug='no'
+declare --	opt_check_mode='no'
+declare --	opt_variant=''
+declare --	opt_clean_install='no'
+declare --	opt_parent_prefix=''
+
+declare --	BUILD_SCRIPT=''
+declare --      yaml_config_file=''
+declare --	module_name=''
+declare --	module_type='module'
+declare --	echo=':'
+
+HostName=$(hostname -f)
+declare -r HostName
+
+parse_args() {
+	#
+	# The first argument ($1) is the build-script, if called in the
+	# usual way:
+	#     ./<build-script> <version> [options]
+	# If called via:
+	#     modbuild <build-script> [options]
+	# the build-script MUST be passed as first argument.
+	#
+	(( $# == 0 )) && usage
+	while (( $# > 0 )); do
+		case $1 in
+		-j )
+                        opt_jobs="$2"
+			shift
+			;;
+		--jobs=[0-9]* )
+			opt_jobs="${1/--jobs=}"
+			;;
+		-v | --verbose )
+			trap 'echo "$BASH_COMMAND"' DEBUG
+                        (( opt_verbose+=1 ))
+			echo='echo'
+			;;
+		--debug )
+			opt_debug='yes'
+			set -x
+			;;
+		-f | --force-rebuild )
+                        opt_force_rebuild='yes'
+			;;
+		-\? | -h | --help )
+			usage
+			;;
+                -V | --version )
+                        std::die 0  "\nPmodules version ${VERSION}\nCopyright GNU GPL v2\n"
+                        ;;
+		--dry-run )
+			opt_dry_run='yes'
+			;;
+		--disable-cleanup )
+			opt_enable_cleanup_build='no'
+			opt_enable_cleanup_src='no'
+			;;
+		--disable-cleanup-build )
+			opt_enable_cleanup_build='no'
+			;;
+		--disable-cleanup-src )
+			opt_enable_cleanup_src='no'
+			;;
+		--distdir | --distdir=* )
+			if [[ $1 == *=* ]]; then
+				PMODULES_DISTFILESDIR="${1/--distdir=}"
+			else
+				PMODULES_DISTFILESDIR="$2"
+				shift
+			fi
+			;;
+		--exit-on-error )
+			# this is for testing!
+			set -e
+			;;
+		--tmpdir | --tmpdir=* )
+			if [[ $1 == *=* ]]; then
+				PMODULES_TMPDIR="${1#--*=}"
+			else
+				PMODULES_TMPDIR="$2"
+				shift
+			fi
+			;;
+		--system | --system=* )
+			if [[ $1 == *=* ]]; then
+				opt_system="${1#--*=}"
+			else
+				opt_system="$2"
+				shift
+			fi
+			;;
+		--check-mode )
+			opt_check_mode='yes'
+			;;
+		--with | --with=*/* )
+			if [[ $1 == *=* ]]; then
+				opt_with_modules+=( "${1#--*=}" )
+				opt_with_dict[${1#--*=}]=0
+			else
+				opt_with_modules+=( "$2" )
+				opt_with_dict[$2]=0
+				shift
+			fi
+			;;
+		--prep | --configure | --compile | --install | --all )
+			opt_build_target=${1:2}
+			;;
+		--clean-install )
+			opt_force_rebuild='yes'
+			opt_clean_install='yes'
+			;;
+		--update-modulefiles )
+			opt_update_modulefiles='yes'
+			;;
+		--cleanup-modulefiles )
+			opt_cleanup_modulefiles='yes'
+			;;
+		--config-file | --config-file=* )
+			if [[ $1 == *=* ]]; then
+				opt_config_file=( "${1#--*=}" )
+			else
+				opt_config_file=( "$2" )
+				shift
+			fi
+			;;
+		--variant | --variant=* )
+			if [[ $1 == *=* ]]; then
+				opt_variant=( "${1#--*=}" )
+			else
+				opt_variant=( "$2" )
+				shift
+			fi
+			;;
+		--parent-prefix | --parent-prefix=* )
+			if [[ $1 == *=* ]]; then
+				opt_parent_prefix="${1#--*=}"
+			else
+				opt_parent_prefix="$2"
+				shift
+			fi
+			module_type='sub_package'
+			pbuild.set_prefix "${opt_parent_prefix}"
+			;;
+                -- | '' )
+                        :
+                        ;;
+		-* )
+			std::die 1 "Invalid option -- '$1'"
+			;;
+		* )
+			local -- arg="$1"
+			if [[ -f "${arg}" && -x "${arg}" ]]; then
+				BUILD_SCRIPT="$(std::get_abspath "${arg}")"
+				BUILDBLOCK_DIR=$(dirname "${BUILD_SCRIPT}")
+			elif [[ "${arg}" == */* ]]; then
+				module_name="${arg%/*}"
+				versions_to_build+=( "${arg#*/}" )
+			else
+				versions_to_build+=( "$1" )
+			fi
+			;;
+		esac
+		shift
+	done
+
+	[[ -z "${BUILD_SCRIPT}" ]] && \
+		std::die 1 "%s " \
+			 "Build script argument missing?"
+
+	# if no version is specified on the cmd-line, build all versions
+	(( ${#versions_to_build[@]} > 0)) || versions_to_build+=( '.*' )
+
+	# set system if not set on the cmd-line
+	opt_system="${opt_system:-$(std::get_os_release)}"
+
+	# set config file
+	yaml_config_file="${opt_config_file:-${BUILDBLOCK_DIR}/files/config.yaml}"
+	[[ -f "${yaml_config_file}" && -r "${yaml_config_file}" ]] || \
+		std::die 2 \
+			 "%s -- %s" \
+			 "YAML config file doesn't exist or is not readable" \
+			 "${yaml_config_file}"
+	std::info "Using YAML configuration file - ${yaml_config_file}"
+}
+
+yml::get_file_fmt(){
+	: "
+	Get format version of configuration file. Print the version number
+	to stdout if it is valid.
+	"
+	local -n yml_fmt="$1"
+	local -n yml_content="$2"
+
+	yml::get_value yml_fmt yml_content '.format' '!!int' || \
+		std::die 3 "Error reading config file format -- ${fname}"
+	case "${yml_fmt}" in
+		1 )
+			:
+			;;
+		* )
+			std::die 3 "Unsupported YAML Pmodules config file format -- ${yml_fmt}"
+			;;
+	esac
+}
+
+build_modules(){
+	local -- name="$1"
+        local -- version="$2"
+	shift 2
+        local -a with_modules=( "$*" )
+
+
+	if [[ "${opt_check_mode}" == 'yes' ]]; then
+		if ! which yamllint > /dev/null 2>&1; then
+			eval $( "${modulecmd}" bash load yamllint/1.28.0 )
+		fi
+		which yamllint > /dev/null 2>&1 || \
+			std::die 3 "yamllint not found"
+		yamllint "${yaml_config_file}"
+	fi
+
+	local -- yaml_config=''
+	local -i file_fmt=0
+	yml::read_file yaml_config "${yaml_config_file}" '.'
+	yml::get_file_fmt file_fmt yaml_config
+
+	echo "file_fmt=${file_fmt}"
+	local -- yaml_module_config=''
+	case "${file_fmt}" in
+		1 )
+			yml::get_value yaml_module_config yaml_config ".${name}" '!!map' || \
+				std::die 3 "Configuration for '${name}' missing in config file -- ${file_name}"
+			build_modules_yaml_v1 \
+				"${yaml_module_config}" \
+				"${name}" "${version}" \
+				"${with_modules[@]}"
+			;;
+		* )
+			std::die 255 "Oops!" # we should never be here!
+			;;
+	esac
+}
+
+
+parse_version() {
+	local -- v="$1"
+	V="$1"
+
+	local -- tmp=''
+	SUFFIX=''
+
+	if [[ "$v" =~ "_" ]]; then
+		tmp="${v#*_}"
+		SUFFIX+=":${tmp//_/:}:"
+		v="${v%%_*}"
+	fi
+	V_PKG="${v%%-*}"		# version without the release number
+	if [[ $v == *-* ]]; then
+		V_RELEASE="${v#*-}"	# release number
+	fi
+	case "${V_PKG}" in
+		*.*.* )
+			V_MAJOR="${V_PKG%%.*}"
+			tmp="${V_PKG#*.}"
+			V_MINOR="${tmp%%.*}"
+			V_PATCHLVL="${tmp#*.}"
+			;;
+		*.* )
+			V_MAJOR="${V_PKG%.*}"
+			V_MINOR="${V_PKG#*.}"
+			;;
+		* )
+			V_MAJOR="${V_PKG}"
+			;;
+	esac
+
+	VERSIONS=()
+	if [[ -n ${V_RELEASE} ]]; then
+		VERSIONS+=( "${V_PKG}-${V_RELEASE}" )
+	fi
+	if [[ -n ${V_PATCHLVL} ]]; then
+		VERSIONS+=( "${V_MAJOR}.${V_MINOR}.${V_PATCHLVL}" )
+	fi
+	if [[ -n ${V_MINOR} ]]; then
+		VERSIONS+=( "${V_MAJOR}.${V_MINOR}" )
+	fi
+	VERSIONS+=( "${V_MAJOR}" )
+}
+
+# these variables must be export for envsubst(1)
+declare -x P=''
+declare -x V=''
+declare -x V_PKG=''
+declare -x V_MAJOR=''		# first number in version string
+declare -x V_MINOR=''		# second number in version string (or empty)
+declare -x V_PATCHLVL=''	# third number in version string (or empty)
+declare -x V_RELEASE=''		# module release (or empty)
+declare -x PREFIX=''
+
+declare -A SHASUMS=()
+declare -a MODULE_DOCFILES=()
+
+declare -A Yaml_valid_keys_for_module=(
+	['defaults']=1
+	['shasums']=1
+	['type']=1
+	['versions']=1
+)
+
+declare -A Yaml_default_config=(
+	['build_requires']=''		# !!seq of strings
+	['build_functions']=''		# !!seq of strings
+	['build_variants']=''		# !!seq of strings
+	['compile_in_sourcetree']='no'  # !!str
+	['configure_args']=''           # !!seq of strings
+	['configure_args+']=''          # !!seq of strings
+	['configure_with']='auto'	# !!str
+	['default_variant']=''          # !!str
+	['docfiles']=''	                # !!seq of strings
+	['docfiles+']=''		# !!seq of strings
+	['download_dir']=''             # !!str
+	['group']='Tools'		# !!str
+	['group_deps']=''		# !!map
+	['kernels']=''			# !!seq of strings
+	['modulefile']=''		# !!str
+	['overlay']='base'		# !!str
+	['patch_files']=''		# !!seq
+	['patch_files+']=''		# !!seq
+	['relstage']='unstable'		# !!str
+	['runtime_deps']=''		# !!seq of strings
+	['script']='build'		# !!str
+	['sub_packages']=''		# !!map
+	['suffix']=''			# !!str
+	['systems']=''			# !!seq of strings
+	['target_cpus']=''		# !!seq of strings
+	['urls']=''			# !!map
+	['sources']=''			# !!map; alias for urls
+	['use_flags']=''		# !!seq
+	['use_overlays']=''		# !!seq
+	['variant']=''			# !!str
+	['target_funcs:prep']='pbuild::pre_prep pbuild::prep pbuild::post_prep'
+	['target_funcs:configure']='pbuild::pre_configure pbuild::configure pbuild::post_configure'
+	['target_funcs:compile']='pbuild::pre_compile pbuild::compile pbuild::post_compile'
+	['target_funcs:install']='pbuild::pre_install pbuild::install pbuild::post_install'
+)
+
+declare -A Yaml_valid_vk_keys=(
+	['config']='1'			# !!map
+	['variants']='1'		# !!map
+)
+
+declare -A Yaml_source_keys=(
+	['url']=''
+	['name']=''
+	['strip_dirs']=1
+	['unpacker']='tar'
+	['unpack_dir']=''
+	['patch_file']=''
+	['patch_strip']=0
+)
+
+declare -A Unpackers=(
+	['tar']='tar'
+	['7z']='7z'
+	['none']='none'
+)
+
+declare -A KernelNames=(
+	['linux']='1'
+	['darwin']='1'
+	['any']='1'
+)
+
+declare -A TargetCPUs=(
+	['x86_64']='x86_64'
+	['arm64']='arm64'
+	['aarch64']='arm64'
+	['any']='1'
+)
+
+declare -A hierarchical_groups=(
+	['compiler']='compiler'
+	['mpi']='compiler mpi'
+	['hdf5']='compiler mpi hdf5'
+	['hdf5_serial']='compiler hdf5_serial'
+)
+
+build_modules_yaml_v1(){
+	: "
+	
+	"
+	local -- yaml_module_config="$1"
+	local -- name="$2"
+        local -- version="$3"
+	shift 3
+        local -a with_modules=( "$@" )
+
+
+	die_missing_group_dep(){
+		std::die 3 "%s/%s: %s" \
+			 "${1}" "${2}" \
+			 "is in group '$3', but the group dependency for this group is missing!" 
+	}
+
+	die_missing_key(){
+		std::die 3 "Key '$3' missing in $2\n----\n$1\n----"
+	}
+
+	die_illegal_group_dep(){
+		std::die 3 "%s/%s: %s" \
+			 "${1}" "${2}" \
+			 "illegal group dependency '$4' for module in group '$3'!"
+	}
+
+	die_invalid_group_dep(){
+		std::die 3 "%s/%s: %s" \
+			 "${1}" "${2}" \
+			 "invalid group dependency '$3' for module in group '$4'!"
+	}
+
+	die_invalid_variants_block(){
+		std::die 3 "%s/%s: %s" \
+			 "${1}" "${2}" \
+			 "invalid type of variants block: must be '!!seq' but is '$3'!"
+	}
+
+	die_invalid_value(){
+		std::die 3 "Invalid value for key '$3' in $2 -- '$4'\n----\n$1\n----"
+	}
+
+	die_invalid_key(){
+		std::die 3 "Invalid key '$3' in $2\n----\n$1\n----"
+	}
+
+	die_error_reading_keys(){
+		std::die 3 "Error while reading keys from:\n----\n$1\n----"
+	}
+
+	die_invalid_kernel_name(){
+		std::die 3 "Invalid kernel name in configuration!"
+	}
+
+	die_wrong_module_type(){
+		std::die 3 "Module type is '$1' but was called as '$2'!"
+	}
+
+	die_invalid_module_type(){
+		std::die 3 "Invalid module type -- '$1'!"
+	}
+
+	yml::get_config(){
+		local -n yaml_input="$1"	# [in] YAML formated string
+		local -- node="$2"		# [in] config node
+		local -n cfg="$3"		# [in/out] module configuration
+
+		local -- key=''
+		local -- value=''
+
+		get_build_functions(){
+			local -a keys=()
+			yml::get_keys \
+				keys \
+				yaml_input \
+				"${node}.build_functions"
+
+			local -- key=''
+			local -- value=''
+			for key in "${keys[@]}"; do
+				case ${key} in
+					prep | configure | compile | install)
+						yml::get_seq \
+							value \
+							yaml_input \
+							"${node}.build_functions.${key}" || \
+							yml::die_parsing "${yaml_input}"
+						debug "${key} functions: ${value}"
+						cfg[target_funcs:${key}]="${value}"
+						;;
+					* )
+						die_invalid_key \
+							"${yaml_input}" \
+							'build functions' \
+							"${key}"
+						;;
+				esac
+			done
+		}
+
+		if [[ -z "${yaml_input}" ]]; then
+			return 0
+		fi
+
+		local -a keys=()
+		yml::get_keys keys yaml_input "${node}"
+		debug "config keys: ${keys[*]}"
+		for key in "${keys[@]}"; do
+			case ${key} in
+				build_functions )
+					get_build_functions value
+					;;
+				build_variants )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!str' || \
+						yml::die_parsing "${yaml_input}"
+					case ${value,,} in
+						all ) : ;;
+						first_match ) : ;;
+						* )
+							die_invalid_value \
+								"${yaml_input}" \
+								'config section' \
+								"${key}" \
+								"${value}"
+							;;
+					esac
+					cfg[${key,,}]="${value}"
+					;;
+				compile_in_sourcetree )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!bool' || \
+						yml::die_parsing "${yaml_input}"
+					case ${value,,} in
+						true )
+							cfg[${key,,}]='yes'
+							;;
+						false )
+							cfg[${key,,}]='no'
+							;;
+						* )
+							die_invalid_value \
+								"${yaml_input}" \
+								'config section' \
+								"${key}" \
+								"${value}"
+							;;
+					esac
+					;;
+				configure_with )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!str' || \
+						yml::die_parsing "${yaml_input}"
+					case ${value,,} in
+						auto | cmake | autotools )
+							cfg[${key,,}]="${value,,}"
+							;;
+						* )
+							die_invalid_value \
+								"${yaml_input}" \
+								'config section' \
+								"${key}" \
+								"${value}"
+							;;
+					esac
+					;;
+				default_variant | download_dir | group | modulefile | overlay | script | suffix )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!str' || \
+						yml::die_parsing "${yaml_input}"
+					cfg[${key,,}]="${value}"
+					;;
+				group_deps )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!map' || \
+						yml::die_parsing "${yaml_input}"
+					cfg[${key,,}]="${value}"
+					;;
+				use_flags )
+					yml::get_seq \
+						value \
+						yaml_input \
+						"${node}.${key}" || \
+						yml::die_parsing "${yaml_input}"
+					local -a tmp=()
+					readarray -t tmp <<<"${value}"
+					cfg[${key,,}]=" ${tmp[*]} "
+					;;
+				relstage )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!str' || \
+						yml::die_parsing "${yaml_input}"
+					case ${value,,} in
+						unstable | stable | deprecated )
+							cfg[${key,,}]="${value,,}"
+							;;
+						remove | removed )
+							cfg[${key,,}]='remove'
+							;;
+						* )
+							die_invalid_value \
+								"${yaml_input}" \
+								'config section' \
+								"${key}" \
+								"${value}"
+							;;
+					esac
+					;;
+				urls | sources | sub_packages )
+					yml::get_value \
+						value \
+						yaml_input \
+						"${node}.${key}" '!!seq' || \
+						yml::die_parsing "${yaml_input}"
+					[[ "${key,,}" == 'sources' ]] && key='urls'
+					cfg[${key,,}]="${value}"
+					;;
+				build_requires|configure_args|docfiles|patch_files|runtime_deps|systems|use_overlays|variant )
+					yml::get_seq \
+						value \
+						yaml_input \
+						"${node}.${key}" || \
+						yml::die_parsing "${yaml_input}"
+					cfg[${key,,}]="${value}"
+					;;
+				kernels )
+					yml::get_seq \
+						value \
+						yaml_input \
+						"${node}.${key}" || \
+						yml::die_parsing "${yaml_input}"
+					set -o noglob
+					local -a items=( "${value,,}" )
+					set +o noglob
+					local -- item=''
+					for item in "${items[@]}"; do
+						[[ -v KernelNames[${item}] ]] || \
+							die_invalid_value \
+								"${yaml_input}" \
+								'config section' \
+								'kernel' \
+								"${item}"
+					done
+					cfg[${key,,}]="${value}"
+					;;
+				target_cpus )
+					yml::get_seq \
+						value \
+						yaml_input \
+						"${node}.${key}" || \
+						yml::die_parsing "${yaml_input}"
+					set -o noglob
+					local -a items=( "${value,,}" )
+					set +o noglob
+					local -- item=''
+					for item in "${items[@]}"; do
+						[[ -v TargetCPUs[${item}] ]] || \
+							die_invalid_value \
+								"${yaml_input}" \
+								'config section' \
+								'CPU' \
+								"${item}"
+					done
+					cfg[${key,,}]="${value}"
+					;;
+				'configure_args+' | 'docfiles+' | 'patch_files+' )
+					yml::get_seq \
+						value \
+						yaml_input \
+						"${node}.${key}" || \
+						yml::die_parsing "${yaml_input}"
+					key="${key:0:-1}"
+					if [[ -z "${cfg[${key,,}]}" ]]; then
+						cfg[${key,,}]="${value}"
+					else
+						cfg[${key,,}]+=$'\n'"${value}"
+					fi
+					;;
+
+				* )
+					die_invalid_key \
+						"${yaml_input}" \
+						'configuration' \
+						"${key}"
+					;;
+			esac
+		done
+	}
+
+	yml::get_matching_version_keys(){
+		#
+		# return list of versions matching a specific version.
+	      	#
+		local -n yaml_input="$1"	# [in]  YAML input
+		local -n result="$2"		# [out] list of versions
+		local -- version="$3"		# [in]  version to match
+
+		local -a keys=()
+		yml::get_keys keys yaml_input '.versions'
+		result=()
+		for key in "${keys[@]}"; do
+			l=()
+			# loop over semicolon separated list of keys
+			for k in ${key//;/ }; do
+				# brace expansion of key
+				local -a list=()
+				list=( $(${bash} -c "echo $k") )
+				if [[ ${list[@]} =~ ${version} ]]; then
+					result+=("${key}")
+					break
+				fi
+			done
+		done
+		(( ${#result[@]} == 0 )) && \
+			std::die 3 "No configuration for version -- ${version}"
+		return 0
+	}
+
+	yml::chk_group_deps(){
+		#
+		# Check the group dependencies:
+		# 1. are all keys valid?
+		# 2. all required group deps defined?
+		# 3. more group deps defined as required?
+		#
+		# Die if check fails.
+		#
+		local -- yaml_input="$1"	# [in]  value of key group_deps
+		local -- group="$2"		# [in]  compiler|mpi|hdf5|hdf5_serial
+		local -- name="$3"		# [in]  module name
+		local -- version="$4"		# [in]  module version
+
+		# query all specified group dependencies
+		local -- key=''
+		local -a keys=()
+		yml::get_keys keys yaml_input '.'
+		for key in "${keys[@]}"; do
+			# is this a name of a hierarchical group?
+			[[ -v hierarchical_groups[${key}] ]] || \
+				die_illegal_group_dep "${name}" "${version}" "${group}" "${key}"
+			# is this in the list of required group dependencies?
+			is_in_array "${key}" "${hierarchical_groups[${key}]}" || \
+				die_invalid_group_dep "${name}" "${version}" "${group}"
+		done
+		# are all required group dependencies defined?
+		for key in ${hierarchical_groups[${group,,}]}; do
+			is_in_array "${key,,}" "${keys[@]}" || \
+				die_missing_group_dep "${name}" "${version}" "${group}"
+		done
+	}
+
+	yml::get_group_deps(){
+		local -- yaml_input="$1"	# [in]  value of key group_deps
+		local -- group="$2"		# [in]  compiler|mpi|hdf5|hdf5_serial
+		local -n with_modules="$3"	# [out] list of required modules
+
+		local -a modules=()
+		local -- key
+		local -a keys=()
+		yml::get_keys keys yaml_input ".${group,,}"
+		for key in "${keys[@]}"; do
+			local -- version
+			local -a versions=()
+			local -- value=''
+			yml::get_seq value yaml_input ".${group,,}.${key}" || \
+				yml::die_parsing "${yaml_input}"
+			readarray -t versions <<<"${value}"
+			for version in "${versions[@]}"; do
+				if [[ -v opt_with_dict[${key}/${version}] ]]; then
+					with_modules+=( "${key}/${version}" )
+				fi
+				modules+=( "${key}/${version}" )
+			done
+		done
+		if (( ${#with_modules[@]} == 0 )); then
+			with_modules=( "${modules[@]}" )
+		fi
+	}
+
+	is_in_array(){
+		local -r key="$1"
+		shift 1
+		[[ $* =~ (^|[[:space:]])"${key}"($|[[:space:]]) ]]
+	}
+
+	is_subset(){
+		local -n subset="$1"
+		shift 1
+		local -- el=''
+		for el in "${subset[@]}"; do
+			is_in_array "${el}" "$@" || return 1
+		done
+		return 0
+	}
+
+	#
+	# To compile a module with a certain compiler||mpi||hdf5 dependency
+	# the '--with' option can be used. Depending on the hierarchical
+	# group the modules specified with the option '--with' must be a
+	# subset of
+	# - compiler: ( compiler)
+	# - mpi: ( compiler mpi )
+	# - hdf5: ( compiler mpi hdf5 )
+	# - hdf5_serial: ( compiler hdf5_serial )
+	#
+
+	build_modules_compiler(){
+		#
+		# build a module in hierarchical group 'Compiler'
+		#
+		local -- module_name="$1"	# [in]  module name
+		local -- module_version="$2"	# [in]  module version
+		local -n module_cfg="$3"	# [in]  ref to module config
+
+		yml::chk_group_deps \
+			"${module_cfg['group_deps']}" \
+			'Compiler' \
+			"${module_name}" "${module_version}"
+
+		local -a with_compiler=()
+		yml::get_group_deps \
+			"${module_cfg['group_deps']}" \
+			'Compiler' with_compiler
+		debug "${with_compiler[@]}"
+		
+		local -- compiler=''
+		for compiler in "${with_compiler[@]}"; do
+			# build if opt_with_modules is empty or compiler is in this array
+			(( ${#opt_with_modules[@]} != 0 )) \
+				&& [[ "${compiler}" != "${opt_with_modules[0]}" ]] \
+				&& continue
+			[[ "${opt_check_mode}" == 'yes' ]] && continue
+			pbuild.build_module_yaml \
+				"${module_name}" "${module_version}" \
+				"$3" \
+				"${compiler}" \
+				"${@:4}"
+		done
+	}
+
+	build_modules_hdf5_serial(){
+		#
+		# build a module in hierarchical group 'HDF5_serial'
+		#
+		local -- module_name="$1"	# [in]  module name
+		local -- module_version="$2"	# [in]  module version
+		local -n module_cfg="$3"	# [in]  ref to module config
+
+		yml::chk_group_deps \
+			"${module_cfg['group_deps']}" \
+			'HDF5_serial' \
+			"${module_name}" "${module_version}"
+
+		local -a with_compiler=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'Compiler' with_compiler
+
+		local -a with_hdf5=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'HDF5_serial' with_hdf5
+
+		local -- compiler
+		local -- hdf5
+		for compiler in "${with_compiler[@]}"; do
+			for hdf5 in "${with_hdf5[@]}"; do
+				# build if opt_with_modules is empty or compiler is in this array
+				(( ${#opt_with_modules[@]} != 0 )) \
+					&& ! is_subset opt_with_modules "${compiler}" "${hdf5}" \
+					&& continue
+
+				debug "build $module_name/$module_version with $compiler and $hdf5"
+				debug "  runtime deps: ${runtime_deps[*]}"
+				debug "  build requires: ${build_requires[*]}"
+				pbuild.build_module_yaml \
+					"${module_name}" "${module_version}" \
+					"$3" \
+					"${compiler}" \
+					"${hdf5}" \
+					"${@:4}"
+			done
+		done
+	}
+
+
+	build_modules_mpi(){
+		#
+		# build a module in hierarchical group 'MPI'
+		#
+		local -- module_name="$1"	# [in]  module name
+		local -- module_version="$2"	# [in]  module version
+		local -n module_cfg="$3"	# [in]  ref to module config
+
+		yml::chk_group_deps \
+			"${module_cfg['group_deps']}" \
+			'MPI' \
+			"${module_name}" "${module_version}"
+
+		local -a with_compiler=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'Compiler' with_compiler
+
+		local -a with_mpi=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'MPI' with_mpi
+
+		local -- compiler
+		local -- mpi
+		for compiler in "${with_compiler[@]}"; do
+			for mpi in "${with_mpi[@]}"; do
+				# build if opt_with_modules is empty or compiler is in this array
+				(( ${#opt_with_modules[@]} != 0 )) \
+					&& ! is_subset opt_with_modules "${compiler}" "${mpi}" \
+					&& continue
+
+				debug "build $module_name/$module_version with $compiler and $mpi"
+				debug "  runtime deps: ${runtime_deps[*]}"
+				debug "  build requires: ${build_requires[*]}"
+				pbuild.build_module_yaml \
+					"${module_name}" "${module_version}" \
+					"$3" \
+					"${compiler}" \
+					"${mpi}" \
+					"${@:4}"
+			done
+		done
+	}
+
+	build_modules_hdf5(){
+		#
+		# build a module in hierarchical group 'HDF5'
+		#
+		local -- module_name="$1"	# [in]  module name
+		local -- module_version="$2"	# [in]  module version
+		local -n module_cfg="$3"	# [in]  ref to module config
+
+		yml::chk_group_deps \
+			"${module_cfg['group_deps']}" \
+			'HDF5' \
+			"${module_name}" "${module_version}"
+
+		local -a with_compiler=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'Compiler' with_compiler
+
+		local -a with_mpi=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'MPI' with_mpi
+
+		local -a with_hdf5=()
+		yml::get_group_deps  "${module_cfg['group_deps']}" 'HDF5' with_hdf5
+
+		local -- compiler
+		local -- mpi
+		local -- hdf5
+		for compiler in "${with_compiler[@]}"; do
+			for mpi in "${with_mpi[@]}"; do
+				for hdf5 in "${with_hdf5[@]}"; do
+					debug "build $module_name/$module_version with $compiler, $mpi and $hdf5"
+					debug "  runtime deps: ${runtime_deps[*]}"
+					debug "  build requires: ${build_requires[*]}"
+
+					# build if opt_with_modules is empty or compiler is in this array
+					(( ${#opt_with_modules[@]} != 0 )) \
+						&& ! is_subset opt_with_modules \
+						     "${compiler}" "${mpi}" "${hdf5}" \
+						&& continue
+					pbuild.build_module_yaml \
+						"${module_name}" "${module_version}" \
+						"$3" \
+						"${compiler}" \
+						"${mpi}" \
+						"${hdf5}" \
+						"${@:4}"
+				done
+			done
+		done
+
+	}
+
+	build_modules_other(){
+		#
+		# build a module in a non-hierarchical group
+		#
+		local -- module_name="$1"	# [in]  module name
+		local -- module_version="$2"	# [in]  module version
+		local -n module_cfg="$3"	# [in]  ref to module config
+
+		pbuild.build_module_yaml \
+                        "${module_name}" "${module_version}" \
+                        "$3" \
+			"${@:4}"
+	}
+
+	set_urls() {
+		local -- yaml="$1"
+		local -i l=0
+		yml::get_seq_length l yaml .
+		local -i i=0
+		local -- url_yaml=''
+		for ((i=0; i<l; i++)); do
+			local -A source=()
+			local -- key=''
+			for key in "${!Yaml_source_keys[@]}"; do
+				source[${key}]="${Yaml_source_keys[${key}]}"
+			done
+			url_yaml=$(${yq} -Ne e ".[$i]" <<<"${yaml}" 2>/dev/null) || \
+				die_parsing "{yaml}"
+			local -- value=''
+			while read -r key value; do
+				key=${key:0:-1}
+				case "${key}" in
+					url | name | patch_file )
+						source[${key}]=$(${envsubst} <<<"${value}")
+						;;
+					unpack_dir )
+						source[${key}]="${value}"
+						;;
+					strip_dirs | patch_strip )
+						[[ ${value} =~ ^[0-9]+$ ]] || \
+							die_invalid_value \
+								"${url_yaml}" \
+								'list of URLS' \
+								'strip_dirs' \
+								"${value}"
+						source[${key}]="${value}"
+						;;
+					unpacker )
+						[[ -v Unpackers[${value}] ]] || \
+							die_invalid_value \
+								"${url_yaml}" \
+								'list of URLs' \
+								'unpacker' \
+								"${value}"
+						source[${key}]="${value}"
+						;;
+					* )
+						die_invalid_key \
+							"${url_yaml}" \
+							'list of URLs' \
+							"${key}"
+						;;
+				esac
+			done <<<"${url_yaml}"
+			[[ -z "${source['url']}" && \
+				   -z "${source['name']}" && \
+				   -z "${source['patch_file']}" ]] && \
+				die_missing_key \
+					"${url_yaml}" \
+					'list of URLs/sources' \
+					'url or name or patch_file'
+			#[[ -v sources['name'] ]] && sources['name']="${sources['url']##*/}"
+			pbuild.set_urls source
+		done
+	}
+
+	set_configure_args(){
+		local -a args=()
+		[[ -z "$1" ]] && return 0
+		readarray -t args <<< "$1"
+		pbuild.set_configure_args "${args[@]}"
+	}
+
+	set_patch_files(){
+		local -a args=()
+		readarray -t args <<< "$1"
+		pbuild.add_patch_files "${args[@]}"
+	}
+
+	is_variant_to_build(){
+		local -- name="$1"
+		local -- version="$2"
+		local -n config="$3"
+
+		check_system(){
+			[[ -z ${config['systems']} ]] && return 0
+
+			set -o noglob
+			local -a systems=( ${config['systems']} )
+			set +o noglob
+
+			local -- system
+			for system in "${systems[@]}"; do
+				[[ "${opt_system}" =~ ${system} ]] && return 0
+				[[ "${HostName}" =~ ${system} ]] && return 0
+			done
+			std::info "%s " "Skipping variant '${version}'" \
+				  "for the system(s): ${systems[@]}"
+			return 1
+		}
+
+		check_kernel(){
+			[[ -z ${config['kernels']} ]] && return 0
+			set -o noglob
+			local -a kernels=( "${config['kernels'],,}" )
+			set +o noglob
+			local -- kernel=''
+			for kernel in "${kernels[@]}"; do
+				[[ ${kernel} == 'any' ]] && return 0
+				[[ ${kernel} == ${KernelName,,} ]] & return 0
+			done
+			std::info "%s " "Skipping variant '${version}'" \
+				  "for the kernel(s): ${config['kernels']}"
+			return 1
+		}
+
+		check_target_cpu(){
+			[[ -z ${config['target_cpus']} ]] && return 0
+			set -o noglob
+			local -a target_cpus=( "${config['target_cpus'],,}" )
+			set +o noglob
+			local -- system_cpu=$(uname -p)
+			local -- cpu=''
+			for cpu in "${target_cpus[@]}"; do
+				[[ ${cpu} == 'any' ]] && return 0
+				[[ ${cpu} == ${system_cpu} ]] && return 0
+			done
+			std::info "%s" "Skipping variant '${version}' " \
+				  "for the CPU(s) ${config['target_cpus']}"
+			return 1
+
+		}
+
+		check_variant(){
+			# if a variant is neither passed as argument nor a default,
+			# is defined, therefore let's build this variant.
+			local -- build_variant="${opt_variant:-${config['default_variant']}}"
+			[[ -z "${build_variant}" ]] && return 0
+
+			# don't build if a variant has be specified on the command line or
+			# a default variant has been set in the config file, but no
+			# variant name is defined here
+	      		[[ -n ${build_variant} && -z ${config['variant']} ]] && return 1
+			
+			[[ -z ${config['variant']} ]] && return 1
+			set -o noglob
+			local -a items=( "${config['variant'],,}" )
+			set +o noglob
+			local item=''
+			for item in "${items[@]}"; do
+				[[ "${opt_variant}" == "${item}" ]] && return 0
+			done
+		}
+
+		check_kernel     module_config || return 1
+		check_target_cpu module_config || return 1
+		check_system     module_config || return 1
+		check_variant    module_config || return 1
+		return 0
+	}
+
+	build_modules_variant(){
+		local -- module_name="$1"
+		local -- module_version="$2"
+		local -n module_config="$3"
+
+		debug "build variant ${module_name}/${module_version}"
+		local -- ol_name="${module_config['overlay']}"
+		[[ -v OverlayInfo[${ol_name}:install_root] ]] || \
+			std::die 2 "%s" \
+				 "Overlay doesn't exist - ${ol_name}"
+		declare ol_install_root="${OverlayInfo[${ol_name}:install_root]}"
+		declare ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
+
+		module_version+="${module_config['suffix']}"
+
+		pbuild.compile_in_sourcetree "${module_config['compile_in_sourcetree']}"
+		pbuild.configure_with "${module_config['configure_with']}"
+		pbuild.add_to_group "${module_config['group']}"
+
+		set_urls "${module_config['urls']}"
+		set_configure_args "${module_config['configure_args']}"
+		set_patch_files "${module_config['patch_files']}"
+
+		if [[ -n "${module_config['download_dir']}" ]]; then
+			PMODULES_DISTFILESDIR="${module_config['download_dir']}"
+		fi
+		local -a runtime_deps=()
+		if [[ -n ${module_config['runtime_deps']} ]]; then
+			readarray -t runtime_deps <<<"${module_config['runtime_deps']}"
+			debug "runtime_deps=${runtime_deps[@]} length: ${#runtime_deps[@]}"
+		fi
+
+		local -a build_requires=()
+		if [[ -n ${module_config['build_requires']} ]]; then
+			readarray -t build_requires <<<"${module_config['build_requires']}"
+			build_requires=( "${build_requires[@]/#/b:}" )
+			debug "build_requires=${build_requires[@]} length: ${#build_requires[@]}"
+		fi
+
+		if [[ -n ${module_config['docfiles']} ]]; then
+			readarray -t MODULE_DOCFILES <<<"${module_config['docfiles']}"
+		fi
+
+		local -A build_functions=(
+			['Compiler']=build_modules_compiler
+			[HDF5_serial]=build_modules_hdf5_serial
+			[MPI]=build_modules_mpi
+			[HDF5]=build_modules_hdf5
+		)
+		local -- func=build_modules_other
+		if [[ -v build_functions[${module_config['group']}] ]]; then
+			func=${build_functions[${module_config['group']}]}
+		fi
+		${func}	\
+			"${module_name}" \
+			"${module_version}" \
+			module_config \
+			"${runtime_deps[@]}" "${build_requires[@]}"
+	}
+
+	expand_version_key(){
+		local -n ev_result="$1"
+		local -- key="$2"
+		local -- version="$3"
+
+		ev_result=()
+		# loop over comma separated list of keys
+		for k in ${key//;/ }; do
+			# do curly brackets expansion {}
+			local -- l
+			local -a list=()
+			list=( $(${bash} -c "echo $k" ) )
+			for l in "${list[@]}"; do
+				if [[ $l =~ ${version} ]]; then
+					ev_result+=("${l}")
+				fi
+			done
+		done
+	}
+
+	local -a found_keys=()
+	local -a version_keys=()
+
+	yml::get_keys  \
+		found_keys \
+		yaml_module_config \
+		'.'
+
+	local -A mod_config=()
+	local -- key=''
+	for key in "${!Yaml_default_config[@]}"; do
+		mod_config[${key}]="${Yaml_default_config[${key}]}"
+	done
+	for key in "${found_keys[@]}"; do
+		case "${key}" in
+			'defaults' )
+				yml::get_config \
+					yaml_module_config \
+					".${key}" \
+					mod_config \
+				;;
+			'shasums' )
+				local -- yaml_shasums=''
+				yaml_shasums=$(${yq} ".${key}" <<<"${yaml_module_config}" 2>/dev/null)
+				while read -r key value; do
+					[[ -z ${key} ]] && continue
+					SHASUMS[${key//:}]="${value}"
+				done <<<"${yaml_shasums}"
+				;;
+			'type' )
+				local -- value=''
+				yml::get_value \
+					value \
+					yaml_module_config \
+					".${key}" '!!str' || \
+					yml::die_parsing "${yaml_module_config}"
+				case "${value,,}" in
+					'module' )
+						[[ "${module_type}" == 'sub_package' ]] && \
+							die_wrong_module_type 'module' 'sub_package'
+						;;
+					'sub_package' )
+						[[ "${module_type}" == 'module' ]] && \
+							die_wrong_module_type 'sub_package' 'module'
+						;;
+					* )
+						die_invalid_module_type "${value}"
+						;;
+				esac
+				;;
+			'versions' )
+				yml::get_matching_version_keys \
+					yaml_module_config \
+					version_keys \
+					"${version}"
+				;;
+		esac
+	done
+	(( ${#version_keys[@]} > 0 )) || \
+		std::die 3 "No version(s) specified in YAML configuration file."
+
+
+	local -- version_key=''
+	local -i num_variants=0
+	for version_key in "${version_keys[@]}"; do
+		local -- node=".versions.\"${version_key}\""
+		yml::get_keys \
+			found_keys \
+			yaml_module_config \
+			"${node}"
+		for key in "${found_keys[@]}"; do
+			case "${key}" in
+				'config' )
+					yml::get_config \
+						yaml_module_config \
+						"${node}.config" \
+						mod_config
+					;;
+				'variants' )
+					local -- type_of_node=''
+					yml::get_type type_of_node yaml_module_config "${node}.variants"
+					if [[ "${type_of_node}" == '!!null' ]]; then
+						num_variants=0
+					elif [[ "${type_of_node}" != '!!seq' ]]; then
+						die_invalid_variants_block "${name}" "${version}" \
+									   "${type_of_key}"
+					else
+						yml::get_seq_length \
+							num_variants \
+							yaml_module_config \
+							"${node}.variants"
+					fi
+					;;
+			esac
+		done
+
+		local -a versions=()
+		expand_version_key versions "${version_key}" "${version}"
+		local -- version=''
+		for version in "${versions[@]}"; do
+			debug "version: $version"
+			P="${name}"
+			parse_version "${version}"
+
+			if (( num_variants == 0 )); then
+				is_variant_to_build \
+					"${name}" "${version}" \
+					mod_config || continue
+				build_modules_variant \
+					"${name}" "${version}" \
+					mod_config
+			else
+				local -i n=0
+				for ((n=0; n<num_variants; n++)); do
+					local -A variant_config=()
+					local -- key=''
+					for key in "${!mod_config[@]}"; do
+						variant_config[${key}]="${mod_config[${key}]}"
+					done
+					yml::get_config \
+						yaml_module_config \
+						"${node}.variants[$n]" \
+						variant_config
+					is_variant_to_build \
+						"${name}" "${version}" \
+						variant_config || continue
+					build_modules_variant \
+						"${name}" "${version}" \
+						variant_config
+					if [[ "${mod_config['build_variants']}" == 'first_match' ]]; then
+						break
+					fi
+					#debug "n=$n; num_variants=$num_variants"
+				done
+			fi
+		done
+	done
+} # build_modules()
+
+debug(){
+	${echo} "INFO: " "$@" 1>&2
+}
+
+#.............................................................................
+# main
+
+eval $( "${modulecmd}" bash use unstable )
+eval $( "${modulecmd}" bash use deprecated )
+eval $( "${modulecmd}" bash use Libraries )
+eval $( "${modulecmd}" bash use System )
+
+parse_args "$@"
+
+#
+# :FIXME: add comments what and why we are doing this.
+#
+declare -r logfile="${BUILDBLOCK_DIR}/pbuild.log"
+${rm} -f "${logfile}"
+if (( opt_verbose > 0 )); then
+	exec  > >(${tee} -a "${logfile}")
+else
+	exec > >(${cat} >> "${logfile}")
+fi
+exec 2> >(${tee} -a "${logfile}" >&2)
+
+pbuild.jobs "${opt_jobs}"
+pbuild.force_rebuild "${opt_force_rebuild}"
+pbuild.build_target "${opt_build_target}"
+pbuild.dry_run "${opt_dry_run}"
+pbuild.enable_cleanup_build "${opt_enable_cleanup_build}"
+pbuild.enable_cleanup_src "${opt_enable_cleanup_src}"
+pbuild.update_modulefiles "${opt_update_modulefiles}"
+pbuild.system "${opt_system}"
+
+#
+# read configuration for modbuild
+#
+pm::read_config
+
+declare -r BUILD_SCRIPT
+declare -r BUILDBLOCK_DIR
+
+if [[ -z ${module_name} ]]; then
+	# the module name is defined by the directory the build script is in
+	IFS=/ read -r -a fname <<< "${BUILD_SCRIPT:1}"
+	module_name=${fname[${#fname[@]}-2]}
+fi
+
+declare version=''
+for version in "${versions_to_build[@]}"; do
+        build_modules "${module_name}" "${version}" "${opt_with_modules[@]}"
+done
+
+# Local Variables:
+# mode: sh
+# sh-basic-offset: 8
+# tab-width: 8
+# End:
