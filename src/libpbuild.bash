@@ -412,7 +412,7 @@ pbuild::prep() {
 		local -ri idx="$2"
 
 		local -r fname="${src_dir}/${SOURCE_NAMES[idx]}"
-		local -r dir="${SOURCE_UNPACK_DIRS[idx]}"
+		local -r dir="$(envsubst <<<"${SOURCE_UNPACK_DIRS[idx]}")"
 		local -r strip="${SOURCE_STRIP_DIRS[idx]}"
 		local -r unpacker="${SOURCE_UNPACKER[idx]}"
 
