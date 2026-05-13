@@ -318,11 +318,9 @@ pbuild::unpack(){
 	local -r strip="${3:-1}"
 	local -r unpacker="${4:-${tar}}"
 
-	if [[ -z "${dir}" ]]; then
-		dir="${SRC_DIR}"
-	else
-		dir=$(envsubst <<<"${dir}")
-	fi
+	fname=$(envsubst <<<"${fname}")
+	dir=$(envsubst <<<"${dir}")
+	unpacker=$(envsubst <<<"${unpacker}")
 	mkdir -p "${dir}"
 
 	case "${unpacker}" in
@@ -385,6 +383,8 @@ pbuild::prep() {
 	download_source_file() {
 		local -- src_dir="$1"
 		local -i idx="$2"
+		#
+	        # Use filename in URL if no other name has been defined
 		if [[ -z "${SOURCE_NAMES[idx]}" ]]; then
 			SOURCE_NAMES[idx]="${PMODULES_DISTFILESDIR}/${SOURCE_URLS[idx]##*/}"
 		fi
@@ -428,7 +428,7 @@ pbuild::prep() {
 	check_hash_sum() {
 		local -r  src_dir="$1"
 		local -ri idx="$2"
-		local -r fname="${SOURCE_NAMES[i]}"
+		local -r fname="${SOURCE_NAMES[idx]}"
 		if [[ -v SHASUMS[${fname}] ]]; then
 			local -- hash_sum=''
 			hash_sum=$(sha256sum "${src_dir}/${fname}" | awk '{print $1}')
@@ -441,7 +441,6 @@ pbuild::prep() {
 		else
 			std::info "${module_name}/${module_version}: SHA256 hash sum missing NOK ..." 
 		fi
-
 	}
 
 	apply_patch(){
@@ -478,11 +477,14 @@ pbuild::prep() {
 	for ((i = 0; i < ${#SOURCE_URLS[@]}; i++)); do
 		local -- src_dir=''
 		local -i ec=0
+
+		SOURCE_URLS[i]="$(envsubst <<<"${SOURCE_URLS[i]}")"
 		# if file name is not specified, use last component of URL as file name
 		# check whether file exist
 		# try to download if not and URL is specified
 		[[ -z "${SOURCE_NAMES[i]}" ]] && SOURCE_NAMES[i]="${SOURCE_URLS[i]##*/}"
 		if [[ -n "${SOURCE_NAMES[i]}" ]]; then
+			SOURCE_NAMES[i]="$(envsubst <<<"${SOURCE_UNPACK_DIRS}")"
 			if ! search_source_file src_dir "${SOURCE_NAMES[i]}"; then
 				if [[ -n "${SOURCE_URLS[i]}" ]]; then
 					src_dir="${PMODULES_DISTFILESDIR}"
@@ -495,6 +497,7 @@ pbuild::prep() {
 			unpack "${src_dir}" "$i"
 		fi
 		if [[ -n "${SOURCE_PATCH_FILES[i]}" ]]; then
+			SOURCE_PATCH_FILES[i]="$(envsubst <<<"${SOURCE_PATCH_FILES[i]}")"
 			search_source_file src_dir "${SOURCE_PATCH_FILES[i]}" || \
 				std::die 42 \
 					 "%s " \
