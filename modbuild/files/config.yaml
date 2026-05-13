@@ -22,8 +22,8 @@ modbuild:
             version: 4.53.2
           - name: bash
             version: 5.3.9
-            build_args:
-
+          - name: patchelf
+            version: 0.14.5
 
 bash:
   type: sub_package
@@ -64,3 +64,15 @@ sevenz:
         urls:
           - url: https://github.com/ip7z/7zip/archive/refs/tags/${V_PKG}.tar.gz
             name: 7zip-${V_PKG}.tar.gz
+
+patchelf:
+  type: sub_package
+  defaults:
+    urls:
+      - url: https://github.com/NixOS/$P/archive/${V_PKG}.tar.gz
+        name: $P-${V_PKG}.tar.gz
+    configure_args:
+      - --bindir=${PREFIX}/libexec
+    compile_in_sourcetree: true
+  versions:
+    0.14.5:
