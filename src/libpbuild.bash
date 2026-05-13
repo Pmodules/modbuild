@@ -396,7 +396,7 @@ pbuild::prep() {
 				std::die 42 \
 					 "%s " \
 					 "${module_name}/${module_version}:" \
-					 "downloading source file '${fname}' failed!"
+					 "downloading source file '${SOURCE_NAMES[idx]}' failed!"
 
 			# :FIXME: How to handle insecure downloads? 
 			#if (( $? != 0 )); then
