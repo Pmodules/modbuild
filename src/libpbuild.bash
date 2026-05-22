@@ -313,13 +313,17 @@ readonly -f pbuild::set_default_patch_strip
 #..............................................................................
 #
 pbuild::unpack(){
-	local -r fname="$1"
+	local -- fname="$1"
 	local -- dir="$2"
 	local -r strip="${3:-1}"
-	local -r unpacker="${4:-${tar}}"
+	local -- unpacker="${4:-${tar}}"
 
 	fname=$(envsubst <<<"${fname}")
-	dir=$(envsubst <<<"${dir}")
+	if [[ -z "${dir}" ]]; then
+		dir="${SRC_DIR}"
+	else
+		dir=$(envsubst <<<"${dir}")
+	fi
 	unpacker=$(envsubst <<<"${unpacker}")
 	mkdir -p "${dir}"
 
@@ -383,8 +387,6 @@ pbuild::prep() {
 	download_source_file() {
 		local -- src_dir="$1"
 		local -i idx="$2"
-		#
-	        # Use filename in URL if no other name has been defined
 		if [[ -z "${SOURCE_NAMES[idx]}" ]]; then
 			SOURCE_NAMES[idx]="${PMODULES_DISTFILESDIR}/${SOURCE_URLS[idx]##*/}"
 		fi
@@ -412,7 +414,7 @@ pbuild::prep() {
 		local -ri idx="$2"
 
 		local -r fname="${src_dir}/${SOURCE_NAMES[idx]}"
-		local -r dir="$(envsubst <<<"${SOURCE_UNPACK_DIRS[idx]}")"
+		local -r dir="${SOURCE_UNPACK_DIRS[idx]}"
 		local -r strip="${SOURCE_STRIP_DIRS[idx]}"
 		local -r unpacker="${SOURCE_UNPACKER[idx]}"
 
@@ -484,7 +486,7 @@ pbuild::prep() {
 		# try to download if not and URL is specified
 		[[ -z "${SOURCE_NAMES[i]}" ]] && SOURCE_NAMES[i]="${SOURCE_URLS[i]##*/}"
 		if [[ -n "${SOURCE_NAMES[i]}" ]]; then
-			SOURCE_NAMES[i]="$(envsubst <<<"${SOURCE_UNPACK_DIRS}")"
+			SOURCE_NAMES[i]="$(envsubst <<<"${SOURCE_NAMES[i]}")"
 			if ! search_source_file src_dir "${SOURCE_NAMES[i]}"; then
 				if [[ -n "${SOURCE_URLS[i]}" ]]; then
 					src_dir="${PMODULES_DISTFILESDIR}"
