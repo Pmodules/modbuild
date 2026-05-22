@@ -1363,6 +1363,8 @@ _build_module() {
 			esac
 		}
 		update_modulerc() {
+			[[ "${is_subpkg}" == 'yes' ]] && return 0
+
 			local -r modulerc_file="${modulefile_dir}/.modulerc"
 
 			echo '#%Module' > "${modulerc_file}"
