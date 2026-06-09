@@ -991,7 +991,8 @@ _build_module() {
 			# match.
 			local -- release_of_dependency=''
 			if ! pbuild::module_is_avail "$m" release_of_dependency; then
-				build_dependency "$m"
+				build_dependency "$m" || \
+					std::die 6 "building dependency failed!"
 				pbuild::module_is_avail "$m" release_of_dependency || \
 					std::die 6 "Oops"
 			fi
