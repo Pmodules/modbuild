@@ -1379,11 +1379,9 @@ _build_module() {
 				local relstage=$(awk '/relstage:/ {print $2}' "${config_file}")
 				case ${relstage} in
 					unstable )
-						echo "   module-hide --before 2030-01-01 ${name}" >> "${modulerc_file}"
 						echo "   module-tag u ${name}" >> "${modulerc_file}"
 						;;
 					deprecated )
-						echo "   module-hide --after 1970-01-01 ${name}" >> "${modulerc_file}"
 						echo "   module-tag d ${name}" >> "${modulerc_file}"
 						;;
 				esac
