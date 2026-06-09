@@ -819,6 +819,14 @@ pbuild.build_module_yaml(){
 	ModuleConfig="$3"
 
 	eval $( "${modulecmd}" bash purge )
+	if [[ -v __MODULES_OVERLAYS ]]; then
+		local -a overlays=()
+		local -- overlay=''
+		IFS=':' read -r -a overlays <<<"${__MODULES_OVERLAYS}"
+		for overlay in "${overlays[@]}"; do
+			eval $("${modulecmd}" bash unuse "${overlay}")
+		done
+	fi
 	unset	C_INCLUDE_PATH
 	unset	CPLUS_INCLUDE_PATH
 	unset	CPP_INCLUDE_PATH
