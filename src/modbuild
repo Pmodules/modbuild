@@ -363,7 +363,7 @@ yml::get_file_fmt(){
 
 build_modules(){
 	local -- name="$1"
-        local -- version="$2"
+        local -- version_pattern="$2"
 	shift 2
         local -a with_modules=( "$*" )
 
@@ -390,7 +390,8 @@ build_modules(){
 				std::die 3 "Configuration for '${name}' missing in config file -- ${file_name}"
 			build_modules_yaml_v1 \
 				"${yaml_module_config}" \
-				"${name}" "${version}" \
+				"${name}" \
+				"${version_pattern}" \
 				"${with_modules[@]}"
 			;;
 		* )
@@ -847,17 +848,18 @@ build_modules_yaml_v1(){
 
 	yml::get_matching_version_keys(){
 		#
-		# return list of versions matching a specific version.
+		# return list of version keys matching a specific
+		# version pattern
 	      	#
 		local -n yaml_input="$1"	# [in]  YAML input
-		local -n result="$2"		# [out] list of versions
-		local -- version="$3"		# [in]  version to match
+		local -n result="$2"		# [out] list of matching
+						#       version keyss
+		local -- version="$3"		# [in]  version pattern
 
 		local -a keys=()
 		yml::get_keys keys yaml_input '.versions'
 		result=()
 		for key in "${keys[@]}"; do
-			l=()
 			# loop over semicolon separated list of keys
 			for k in ${key//;/ }; do
 				# brace expansion of key
@@ -1441,7 +1443,7 @@ build_modules_yaml_v1(){
 	(( ${#version_keys[@]} > 0 )) || \
 		std::die 3 "No version(s) specified in YAML configuration file."
 
-
+	# loop over all version keys in the YAML config file
 	local -- version_key=''
 	local -i num_variants=0
 	for version_key in "${version_keys[@]}"; do
@@ -1460,11 +1462,13 @@ build_modules_yaml_v1(){
 					;;
 				'variants' )
 					local -- type_of_node=''
-					yml::get_type type_of_node yaml_module_config "${node}.variants"
+					yml::get_type type_of_node yaml_module_config \
+						      "${node}.variants"
 					if [[ "${type_of_node}" == '!!null' ]]; then
 						num_variants=0
 					elif [[ "${type_of_node}" != '!!seq' ]]; then
-						die_invalid_variants_block "${name}" "${version}" \
+						die_invalid_variants_block "${name}" \
+									   "${version}" \
 									   "${type_of_key}"
 					else
 						yml::get_seq_length \
@@ -1476,6 +1480,10 @@ build_modules_yaml_v1(){
 			esac
 		done
 
+		# a version key in the YAML config is a semicolon separated list
+		# of version specifications like
+		# 42.0.0;41.0.{0..9};40.4.2
+		#
 		local -a versions=()
 		expand_version_key versions "${version_key}" "${version}"
 		local -- version=''
@@ -1486,7 +1494,8 @@ build_modules_yaml_v1(){
 
 			if (( num_variants == 0 )); then
 				is_variant_to_build \
-					"${name}" "${version}" \
+					"${name}" \
+					"${version}" \
 					mod_config || continue
 				build_modules_variant \
 					"${name}" "${version}" \
@@ -1504,14 +1513,14 @@ build_modules_yaml_v1(){
 						"${node}.variants[$n]" \
 						variant_config
 					is_variant_to_build \
-						"${name}" "${version}" \
+						"${name}" \
+						"${version}" \
 						variant_config || continue
 					build_modules_variant \
 						"${name}" "${version}" \
 						variant_config
-					if [[ "${mod_config['build_variants']}" == 'first_match' ]]; then
-						break
-					fi
+					[[ "${mod_config['build_variants']}" == 'first_match' ]] \
+						&& break
 					#debug "n=$n; num_variants=$num_variants"
 				done
 			fi
