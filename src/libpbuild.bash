@@ -1277,6 +1277,9 @@ _build_module() {
 					echo "${dep}" >> "${fname}"
 				done
 			}
+			${rm} -f "${PREFIX}/${FNAME_RDEPS}"
+			${rm} -f "${modulefile_dir}/.deps-${module_version}"
+			${rm} -f "${PREFIX}/${FNAME_IDEPS}"
 			if (( ${#runtime_dependencies[@]} > 0 )); then
 				if [[ "${ol_name}" == 'base' ]]; then
 					_write_file \
