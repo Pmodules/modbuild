@@ -865,10 +865,13 @@ build_modules_yaml_v1(){
 				# brace expansion of key
 				local -a list=()
 				list=( $(${bash} -c "echo $k") )
-				if [[ ${list[@]} =~ ${version} ]]; then
-					result+=("${key}")
-					break
-				fi
+				local -- el=''
+				for el in "${list[@]}"; do
+					if [[ ${el} == ${version} ]]; then
+						result+=("${key}")
+						break
+					fi
+				done
 			done
 		done
 		(( ${#result[@]} == 0 )) && \
