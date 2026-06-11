@@ -367,15 +367,8 @@ build_modules(){
 	shift 2
         local -a with_modules=( "$*" )
 
-
-	if [[ "${opt_check_mode}" == 'yes' ]]; then
-		if ! which yamllint > /dev/null 2>&1; then
-			eval $( "${modulecmd}" bash load yamllint/1.28.0 )
-		fi
-		which yamllint > /dev/null 2>&1 || \
-			std::die 3 "yamllint not found"
-		yamllint "${yaml_config_file}"
-	fi
+	[[ "${opt_check_mode}" == 'yes' ]] && \
+		${yamllint} "${yaml_config_file}"
 
 	local -- yaml_config=''
 	local -i file_fmt=0

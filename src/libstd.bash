@@ -251,6 +251,7 @@ std::def_cmd2 'tee'
 std::def_cmd2 'touch'
 std::def_cmd2 'tput'
 std::def_cmd2 'uname'
+std::def_cmd2 'yamllint'
 std::def_cmd2 'yq'
 
 KernelName=$(${uname} -s);		declare -r KernelName
