@@ -1401,10 +1401,7 @@ _build_module() {
 			echo '}' >> "${modulerc_file}"
 		}
 
-		if [[ "${opt_update_modulefiles}" == "yes" ]] || \
-			   [[ ! -e "${modulefile_name}" ]]; then
-			install_modulefile
-		fi
+		install_modulefile
 		install_runtime_dependencies
 		install_config_file
 		update_modulerc
@@ -1711,12 +1708,19 @@ _build_module() {
 		bm::remove_module
 	elif [[ "${module_release}" == 'deprecated' ]]; then
 		bm::deprecate_module
-	elif [[ -d "${PREFIX}" && "${is_subpkg}" != 'yes' ]] && [[ "${force_rebuild}" == 'no' ]]; then
+	elif [[ -d "${PREFIX}" && "${is_subpkg}" != 'yes' && "${force_rebuild}" == 'no' ]]; then
  		std::info \
 			"%s " \
 			"${module_name}/${module_version}:" \
 			"already exists, not rebuilding ..."
-		bm::install_module_config
+		if [[ "${opt_update_modulefiles}" == 'yes' ]]; then
+			bm::install_module_config
+		else
+ 			std::info \
+				"%s " \
+				"${module_name}/${module_version}:" \
+				"modulefile and configuration are not updated."
+		fi
 	else
 		if [[ "${opt_clean_install,,}" == 'yes' ]]; then
 			std::info \
