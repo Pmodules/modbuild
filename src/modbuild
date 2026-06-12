@@ -155,7 +155,6 @@ declare -a      opt_with_modules=()
 declare -A	opt_with_dict=()
 declare --	opt_config_file=''
 declare --	opt_debug='no'
-declare --	opt_check_mode='no'
 declare --	opt_variant=''
 declare --	opt_clean_install='no'
 declare --	opt_parent_prefix=''
@@ -246,9 +245,6 @@ parse_args() {
 				opt_system="$2"
 				shift
 			fi
-			;;
-		--check-mode )
-			opt_check_mode='yes'
 			;;
 		--with | --with=*/* )
 			if [[ $1 == *=* ]]; then
@@ -366,9 +362,6 @@ build_modules(){
         local -- version_pattern="$2"
 	shift 2
         local -a with_modules=( "$*" )
-
-	[[ "${opt_check_mode}" == 'yes' ]] && \
-		${yamllint} "${yaml_config_file}"
 
 	local -- yaml_config=''
 	local -i file_fmt=0
@@ -985,7 +978,6 @@ build_modules_yaml_v1(){
 			(( ${#opt_with_modules[@]} != 0 )) \
 				&& [[ "${compiler}" != "${opt_with_modules[0]}" ]] \
 				&& continue
-			[[ "${opt_check_mode}" == 'yes' ]] && continue
 			pbuild.build_module_yaml \
 				"${module_name}" "${module_version}" \
 				"$3" \
