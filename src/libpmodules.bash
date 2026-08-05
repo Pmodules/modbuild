@@ -1,8 +1,21 @@
 #!/bin/bash
 
+# Requires: yq (Go version) >= 4.0!
+
+set   -o pipefail
+set   -o nounset
+shopt -s extglob
+shopt -s nullglob
+
+(( BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 3 )) || \
+	{
+		printf "%s\n" "Bash 5.3+ required" 1>&2
+		exit 255
+	}
+
+
 declare -r __MODULEFILES_DIR__='modulefiles'
-declare    PMODULES_VERSION='2.1.0'
-declare -A GroupDepths=(['none']=0)
+declare -g PMODULES_DISTFILESDIR PMODULES_TMPDIR
 
 declare -a Overlays=()
 declare -A OverlayInfo
@@ -40,52 +53,9 @@ declare -A OverlayInfo
 #	This type can be used to make hole groups unavailable.
 #
 # 
-declare -r ol_normal='n'
-declare -r ol_hiding='h'
-declare -r ol_replacing='r'
-
-compute_group_depth () {
-	: "
-	Compute depth of modulefile directory.
-	"
-	local -n result="$1"	# ref.var to return result
-        local -r dir="$2"	# absolute path of a modulefile directory
-	if [[ ! -d "${dir}" ]]; then
-		${mkdir} -p "${dir}" || \
-			std::die 1 "Cannot create directory -- ${dir}"
-	fi
-        local -- group=${dir%/*}
-        local -- group=${group##*/}
-	result=$(${find} "${dir}" -depth \( -type f -o -type l \) \
-                          -printf "%d" -quit 2>/dev/null)
-	(( result-=2 )) || :
-	# if a group doesn't contain a modulefile, depth is negativ
-	# :FIXME: better solution?
-	(( result < 0 )) && (( result = 0 )) || :
-}
-
-scan_groups () {
-	: "
-	(Re-)Scan available groups in the overlays $@ and compute group depth's.
-	Set GroupDepths[group].
-	"
-        local -- ol=''
-	local -i depth=0
-        for ol in "$@"; do
-		[[ "${OverlayInfo[${ol}:layout]}" == 'Pmodules' ]] || continue
-		local -- modulefiles_root="${OverlayInfo[${ol}:modulefiles_root]}"
-		local -- dir=''
-		for dir in "${modulefiles_root}"/*/"${__MODULEFILES_DIR__}"; do
-			local -- group="${dir%/*}"
-			group="${group##*/}"
-			if [[ ! -v GroupDepths[${group}] ]]; then
-				compute_group_depth depth "${dir}"
-				GroupDepths[$group]=${depth}
-			fi
-		done
-        done
-	GroupDepths['none']=0
-}
+declare -r OL_NORMAL='n'
+declare -r OL_HIDING='h'
+declare -r OL_REPLACING='r'
 
 declare -A DefaultPmodulesConfig=(
 	['defaultgroups']='Tools:Programming'
@@ -94,10 +64,7 @@ declare -A DefaultPmodulesConfig=(
 	['default_reltages']='stable'
 	['tmpdir']="/var/tmp/${USER}"
 	['tmp_dir']="/var/tmp/${USER}"
-	['distfilesdir']="${HOME}/.cache/Pmodules/distfiles"
-	['distfiles_dir']="${HOME}/.cache/Pmodules/distfiles"
 	['download_dir']="${HOME}/.cache/Pmodules/distfiles"
-	['overlays']=''
 )
 
 declare -A OverlayConfigKeys=(
@@ -122,128 +89,32 @@ declare -A OverlayPathConfigKeys=(
 
 )
 
-yml::die_parsing(){
-	std::die 3 "error parsing YAML:\n----\n$1\n----"
+pm::die_invalid_key(){
+	std::die 3 "Invalid key in configuration -- $1\n$2"
 }
 
-yml::die_type_error(){
-	std::die 3 "%s" \
-		 "Value of '$1' must be of type '$2', but is '$3'!"
-}
-
-yml::die_invalid_key(){
-	std::die 3 "%s -- %s\n%s" \
-		 "Invalid key in configuration" \
-		 "$1" "$2"
-}
-
-yml::die_read_file(){
-	std::die 3 "Cannot read file '$1'. Please check with yamllint!"
-}
-
-yml::read_file(){
-	local -n yml_content="$1"
-	local -- yml_fname="$2"
-	local -- yml_node="$3"
-
-	yml_content=$( ${yq} -Ne e "${yml_node}|explode(.)" "${yml_fname}" 2>/dev/null ) || \
-		yml::die_read_file "${yml_fname}"
-}
-
-yml::get_keys(){
-	local -n yml_keys="$1"
-	local -n yml_input="$2"
-	local -- yml_node="$3"
-
-	local -- str=''
-	str="$( ${yq} -e "${yml_node}|keys|.[]" 2>/dev/null <<<"${yml_input}")" || \
-		{ yml_keys=(); return 0; };
-	readarray -t yml_keys <<<"${str}" 
-}
-
-yml::get_type(){
-	local -n yml_type="$1"
-	local -n yml_input="$2"
-	local -- yml_node="$3"
-	yml_type="$( ${yq} -e "${yml_node}|type" 2>/dev/null <<<"${yml_input}")" || \
-		yml::die_parsing "${yml_input}"
-}
-
-yml::get_value(){
-	local -n yml_val="$1"
-	local -n yml_input="$2"
-	local -- yml_node="$3"
-	local -- yml_expected_type="$4"
-	
-	local -- type=''
-	type="$( ${yq} -e "${yml_node}|type" 2>/dev/null <<<"${yml_input}")" || \
-		yml::die_parsing "${yml_input}"
-	[[ "${type}" == "${yml_expected_type}" ]] || \
-		yml::die_type_error "${yml_node}" "${yml_expected_type:2}" "${type:2}"
-	yml_val=$( ${yq} -e "${yml_node}" 2>/dev/null <<<"${yml_input}" ) || \
-		return 1
-}
-
-yml::get_seq_length(){
-
-	local -n yml_seq_length="$1"	# [out] number of variants
-	local -n yml_input="$2"		# [in]  YAML input
-	local -- yml_node="$3"		# [in]  node
-
-	yml_seq_length=$(${yq} -e "${yml_node}|length" 2>/dev/null <<<"${yml_input}") || \
-		yml::die_parsing "${yml_input}"
-}
-
-yml::get_seq(){
-	local -n yml_val="$1"
-	local -n yml_input="$2"
-	local -- yml_node="$3"
-
-	local -- type=''
-	type=$( ${yq} -e "${yml_node}|type" 2>/dev/null <<<"${yml_input}")
-	if [[ "${type:2}" == 'null' ]]; then
-		yml_val=''
-		return 0
-	fi
-	[[ "${type}" == '!!seq' ]] || \
-		yml::die_type_error "${yml_node}" 'seq' "${type:2}"
-	local -i length=0
-	length=$(${yq} -e "${yml_node}|length" 2>/dev/null <<<"${yml_input}")
-	if (( length == 0 )); then
-		yml_val=''
-		return 0
-	fi
-	yml_val=$( ${yq} -e "${yml_node}[]" 2>/dev/null <<<"${yml_input}" ) || \
-		return 1
-}
-
-yml::die_invalid_ol_install_root(){
+pm::die_invalid_ol_install_root(){
 	std::die 3 "Invalid installation root directory for overlay '$1' -- $2"
 }
 
-yml::die_invalid_ol_modulefiles_root(){
+
+pm::die_invalid_ol_modulefiles_root(){
 	std::die 3 "Invalid modulefiles root directory for overlay '$1' -- $2"
 }
 
-yml::die_invalid_ol_type(){
+pm::die_invalid_ol_type(){
 	std::die 3 "Invalid type for overlay '$1' -- $2"
 }
 
-yml::die_invalid_ol_layout(){
+pm::die_invalid_ol_layout(){
 	std::die 3 "Invalid layout for overlay '$1' -- $2\nAllowed values are 'Pmodules', 'Spack' and 'flat'."
 }
 
-yml::die_invalid_ol_relstage(){
+pm::die_invalid_ol_relstage(){
 	std::die 3 "Invalid default release stage for overlay '$1' -- $2"
 }
 
-yml::die_invalid_ol_key(){
-	std::die 3 "%s -- %s\n%s" \
-		 "Invalid key in configuration" \
-		 "$1" "$2"
-}
-
-parse_path_config(){
+pm::parse_path_config(){
 	local -n yaml="$1"
 	local -- ol_name="$2"
 
@@ -266,8 +137,7 @@ parse_path_config(){
 					yml::get_seq \
 						str \
 						yaml \
-						"${node}.${key}" || \
-						yml::die_parsing "${yaml}"
+						"${node}.${key}"
 					readarray -t target_cpus <<<${str}
 					local -- system_cpu=$(uname -p)
 					local -- cpu=''
@@ -282,15 +152,15 @@ parse_path_config(){
 					;;
 				modulepath | modulepath_unstable | modulepath_stable | modulepath_deprecated)
 					local -- str=''
-					yml::get_seq str yaml "${node}.${key}" '!!seq'
+					yml::get_seq str yaml "${node}.${key}"
 					local -a tmp_array=()
 					readarray -t tmp_array <<<${str}
 					local -- modulepath=''
 					local -- dir=''
-					export target_cpu=''
+					local -- target_cpu=''
 					for dir in "${tmp_array[@]}"; do
 						for target_cpu in "${target_cpus[@]}"; do
-							std::append_path modulepath $(${envsubst} <<< "${dir}")
+							std::append_path modulepath $(envsubst <<< "${dir}")
 						done
 					done
 					OverlayInfo[${ol_name}:${key}]="${modulepath}"
@@ -302,10 +172,18 @@ parse_path_config(){
 }
 
 pm::read_config(){
-	: "
-	Read Pmodules configuration files 'PMODULES_ROOT/config/Pmodules.yaml'
+	local -r __doc__='
+	Read modules configuration.
+
+	In case of Pmodules read 'PMODULES_ROOT/config/Pmodules.yaml'
 	and '${HOME}/.Pmodules/Pmodules.yaml'.
-	"
+
+	In case of Tcl Environemnt Modules get the config from running
+	module use
+	'
+	local -- tmp_dir="${DefaultPmodulesConfig['tmp_dir']}"
+	local -- download_dir="${DefaultPmodulesConfig['download_dir']}"
+
 	get_config_of_overlay(){
 		: "
 		Get configuration of an overlay.
@@ -331,26 +209,26 @@ pm::read_config(){
 			case ${key,,} in
 				install_root )
 					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					OverlayInfo[${ol_name}:install_root]=$(${envsubst} <<< "${value}")
+					OverlayInfo[${ol_name}:install_root]=$(envsubst <<< "${value}")
 					mkdir -p "${OverlayInfo[${ol_name}:install_root]}" 2>/dev/null
 					[[ -d ${OverlayInfo[${ol_name}:install_root]} ]] || \
-						yml::die_invalid_ol_install_root "${ol_name}" "${value}"
+						pm::die_invalid_ol_install_root "${ol_name}" "${value}"
 					;;
 				modulefiles_root )
 					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					OverlayInfo[${ol_name}:modulefiles_root]=$(${envsubst} <<< "${value}")
+					OverlayInfo[${ol_name}:modulefiles_root]=$(envsubst <<< "${value}")
 					mkdir -p "${OverlayInfo[${ol_name}:modulefiles_root]}" 2>/dev/null
 					[[ -d ${OverlayInfo[${ol_name}:modulefiles_root]} ]] || \
-						yml::die_invalid_ol_modulefiles_root "${ol_name}" "${value}"
+						pm::die_invalid_ol_modulefiles_root "${ol_name}" "${value}"
 					;;
 				type )
 					yml::get_value value yaml_input "${node}.${key}" '!!str'
 					case ${value} in
-						"${ol_normal}" | "${ol_replacing}" | "${ol_hiding}" )
+						"${OL_NORMAL}" | "${OL_REPLACING}" | "${OL_HIDING}" )
 							:
 							;;
 						* )
-							yml::die_invalid_ol_type "${ol_name}" "${value}"
+							pm::die_invalid_ol_type "${ol_name}" "${value}"
 							;;
 					esac
 					OverlayInfo[${ol_name}:type]="${value}"
@@ -362,7 +240,7 @@ pm::read_config(){
 							:
 							;;
 						* )
-							yml::die_invalid_ol_layout "${ol_name}" "${value}"
+							pm::die_invalid_ol_layout "${ol_name}" "${value}"
 							;;
 					esac
 					OverlayInfo[${ol_name}:${key,,}]="${value}"
@@ -374,25 +252,25 @@ pm::read_config(){
 							:
 							;;
 						*)
-							yml::die_invalid_ol_relstage "${ol_name}" "${value}"
+							pm::die_invalid_ol_relstage "${ol_name}" "${value}"
 							;;
 					esac
 					OverlayInfo[${ol_name}:${key}]="${value}"
 					;;
 				conflicts | excludes | groups)
-					yml::get_seq value yaml_input "${node}.${key}" '!!seq'
+					yml::get_seq value yaml_input "${node}.${key}"
 					local -a tmp_array=()
 					readarray -t tmp_array <<<${value}
 					local -- tmp_str=''
 					printf -v tmp_str "%s:" "${tmp_array[@]}"
-					OverlayInfo[${ol_name}:${key}]=$(${envsubst} <<<"${tmp_str%:}" )
+					OverlayInfo[${ol_name}:${key}]=$(envsubst <<<"${tmp_str%:}" )
 					;;
 				path_config )
 					yml::get_value value yaml_input "${node}.${key}" '!!seq'
-					parse_path_config value "${ol_name}"
+					pm::parse_path_config value "${ol_name}"
 					;;
 				* )
-					yml::die_invalid_ol_key "${key}" "${yaml_input}"
+					pm::die_invalid_key "${key}" "${yaml_input}"
 					;;
 
 			esac
@@ -410,7 +288,7 @@ pm::read_config(){
 		local -r config_file="$1"	# Pmodules configuration file
 
 		local -- yaml_input=''
-		yml::read_file yaml_input "${config_file}" '.'
+		yml::read_file yaml_input "${config_file}"
 
 		local -- key=''
 		local -a keys=()
@@ -418,38 +296,36 @@ pm::read_config(){
 		for key in "${keys[@]}"; do
 			case ${key,,} in
 				defaultgroups | default_groups )
-					yml::get_value DefaultGroups yaml_input ".${key}" '!!str'
+					: # ignore
 					;;
 				defaultreleasestages | default_reltages )
-					yml::get_value DefaultReleaseStages yaml_input ".${key}" '!!str'
+					: # ignore
 					;;
 				tmpdir | tmp_dir )
-					yml::get_value TmpDir yaml_input ".${key}" '!!str'
-					TmpDir="$(envsubst <<<"${TmpDir}")"
+					yml::get_value tmp_dir yaml_input ".${key}" '!!str'
+					tmp_dir="$(envsubst <<<"${tmp_dir}")"
 					;;
 				distfilesdir | download_dir )
-					yml::get_value DistfilesDir yaml_input ".${key}" '!!str'
-					DistfilesDir="$(envsubst <<<"${DistfilesDir}")"
+					yml::get_value download_dir yaml_input ".${key}" '!!str'
+					download_dir="$(envsubst <<<"${download_dir}")"
 					;;
 				overlays )
 					local -- overlay=''
 					local -a overlays=()
 					local -- ol_configs=''
-					yml::get_value ol_configs yaml_input ".${key}"
+					yml::get_value ol_configs yaml_input ".${key}" "!!map"
 					yml::get_keys overlays ol_configs "."
 					for overlay in "${overlays[@]}"; do
-
 						get_config_of_overlay "${yaml_input}" "${overlay}"
 					done
 					;;
 				* )
-					yml::die_invalid_key "${key}" "${yaml_input}"
+					pm::die_invalid_key "${key}" "${yaml_input}"
 					;;
 			esac
 		done
 	}
 
-	Overlays=()
 	if [[ -v PMODULES_HOME ]]; then
 		# system config file
 		local -- sys_config_file="${PMODULES_HOME%%/Tools*}/config/Pmodules.yaml"
@@ -463,10 +339,6 @@ pm::read_config(){
 				 "Configuration file " \
 				 "does not exist or is not readable" \
 				 "$_"
-		DefaultGroups="${DefaultPmodulesConfig['default_groups']}"
-		DefaultReleaseStages="${DefaultPmodulesConfig['default_reltages']}"
-		TmpDir="${DefaultPmodulesConfig['tmp_dir']}"
-		DistfilesDir="${DefaultPmodulesConfig['download_dir']}"
 		
 		get_config "${sys_config_file}"
 		
@@ -475,22 +347,25 @@ pm::read_config(){
 			get_config "${usr_config_file}"
 		fi
 	else
-		DefaultGroups="${DefaultPmodulesConfig['default_groups']}"
-		DefaultReleaseStages="${DefaultPmodulesConfig['default_reltages']}"
-		TmpDir="${DefaultPmodulesConfig['tmp_dir']}"
-		DistfilesDir="${DefaultPmodulesConfig['download_dir']}"
+		# If Tcl Environemnt Modules are used, retrieving the overlays
+		# is hacky as long as we don't have a solution to query the
+		# overlays via the module command in a well defined format.
+		# For now the output of `module use` is parsed. In the PSI's 
+		# extension the overlays and their configuration are printed
+		# first in YAML format. The output that follows is truncated
+		# using sed(1).
+		
 		# for the module use command xtrace must be switched off!
 		local -- xtrace_is_on=''
 		if [[ "$-" == *x* ]]; then
 			xtrace_is_on=':'
 			set +x
 		fi
-		yaml_input="$(module use)"
+		local -- str="$(module use)"
 		[[ "${xtrace_is_on}" ]] && set -x
-		yaml_input="$(${sed} -n '/Used release stages/q;p' <<<"${yaml_input}")"
-		yaml_input="$(${yq} -e '.*' <<<"${yaml_input}")"
-		local -a overlays=( $(${yq} -e 'keys|.[]' <<<"${yaml_input}") )
-		#yml::get_keys overlays yaml_input 'keys|.[]'
+		yaml_input="$(sed -n '/Used release stages/q;p' <<<"${str}")"
+		yaml_input="$(yq -e '.*' <<<"${yaml_input}")"
+		local -a overlays=( $(yq -e 'keys|.[]' <<<"${yaml_input}") )
 		for overlay in "${overlays[@]}"; do
 			get_config_of_overlay "${yaml_input}" "${overlay}"
 		done
@@ -498,9 +373,8 @@ pm::read_config(){
 	OverlayInfo[none:type]='n'
 	OverlayInfo[none:layout]='flat'
 
-	PMODULES_DISTFILESDIR="${PMODULES_DISTFILESDIR:-${DistfilesDir}}"
-	PMODULES_TMPDIR="${PMODULES_TMPDIR:-${TmpDir}}"
-	export PMODULES_DISTFILESDIR PMODULES_TMPDIR
+	PMODULES_DISTFILESDIR="${PMODULES_DISTFILESDIR:-${download_dir}}"
+	PMODULES_TMPDIR="${PMODULES_TMPDIR:-${tmp_dir}}"
 }
 
 # Local Variables:

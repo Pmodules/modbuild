@@ -11,7 +11,7 @@ modbuild:
       - url: https://github.com/Pmodules/$P/archive/refs/tags/$P-${V_PKG}.tar.gz
   shasums:
   versions:
-    2.1.1:
+    2.1.3:
       config:
         relstage: unstable
         docfiles: [LICENSE.txt]

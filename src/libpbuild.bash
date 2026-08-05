@@ -22,10 +22,8 @@ declare -ax CONFIGURE_ARGS=()
 declare -a PATCH_FILES=()
 declare -a PATCH_STRIPS=()
 declare -- PATCH_STRIP_DEFAULT='1'
-declare -- configure_with='auto'
 declare -- SRC_DIR=''
 declare -- BUILD_DIR=''
-declare -- is_subpkg='no'
 
 declare -i group_depth=0
 
@@ -49,121 +47,11 @@ readonly -f _error_handler
 
 trap "_error_handler" ERR
 
-#..............................................................................
-#
-# write number of cores to stdout
-#
-_get_num_cores() {
-	case "${KernelName}" in
-	Linux )
-		${grep} -c ^processor /proc/cpuinfo
-		;;
-	Darwin )
-		${sysctl} -n hw.ncpu
-		;;
-	* )
-		std::die 1 "OS ${KernelName} is not supported\n"
-		;;
-	esac
-}
-readonly -f _get_num_cores
-
-#..............................................................................
-# global variables which can be set/overwritten by command line args
-# and their corresponding functions
-#
-declare force_rebuild='no'
-pbuild.force_rebuild() {
-	force_rebuild="$1"
-}
-readonly -f pbuild.force_rebuild
-
-declare dry_run=''
-pbuild.dry_run() {
-	dry_run="$1"
-}
-readonly -f pbuild.dry_run
-
-declare enable_cleanup_build=''
-pbuild.enable_cleanup_build() {
-	enable_cleanup_build="$1"
-}
-readonly -f pbuild.enable_cleanup_build
-
-declare enable_cleanup_src=''
-pbuild.enable_cleanup_src() {
-	enable_cleanup_src="$1"
-}
-readonly -f pbuild.enable_cleanup_src
-
-declare build_target=''
-pbuild.build_target() {
-	build_target="$1"
-}
-readonly -f pbuild.build_target
-
-declare opt_update_modulefiles=''
-pbuild.update_modulefiles() {
-	opt_update_modulefiles="$1"
-}
-readonly -f pbuild.update_modulefiles
-
-pbuild.set_prefix(){
-	PREFIX="$1"
-	is_subpkg='yes'
-}
-
-# number of parallel make jobs
-declare -i JOBS=0
-pbuild.jobs() {
-	if (( $1 == 0 )); then
-		JOBS=$(_get_num_cores)
-		(( JOBS > 10 )) && JOBS=10 || :
-	else
-        	JOBS="$1"
-	fi
-}
-readonly -f pbuild.jobs
-
-declare system=''
-pbuild.system() {
-        system="$1"
-}
-readonly -f pbuild.system
-
 #******************************************************************************
 #
 # function in the "namespace" (with prefix) 'pbuild::' can be used in
 # build-scripts
 #
-
-###############################################################################
-#
-# general functions
-#
-
-#..............................................................................
-#
-# Install module in given group.
-#
-# Note:
-#	This function is deprecated with YAML module configuration files.
-#
-# Arguments:
-#	$1: group
-#
-pbuild::add_to_group() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "The group must be configured in the YAML configuration file!"
-}
-readonly -f pbuild::add_to_group
-
-declare -gx GROUP=''
-pbuild.add_to_group(){
-	GROUP="$1"
-}
-readonly -f pbuild.add_to_group
 
 #..............................................................................
 #
@@ -189,12 +77,12 @@ pbuild::module_is_avail() {
 			if [[ "${name}" == "$1" || "${name}" == "${1}.lua" ]]; then
 				# return relase in second argument if defined
 				if (( $# > 1 )); then
-					local -n _result="$2"
-					_result="${release}"
+					local -n _relstage="$2"
+					_relstage="${release}"
 				fi
 				return 0
 			fi
-		done < <(${modulecmd} bash avail -a -m "$1" 2>&1 1>/dev/null)
+		done < <(modulecmd bash avail -a -m "$1" 2>&1 1>/dev/null)
 		return 1
 	else
 		local -- xtrace_is_on=''
@@ -203,7 +91,6 @@ pbuild::module_is_avail() {
 			#set +x
 		fi
 		local output=$(modulecmd bash avail --all --output=tag --terse "$1" 2>&1)
-		echo "$output" 1>&2
 		[[ "${xtrace_is_on}" ]] && set -x
 		while read -r name release; do
 			if [[ "${name}" == "$1" || "${name}" == "${1}.lua" ]]; then
@@ -241,20 +128,6 @@ readonly -f pbuild::use_flag
 #
 # functions to prepare the sources
 
-#..............................................................................
-#
-# Set the download URL and name of downloaded file.
-#
-# Arguments:
-#	$1	download URL
-#	$2	optional file-name (of)
-pbuild::set_download_url() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "The URL must be configured in the YAML configuration file!"
-}
-readonly -f pbuild::set_download_url
-
 pbuild.set_urls(){
 	local -n src="$1"
 	local -i _i=${#SOURCE_URLS[@]}
@@ -266,23 +139,6 @@ pbuild.set_urls(){
 	SOURCE_PATCH_FILES[_i]="${src['patch_file']}"
 	SOURCE_PATCH_STRIPS[_i]="${src['patch_strip']}"
 }
-
-#..............................................................................
-#
-# Set hash sum for file.
-#
-# Arguments:
-#	$1	filen-name:hash-sum
-#
-# :FIXME:
-#	Maybe we should use a dictionary in the future.
-#
-pbuild::set_sha256sum() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "The SHA256 hash must be configured in the YAML configuration file!"
-}
-readonly -f pbuild::set_sha256sum
 
 #..............................................................................
 #
@@ -303,20 +159,11 @@ readonly -f pbuild.add_patch_files
 
 #..............................................................................
 #
-pbuild::set_default_patch_strip() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "The patch strip must be configured in the YAML configuration file!"
-}
-readonly -f pbuild::set_default_patch_strip
-
-#..............................................................................
-#
 pbuild::unpack(){
 	local -- fname="$1"
 	local -- dir="$2"
 	local -r strip="${3:-1}"
-	local -- unpacker="${4:-${tar}}"
+	local -- unpacker="${4:-tar}"
 
 	fname=$(envsubst <<<"${fname}")
 	if [[ -z "${dir}" ]]; then
@@ -419,7 +266,7 @@ pbuild::prep() {
 		local -r unpacker="${SOURCE_UNPACKER[idx]}"
 
 		if ! pbuild::unpack "${fname}" "${dir}" "${strip}" "${unpacker}"; then
-			${rm} -f "${fname}"
+			rm -f "${fname}"
 			std::die 4 \
 				 "%s " \
 				 "${module_name}/${module_version}:" \
@@ -546,49 +393,6 @@ readonly -f pbuild::add_configure_args
 
 #..............................................................................
 #
-pbuild::use_autotools() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "Use the 'configure_with' key in the YAML configuration file!"
-}
-readonly -f pbuild::use_autotools
-
-#..............................................................................
-#
-pbuild::use_cmake() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "Use the 'configure_with' key in the YAML configuration file!"
-}
-readonly -f pbuild::use_cmake
-
-pbuild.configure_with(){
-	configure_with="$1"
-}
-
-#..............................................................................
-#
-# Set flag to build module in source tree.
-#
-# Arguments:
-#   none
-#
-declare -- compile_in_sourcetree='no'
-
-pbuild::compile_in_sourcetree() {
-	std::die 42 "%s " \
-                 "${FUNCNAME[0]}: This function has been removed in Pmodules/1.1.22." \
-		 "Use the 'compile_in_sourcetree' key in the YAML configuration file!"
-}
-readonly -f pbuild::compile_in_sourcetree
-pbuild.compile_in_sourcetree(){
-	if [[ "${1,,}" == 'yes' ]]; then
-		compile_in_sourcetree='yes'
-	fi
-}
-
-#..............................................................................
-#
 # Configure the software to be compiled.
 #
 # Arguments:
@@ -601,6 +405,7 @@ pbuild::post_configure() {
 	:
 }
 pbuild::configure() {
+	local -r configure_with="${ModuleConfig['configure_with']}"
 	case "${configure_with}" in
 		autotools )
         		if [[ ! -r "${SRC_DIR}/configure" ]]; then
@@ -683,17 +488,15 @@ pbuild::compile() {
 		tmp_verbose="${VERBOSE}"
 		restore='yes'
 	fi
-	if (( opt_verbose > 0 )); then
+	if (( Options['verbose'] > 0 )); then
 		declare -g V=1
 		declare -g VERBOSE=1
 	else
 		unset V
 	fi
-	(( JOBS == 0 )) && JOBS=$(_get_num_cores)
-	#[[ -v CC ]] || CC=cc
-	#[[ -v CXX ]] || CXX=c++
-	#CC=$CC CXX=$CXX
-	make -j${JOBS} -e || \
+	# number of parallel make jobs
+	local -i num_jobs="${Options['num_jobs']}"
+	make -j${num_jobs} -e || \
 		std::die 3 \
 			 "%s " "${module_name}/${module_version}:" \
 			 "compilation failed!"
@@ -706,20 +509,6 @@ pbuild::compile() {
 ##############################################################################
 #
 # functions to install everything
-
-#..............................................................................
-#
-# Set documentation file to be installed.
-#
-# Arguments:
-#   $@: documentation files relative to source
-#
-pbuild::install_docfiles() {
-	std::die 1 \
-		"Using ${FUNCNAME[0]} is deprecated with YAML module configuration files."
-	MODULE_DOCFILES+=("$@")
-}
-readonly -f pbuild::install_docfiles
 
 #..............................................................................
 #
@@ -756,7 +545,7 @@ pbuild::post_install_pip3(){
 }
 
 pbuild::install() {
-	${make} install || \
+	make install || \
 		std::die 3 \
 			 "%s " "${module_name}/${module_version}:" \
 			 "compilation failed!"
@@ -771,10 +560,10 @@ pbuild::install_shared_libs() {
 
 	install_shared_libs_Linux() {
 		local -a libs=()
-		mapfile -t libs < <(${ldd} "${binary}" | \
-				       ${awk} "/ => \// && /${pattern}/ {print \$3}")
+		mapfile -t libs < <(ldd "${binary}" | \
+				       awk "/ => \// && /${pattern}/ {print \$3}")
 		if (( ${#libs[@]} > 0 )); then
-			${cp} -vL "${libs[@]}" "${dstdir}" || return $?
+			cp -vL "${libs[@]}" "${dstdir}" || return $?
 		fi
 		return 0
 	}
@@ -783,9 +572,9 @@ pbuild::install_shared_libs() {
 		# https://stackoverflow.com/questions/33991581/install-name-tool-to-update-a-executable-to-search-for-dylib-in-mac-os-x
 		local -a libs=()
 		mapfile -t libs < <(${otool} -L "${binary}" | \
-				       ${awk} "/${pattern}/ {print \$1}")
+				       awk "/${pattern}/ {print \$1}")
 		if (( ${#libs[@]} > 0 )); then
-			${cp} -vL "${libs[@]}" "${dstdir}" || return $?
+			cp -vL "${libs[@]}" "${dstdir}" || return $?
 		fi
 		return 0
 	}
@@ -794,8 +583,8 @@ pbuild::install_shared_libs() {
 		std::die 3 \
 			 "%s " "${module_name}/${module_version}:" \
 			 "${binary}: does not exist or is not executable!"
-	${mkdir} -p "${dstdir}"
-	case "${KernelName}" in
+	mkdir -p "${dstdir}"
+	case "${KERNEL_NAME}" in
 		Linux )
 			install_shared_libs_Linux
 			;;
@@ -811,20 +600,23 @@ pbuild::install_shared_libs() {
 #
 
 declare -n ModuleConfig
+declare -n Options
 declare -a Systems=()
 declare -a UseOverlays=()
-pbuild.build_module_yaml(){
+pbuild::_module_yaml(){
 	local -- module_name="$1"
 	local -- module_version="$2"
 	ModuleConfig="$3"
+	Options="$4"
+	shift 4
 
-	eval $( "${modulecmd}" bash purge )
+	eval $( modulecmd bash purge )
 	if [[ -v __MODULES_OVERLAYS ]]; then
 		local -a overlays=()
 		local -- overlay=''
 		IFS=':' read -r -a overlays <<<"${__MODULES_OVERLAYS}"
 		for overlay in "${overlays[@]}"; do
-			eval $("${modulecmd}" bash unuse "${overlay}")
+			eval $(modulecmd bash unuse "${overlay}")
 		done
 	fi
 	unset	C_INCLUDE_PATH
@@ -853,10 +645,9 @@ pbuild.build_module_yaml(){
 	if [[ -n "${ModuleConfig['use_overlays']}" ]]; then
 		readarray -t UseOverlays <<< "${ModuleConfig['use_overlays']}"
 	fi
-	shift 3
 	_build_module "${module_name}" "${module_version}" "${module_relstage}" "$@"
 }
-readonly -f pbuild.build_module_yaml
+readonly -f pbuild::_module_yaml
 
 #..............................................................................
 #
@@ -891,7 +682,7 @@ _build_module() {
 		[[ -n ${ModuleConfig['use_overlays']} ]] || return 0
 		std::info "%s " \
 			  "using overlays ${UseOverlays[@]}"
-		eval "$( "${modulecmd}" bash use "${UseOverlays[@]}" )"
+		eval "$( modulecmd bash use "${UseOverlays[@]}" )"
 	}
 
 	#......................................................................
@@ -919,19 +710,12 @@ _build_module() {
 			find_build_script(){
 				local -- p="$1"
 				local -- script=''
-				script=$(${find} "${BUILDBLOCK_DIR}/../.." \
+				script=$(find "${BUILDBLOCK_DIR}/../.." \
 						 -path "*/$p/build")
 				std::get_abspath "${script}"
 			}
 
 			local -r m="$1"
-			std::debug "${m}: module not available"
-			[[ ${dry_run} == yes ]] && \
-				std::die 1 \
-					 "%s " \
-					 "${m}: module does not exist," \
-					 "cannot continue with dry run..."
-
 			std::info "%s " \
 				  "$m: module does not exist, trying to build it..."
 			local args=( '' )
@@ -1021,10 +805,10 @@ _build_module() {
 			fi
 
 			std::info "Loading module: ${m}"
-			local output="$("${modulecmd}" bash load "${m}")";
+			local output="$(modulecmd bash load "${m}")";
 			eval "${output}"
 			if ! bm::is_loaded "$m"; then
-				"${modulecmd}" bash list
+				modulecmd bash list
 				std::die 5 \
 					 "%s " "${m}:" \
 					 "module cannot be loaded!"
@@ -1049,28 +833,29 @@ _build_module() {
 	#	PREFIX
 	#
 	bm::set_full_module_name_and_prefix() {
+		local -r group="${ModuleConfig['group']}"
 		die_no_compiler(){
 			std::die 1 \
 				 "%s: %s" \
 				 "${module_name}/${module_version}" \
-				 "module is in group '${GROUP}' but no compiler loaded!"
+				 "module is in group '${group}' but no compiler loaded!"
 		}
 		die_no_mpi(){
 			std::die 1 \
 				 "%s: %s" \
 				 "${module_name}/${module_version}" \
-				 "module is in group '${GROUP}' but no MPI module loaded!"
+				 "module is in group '${group}' but no MPI module loaded!"
 		}
 		die_no_hdf5(){
 			std::die 1 \
 				 "%s: %s" \
 				 "${module_name}/${module_version}" \
-				 "module is in group '${GROUP}' but no HDF5 module loaded!"
+				 "module is in group '${group}' but no HDF5 module loaded!"
 		}
 
-		modulefile_dir="${ol_modulefiles_root}/${GROUP}/${__MODULEFILES_DIR__}/"
-		PREFIX="${ol_install_root}/${GROUP}/${module_name}/${module_version}/"
-		case "${GROUP}" in
+		modulefile_dir="${ol_modulefiles_root}/${group}/${__MODULEFILES_DIR__}/"
+		PREFIX="${ol_install_root}/${group}/${module_name}/${module_version}/"
+		case "${group}" in
 			Compiler )
 				[[ -v COMPILER_VERSION ]] || die_no_compiler
 				modulefile_dir+="${COMPILER}/${COMPILER_VERSION}/"
@@ -1136,19 +921,20 @@ _build_module() {
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"Installing documentation to ${docdir}"
-			${install} -m 0755 -d "${docdir}"
-			${install} -m 0644 "${BUILD_SCRIPT}" "${docdir}"
-			"${modulecmd}" bash list -t 2>&1 1>/dev/null | \
-				${grep} -v "Currently Loaded" > \
+			install -m 0755 -d "${docdir}"
+			install -m 0644 "${BUILD_SCRIPT}" "${docdir}"
+			modulecmd bash list -t 2>&1 1>/dev/null | \
+				grep -v "Currently Loaded" > \
 				      "${docdir}/dependencies" || :
 
 			(( ${#MODULE_DOCFILES[@]} == 0 )) && return 0
-			${install} -m0644 \
+			install -m0644 \
 				"${MODULE_DOCFILES[@]/#/${SRC_DIR}/}" \
 				"${docdir}"
 			return 0
 		}
 
+		# :FIXME: here we need a better solution
 		patch_elf64_files(){
 			local -- libdir="${OverlayInfo[${ol_name}:install_root]}/lib64"
 			[[ -d "${libdir}" ]] || return 0
@@ -1162,7 +948,7 @@ _build_module() {
 				rpath=$(patchelf --print-rpath "${fname}")
 				[[ -z "${rpath}" ]] || continue
 				(( depth=$(std::get_dir_depth "${fname}") + group_depth + 3 ))
-				rpath='$ORIGIN/'$(printf "../%.0s" $(${seq} 1 ${depth}))lib64
+				rpath='$ORIGIN/'$(printf "../%.0s" $(seq 1 ${depth}))lib64
 				${patchelf} --force-rpath --set-rpath "${rpath}" "${fname}"
 			done
 		}
@@ -1174,11 +960,10 @@ _build_module() {
 			std::info \
 				"%s " \
 				"${module_name}/${module_version}:" \
-				"running post-installation for ${KernelName} ..."
+				"running post-installation for ${KERNEL_NAME} ..."
 			{
 				cd "${PREFIX}"
 				[[ -d "lib" ]] && [[ ! -d "lib64" ]] && ln -s lib lib64
-				patch_elf64_files
 			};
 			return 0
 		}
@@ -1186,7 +971,7 @@ _build_module() {
 		#..............................................................
 		# post-install
 		cd "${BUILD_DIR}"
-		[[ "${KernelName}" == "Linux" ]] && post_install_linux
+		[[ "${KERNEL_NAME}" == "Linux" ]] && post_install_linux
 		install_doc
 		std::info \
 			"%s " \
@@ -1195,218 +980,161 @@ _build_module() {
 		return 0
 	} # bm::post_install
 
-		#
-	# write modulefile, configuration and dependencies
-	#
-	bm::install_module_config(){
 
- 		#......................................................................
-		# Install modulefile in ${ol_modulefiles_root}/${GROUP}/modulefiles/...
-		# The modulefiles in the build-block can be
-		# versioned like
-		#     modulefile-10.2.0
-		#     modulefile-10.2
-		#     modulefile-10
-		#     modulefile
-		#
-		# Arguments
-		#     none
-		#
-		# Used gloabal variables:
-		#     VERSIONS
-		#     BUILDBLOCK_DIR
-		#     modulefile_name
-		#
-		install_modulefile() {
-			#..............................................................
-			# Select the modulefile to install.
-			#
-			# Arguments:
-			#     $1  upvar to return the filename
-			#
-			find_modulefile() {
-				local -n _modulefile="$1"
-				local -- fname=''
-				for fname in "${VERSIONS[@]/#/modulefile-}" 'modulefile'; do
-					if [[ -r "${BUILDBLOCK_DIR}/${fname}" ]]; then
-						_modulefile="${BUILDBLOCK_DIR}/${fname}"
-						break;
-					fi
-				done
-				[[ -n "${_modulefile}" ]]
-			}
-			[[ "${is_subpkg}" == 'yes' ]] && return 0
-			local -- src=''
-			if [[ -n "${ModuleConfig['modulefile']}" ]]; then
-				src="${ModuleConfig['modulefile']}"
-			elif ! find_modulefile src; then
-				std::info \
-					"%s " \
-					"${module_name}/${module_version}:" \
-					"skipping modulefile installation ..."
-				return
+ 	#......................................................................
+	bm::install_module_config(){
+		local -r __doc__='
+		Install modulefile.
+		'
+		[[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
+
+		local -- src=''
+		if [[ -n "${ModuleConfig['modulefile']}" ]]; then
+			if [[ ! -e "${ModuleConfig['modulefile']}" ]]; then
+				std::die 3 \
+					 "%s " \
+					 "${module_name}/${module_version}:" \
+					 "modulefile '${ModuleConfig['modulefile']}" \
+					 "does not exist!"
 			fi
+			src="${ModuleConfig['modulefile']}"
+		elif [[ -e "${BUILDBLOCK_DIR}/modulefile" ]]; then
+			src="${BUILDBLOCK_DIR}/modulefile"
+		else
 			std::info \
 				"%s " \
 				"${module_name}/${module_version}:" \
-				"adding modulefile to overlay '${ol_name}' ..."
-			${mkdir} -p "${modulefile_dir}"
-			${install} -m 0644 "${src}" "${modulefile_name}"
-		}
-
-		#..............................................................
-		# post-install: write file with required modules
-		install_runtime_dependencies() {
-			_write_file(){
-				local -r fname="$1"
-				shift
-				std::info \
-					"%s " \
-					"${module_name}/${module_version}:" \
-					"writing run-time dependencies to ${fname} ..."
-				echo -n "" > "${fname}"
-				local -- dep=''
-				for dep in "$@"; do
-					[[ -z $dep ]] && continue
-					if [[ ! $dep == */* ]]; then
-						# no version given: derive the version
-						# from the currently loaded module
-						dep=$( "${modulecmd}" bash list -t 2>&1 1>/dev/null \
-							       | grep "^${dep}/" )
-					fi
-					echo "${dep}" >> "${fname}"
-				done
-			}
-			${rm} -f "${PREFIX}/${FNAME_RDEPS}"
-			${rm} -f "${modulefile_dir}/.deps-${module_version}"
-			${rm} -f "${PREFIX}/${FNAME_IDEPS}"
-			if (( ${#runtime_dependencies[@]} > 0 )); then
-				if [[ "${ol_name}" == 'base' ]]; then
-					_write_file \
-						"${PREFIX}/${FNAME_RDEPS}" \
-						"${runtime_dependencies[@]}"
-				fi
-				_write_file \
-					"${modulefile_dir}/.deps-${module_version}" \
-					"${runtime_dependencies[@]}"
-			fi
-			if (( ${#install_dependencies[@]} > 0 )); then
-				_write_file \
-					"${PREFIX}/${FNAME_IDEPS}" \
-					"${install_dependencies[@]}"
-			fi
-
-		}
-
-		install_config_file() {
-			[[ "${is_subpkg}" == 'yes' ]] && return 0
-
-			local -r legacy_config_file="${modulefile_dir}/.release-${module_version}"
-			local -- status_legay_config_file='unchanged'
-			local -- relstage_legacy=''
-			if [[ -r "${legacy_config_file}" ]]; then
-				read -r relstage_legacy < "${legacy_config_file}"
-				if [[ "${relstage_legacy}" != "${module_release}" ]]; then
-					status_legay_config_file='changed'
-				fi
-			else
-				status_legay_config_file='new'
-			fi
-			${mkdir} -p "${modulefile_dir}"
-			if [[ "${status_legay_config_file}" != 'unchanged' ]]; then
-				echo "${module_release}" > "${legacy_config_file}"
-			fi
-
- 			local -r yaml_config_file="${modulefile_dir}/.config-${module_version}"
-			local -- status_yaml_config_file='unchanged'
-			if [[ "${opt_update_modulefiles}" == 'yes' ]]; then
-				status_yaml_config_file='update'
-			elif [[ -r "${yaml_config_file}" ]]; then
-				while read -r key value; do
-					local -n ref="${key:0:-1}"
-					ref="${value}"
-				done < "${yaml_config_file}"
-				if [[ "${relstage}" != "${module_release}" ]]; then
-					status_yaml_config_file='changed'
-				fi
-			else
-				status_yaml_config_file='new'
-			fi
-			if [[ "${status_yaml_config_file}" != 'unchanged' ]]; then
-				echo "relstage: ${module_release}" > "${yaml_config_file}"
-				if (( ${#Systems[@]} > 0 )); then
-					echo -n "systems: [${Systems[0]}" >> "${yaml_config_file}"
-					local -- system=''
-					for system in "${Systems[@]:1}"; do
-						echo -n ", ${system}" >> "${yaml_config_file}"
-					done
-					echo "]" >> "${yaml_config_file}"
-				fi
-			fi
-
-			case ${status_yaml_config_file},${status_legay_config_file} in
-				unchanged,unchanged | new,unchanged)
-					:
-					;;
-				unchanged,changed )
-					std::info \
-						"%s " \
-						"${module_name}/${module_version}:" \
-						"changing release stage from" \
-						"'${relstage_legacy}' to '${module_release}' in legacy config file ..."
-					;;
-				unchanged,new )
-					std::info \
-						"%s " \
-						"${module_name}/${module_version}:" \
-						"setting release stage to '${module_release}' in legacy config file ..."
-					;;
-				changed,unchanged | changed,changed | changed,new | new,changed )
-					std::info \
-						"%s " \
-						"${module_name}/${module_version}:" \
-						"changing release stage from" \
-						"'${relstage_legacy}' to '${module_release}' ..."
-					;;
-				new,new )
-					std::info \
-						"%s " \
-						"${module_name}/${module_version}:" \
-						"setting release stage to '${module_release}' ..."
-					;;
-			esac
-		}
-		update_modulerc() {
-			[[ "${is_subpkg}" == 'yes' ]] && return 0
-
-			local -r modulerc_file="${modulefile_dir}/.modulerc"
-
-			echo '#%Module' > "${modulerc_file}"
-			echo 'if {[info exists ModuleTool] && $ModuleTool == {Modules}} {' >> "${modulerc_file}"
-
-			while read config_file; do
-				local version="${config_file##*/}"
-				version="${version/.config-}"
-				local name="${module_name}/${version}"
-				local relstage=$(awk '/relstage:/ {print $2}' "${config_file}")
-				case ${relstage} in
-					unstable )
-						echo "   module-tag u ${name}" >> "${modulerc_file}"
-						;;
-					deprecated )
-						echo "   module-tag d ${name}" >> "${modulerc_file}"
-						;;
-				esac
-			done < <(find "${modulefile_dir}"  -type f -name '.config-*')
-			echo '}' >> "${modulerc_file}"
-		}
-
-		install_modulefile
-		install_runtime_dependencies
-		install_config_file
-		update_modulerc
+				"skipping modulefile installation ..."
+			return
+		fi
+		std::info \
+			"%s " \
+			"${module_name}/${module_version}:" \
+			"adding modulefile to overlay '${ol_name}' ..."
+		mkdir -p "${modulefile_dir}"
+		install -m 0644 "${src}" "${modulefile_name}"
 	}
 
+	#..............................................................
+	bm::install_runtime_dependencies() {
+		local -r __doc__="Install runtime dependencies."
+		_write_file(){
+			local -r fname="$1"
+			shift
+			std::info \
+				"%s " \
+				"${module_name}/${module_version}:" \
+				"writing run-time dependencies to ${fname} ..."
+			echo -n "" > "${fname}"
+			local -- dep=''
+			for dep in "$@"; do
+				[[ -z $dep ]] && continue
+				if [[ ! $dep == */* ]]; then
+					# no version given: derive the version
+					# from the currently loaded module
+					dep=$( modulecmd bash list -t 2>&1 1>/dev/null \
+						       | grep "^${dep}/" )
+				fi
+				echo "${dep}" >> "${fname}"
+			done
+		}
+		rm -f "${PREFIX}/${FNAME_RDEPS}"
+		rm -f "${modulefile_dir}/.deps-${module_version}"
+		rm -f "${PREFIX}/${FNAME_IDEPS}"
+		if (( ${#runtime_dependencies[@]} > 0 )); then
+			if [[ "${ol_name}" == 'base' ]]; then
+				_write_file \
+					"${PREFIX}/${FNAME_RDEPS}" \
+					"${runtime_dependencies[@]}"
+			fi
+			_write_file \
+				"${modulefile_dir}/.deps-${module_version}" \
+				"${runtime_dependencies[@]}"
+		fi
+		if (( ${#install_dependencies[@]} > 0 )); then
+			_write_file \
+				"${PREFIX}/${FNAME_IDEPS}" \
+				"${install_dependencies[@]}"
+		fi
+
+	}
+
+	#..............................................................
+	bm::set_relstages() {
+		local __doc__='
+		      Set/update release stages.
+		      '
+		[[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
+
+		#
+		# update .release-${module_version}
+		#
+		local -r legacy_config_file="${modulefile_dir}/.release-${module_version}"
+		mkdir -p "${modulefile_dir}"
+		echo "${module_release}" > "${legacy_config_file}"
+
+		#
+		# update .config-${module_version}
+		#
+ 		local -r yaml_config_file="${modulefile_dir}/.config-${module_version}"
+		local -- relstage='new'
+		if [[ -r "${yaml_config_file}" ]]; then
+			while read -r key value; do
+				local -n ref="${key:0:-1}"
+				ref="${value}"
+			done < "${yaml_config_file}"
+		fi
+		if [[ "${relstage}" != "${module_release}" ]]; then
+			std::info \
+				"%s " \
+				"${module_name}/${module_version}:" \
+				"changing release stage from" \
+				"'${relstage}' to '${module_release}' ..."
+		else
+			std::info \
+				"%s " \
+				"${module_name}/${module_version}:" \
+				"setting release stage to '${module_release}' ..."
+		fi
+
+		echo "relstage: ${module_release}" > "${yaml_config_file}"
+		if (( ${#Systems[@]} > 0 )); then
+			echo -n "systems: [${Systems[0]}" >> "${yaml_config_file}"
+			local -- system=''
+			for system in "${Systems[@]:1}"; do
+				echo -n ", ${system}" >> "${yaml_config_file}"
+			done
+			echo "]" >> "${yaml_config_file}"
+		fi
+
+		#
+		# Update .modulerc
+		#
+		local -r modulerc_file="${modulefile_dir}/.modulerc"
+		echo '#%Module' > "${modulerc_file}"
+		echo 'if {[info exists ModuleTool] && $ModuleTool == {Modules}} {' \
+		     >> "${modulerc_file}"
+
+		while read config_file; do
+			local version="${config_file##*/}"
+			version="${version/.config-}"
+			local name="${module_name}/${version}"
+			local relstage=$(awk '/relstage:/ {print $2}' "${config_file}")
+			case ${relstage} in
+				unstable )
+					echo "   module-tag u ${name}" \
+					     >> "${modulerc_file}"
+					;;
+				deprecated )
+					echo "   module-tag d ${name}" \
+					     >> "${modulerc_file}"
+					;;
+			esac
+		done < <(find "${modulefile_dir}"  -type f -name '.config-*')
+		echo '}' >> "${modulerc_file}"
+	}
+
+	#..............................................................
 	bm::cleanup_modulefiles(){
 		#
 		# FIXME: Can it happen, that we remove module-/config-files which
@@ -1415,7 +1143,7 @@ _build_module() {
 		#	 This function is only called if the option '--cleanup-modulefiles'
 		#	 was specified.
 		#
-		[[ "${is_subpkg}" == 'yes' ]] && return 0
+		[[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
 		local -- ol=''
 		for ol in "${Overlays[@]}"; do
 			[[ "${ol}" == "${ol_name}" ]] && continue
@@ -1427,7 +1155,7 @@ _build_module() {
 				std::info "%s "\
 					  "${module_name}/${module_version}:" \
 					  "removing modulefile from overlay '${ol}' ..."
-				${rm} -f  "${fname}"
+				rm -f  "${fname}"
 			fi
 			fname="${dir}/.release-${module_version}"
 			if [[ -e "${fname}" ]]; then
@@ -1435,18 +1163,19 @@ _build_module() {
 					"%s " \
 					"${module_name}/${module_version}:" \
 					"removing release file from overlay '${ol}' ..."
-				${rm} -f "${fname}"
+				rm -f "${fname}"
 			fi
 		done
 	}
 
+	#..............................................................
 	bm::cleanup_build() {
-		[[ ${enable_cleanup_build} != 'yes' ]] && return 0
+		[[ ${Options['cleanup_build']} != 'yes' ]] && return 0
 		[[ "${BUILD_DIR}" == "${SRC_DIR}" ]] && return 0
 		[[ -d "${BUILD_DIR}/../.." ]] || return 0
 		{
 			cd "/${BUILD_DIR}/.." || std::die 42 "Internal error"
-			[[ "$(${pwd})" == "/" ]] && \
+			[[ "$(pwd)" == "/" ]] && \
 				std::die 1 \
 					 "%s " "${module_name}/${module_version}:" \
 					 "Oops: internal error:" \
@@ -1456,13 +1185,14 @@ _build_module() {
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"Cleaning up '${BUILD_DIR}'..."
-			${rm} -rf "${BUILD_DIR##*/}"
+			rm -rf "${BUILD_DIR##*/}"
 		};
 		return 0
 	}
 
+	#..............................................................
 	bm::cleanup_src() {
-		[[ ${enable_cleanup_src} != 'yes' ]] && return 0
+		[[ ${Options['cleanup_src']} != 'yes' ]] && return 0
 		[[ -d "${BUILD_DIR}/../.." ]] || return 0
     		{
 			cd "/${SRC_DIR}/.." || std::die 42 "Internal error"
@@ -1475,7 +1205,7 @@ _build_module() {
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"Cleaning up '${SRC_DIR}'..."
-			${rm} -rf "${SRC_DIR##*/}"
+			rm -rf "${SRC_DIR##*/}"
    		};
 		return 0
 	}
@@ -1488,13 +1218,12 @@ _build_module() {
 			local -- target="$2"	# prep, configure, compile or install
 
 			if [[ -e "${BUILD_DIR}/.${target}" ]] && \
-				   [[ ${force_rebuild} == 'no' ]]; then
+				   [[ ${Options['force_rebuild']} == 'no' ]]; then
 				return 0
 			fi
-			debug "build functions for target ${target}: ${ModuleConfig[target_funcs:${target}]}"
 			local -- t=''
 			if (( ${#ModuleConfig[target_funcs:${target}]} == 0 )); then
-				${touch} "${BUILD_DIR}/.${target}"
+				touch "${BUILD_DIR}/.${target}"
 				return 0
 			fi
 			local -A target_info=(
@@ -1523,41 +1252,40 @@ _build_module() {
 					std::die 10 "Function is not defined -- $t"
 				fi
 			done
-			${touch} "${BUILD_DIR}/.${target}"
+			touch "${BUILD_DIR}/.${target}"
 		} # build_target()
 
-		[[ ${dry_run} == yes ]] && std::die 0 ""
-
-		${mkdir} -p "${SRC_DIR}"
-		${mkdir} -p "${BUILD_DIR}"
+		mkdir -p "${SRC_DIR}"
+		mkdir -p "${BUILD_DIR}"
 
 		build_target "${SRC_DIR}" prep
-		[[ "${build_target}" == "prep" ]] && return 0
+		[[ "${Options['build_target']}" == "prep" ]] && return 0
 
 		build_target "${BUILD_DIR}" configure
-		[[ "${build_target}" == "configure" ]] && return 0
+		[[ "${Options['build_target']}" == "configure" ]] && return 0
 
 		build_target "${BUILD_DIR}" compile
-		[[ "${build_target}" == "compile" ]] && return 0
+		[[ "${Options['build_target']}" == "compile" ]] && return 0
 
-		${mkdir} -p "${PREFIX}"
+		mkdir -p "${PREFIX}"
 		build_target "${BUILD_DIR}" install
 	} # bm::compile_and_install()
 
+	#......................................................................
 	bm::remove_module() {
 		if [[ -d "${PREFIX}" ]]; then
 			std::info \
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"removing all files in '${PREFIX}' ..."
-			[[ "${dry_run}" == 'no' ]] && ${rm} -rf "${PREFIX}"
+			rm -rf "${PREFIX}"
 		fi
 		if [[ -e "${modulefile_name}" ]]; then
 			std::info \
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"removing modulefile '${modulefile_name}' ..."
-			[[ "${dry_run}" == 'no' ]] && ${rm} -vf "${modulefile_name}"
+			rm -vf "${modulefile_name}"
 		fi
 		local -- release_file="${modulefile_dir}/.release-${module_version}"
 		if [[ -e "${release_file}" ]]; then
@@ -1565,7 +1293,7 @@ _build_module() {
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"removing release file '${release_file}' ..."
-			[[ "${dry_run}" == 'no' ]] && ${rm} -vf "${release_file}"
+			rm -vf "${release_file}"
 		fi
 		release_file="${modulefile_dir}/.config-${module_version}"
 		if [[ -e "${release_file}" ]]; then
@@ -1573,19 +1301,21 @@ _build_module() {
 				"%s " \
 				"${module_name}/${module_version}:" \
 				"removing release file '${release_file}' ..."
-			[[ "${dry_run}" == 'no' ]] && ${rm} -vf "${release_file}"
+			rm -vf "${release_file}"
 		fi
-		${rmdir} -p "${modulefile_dir}" 2>/dev/null || :
+		rmdir -p "${modulefile_dir}" 2>/dev/null || :
 	}
 
+	#......................................................................
 	bm::deprecate_module(){
 		std::info \
 			"%s " \
 			"${module_name}/${module_version}:" \
 			"is deprecated, skiping!"
-		bm::install_module_config
+		bm::set_relstages
 	}
 
+	#......................................................................
 	die_sub_package_name_missing(){
 		std::die 3 "Name of sub-package not specified in \n===\n$1\n===\n"
 	}
@@ -1593,11 +1323,15 @@ _build_module() {
 		std::die 3 "Version of sub-package not specified in \n===\n$1\n===\n"
 	}
 	bm::build_sub_packages(){
-		local -- yaml="$1"
+		[[ "${Options['skip_subpkgs']}" == 'yes' ]] && return 0
+
+		local -- sub_packages_yml="$1"
+
+		[[ -n "${sub_packages_yml}" ]] || return 0
 
 		# get no of sub-packages to build
 		local -i l=0
-		yml::get_seq_length l yaml .
+		yml::get_seq_length l sub_packages_yml .
 		(( l == 0 )) && return 0
 
 		std::info "\n %d sub-package(s) to build..." "$l"
@@ -1611,61 +1345,57 @@ _build_module() {
 
 			local -- key=''
 			local -a keys=()
-			yml::get_keys keys yaml "${node}"
+			yml::get_keys keys sub_packages_yml "${node}"
 			for key in "${keys[@]}"; do
 				case ${key,,} in
 					'name' )
 						yml::get_value \
 							pkg_name \
-							yaml \
+							sub_packages_yml \
 							"${node}.${key}" \
-							'!!str' || \
-							yml::die_parsing "${yaml}"
+							'!!str'
 						;;
 					'version' )
 						yml::get_value \
 							pkg_version \
-							yaml \
+							sub_packages_yml \
 							"${node}.${key}" \
-							'!!str' || \
-							yml::die_parsing "${yaml}"
+							'!!str'
 						;;
 					'build_args' )
 						local -- value=''
 						yml::get_seq \
 							value \
-							yaml \
-							"${node}.${key}" || \
-							yml::die_parsing "${yaml}"
+							sub_packages_yml \
+							"${node}.${key}"
 						readarray -t pkg_build_args <<< "${value}"
 						;;
 					* )
 						die_invalid_key \
-							"${yaml}" \
+							"${sub_packages_yml}" \
 							"in subpackage '$i'" \
 							"${key}"
 						;;
 				esac
 			done
 			[[ -n "${pkg_name}" ]] || \
-				die_sub_package_name_missing "${yaml}"
+				die_sub_package_name_missing "${sub_packages_yml}"
 			[[ -n "${pkg_version}" ]] || \
-				die_sub_package_version_missing "${yaml}"
+				die_sub_package_version_missing "${sub_packages_yml}"
 
-			(( opt_verbose > 0 )) && \
+			(( Options['verbose'] > 0 )) && \
 				pkg_build_args+=( '--verbose' )
-			[[ "${opt_debug}" == 'yes' ]] && \
+			[[ "${Options['debug']}" == 'yes' ]] && \
 				pkg_build_args+=( '--debug' )
-			[[ "${opt_force_rebuild}" == 'yes' ]] && \
+			[[ "${Options['force_rebuild']}" == 'yes' ]] && \
 				pkg_build_args+=( '-f' )
 			pkg_build_args+=( "--parent-prefix=${PREFIX}" )
 			"$BUILDBLOCK_DIR/build-${pkg_name}" \
 				"${pkg_name}/${pkg_version}" \
-				"${pkg_build_args[@]}"
+				"${pkg_build_args[@]}" || \
+				std::die 255 "Building sub-package failed - ${pkg_name}/${pkg_version}"
 		done
-		debug "Building sub-packages done"
 	}
-
 
 	std::info \
 		"%s " \
@@ -1677,7 +1407,7 @@ _build_module() {
 	bm::load_build_dependencies
 	BUILD_ROOT="${PMODULES_TMPDIR}/${module_name}-${module_version}"
 	SRC_DIR="${BUILD_ROOT}/src"
-	if [[ "${compile_in_sourcetree,,}" == 'yes' ]]; then
+	if [[ "${ModuleConfig['compile_in_sourcetree']}" == 'yes' ]]; then
 		BUILD_DIR="${SRC_DIR}"
 	else
 		BUILD_DIR="${BUILD_ROOT}/build"
@@ -1690,14 +1420,11 @@ _build_module() {
 	local -- modulefile_dir=''
 	local -- modulefile_name=''
 
-	# the group must have been defined - otherwise we cannot continue
-	[[ -n ${GROUP} ]] || \
-		std::die 5 \
-			 "%s " "${module_name}/${module_version}:" \
-			 "Module group not set! Aborting ..."
-
-	[[ "${is_subpkg}" != 'yes' ]] && bm::set_full_module_name_and_prefix
-
+	if [[ "${Options['is_subpkg']}" != 'yes' ]]; then
+		bm::set_full_module_name_and_prefix
+	else
+		PREFIX="${Options['prefix']}"
+	fi
 	# ok, finally we can start ...
  	std::info \
 		"%s " \
@@ -1708,13 +1435,19 @@ _build_module() {
 		bm::remove_module
 	elif [[ "${module_release}" == 'deprecated' ]]; then
 		bm::deprecate_module
-	elif [[ -d "${PREFIX}" && "${is_subpkg}" != 'yes' && "${force_rebuild}" == 'no' ]]; then
+	elif [[ -d "${PREFIX}" && \
+			"${Options['is_subpkg']}" != 'yes' && \
+			"${Options['force_rebuild']}" == 'no' ]]; then
  		std::info \
 			"%s " \
 			"${module_name}/${module_version}:" \
 			"already exists, not rebuilding ..."
-		if [[ "${opt_update_modulefiles}" == 'yes' ]]; then
+		if [[ "${Options['update_modulefiles']}" == 'yes' ]]; then
 			bm::install_module_config
+			bm::install_runtime_dependencies
+			bm::set_relstages
+		elif [[ "${Options['update_relstage']}" == 'yes' ]]; then
+			bm::set_relstages
 		else
  			std::info \
 				"%s " \
@@ -1722,7 +1455,7 @@ _build_module() {
 				"modulefile and configuration are not updated."
 		fi
 	else
-		if [[ "${opt_clean_install,,}" == 'yes' ]]; then
+		if [[ "${Options['clean_install']}" == 'yes' ]]; then
 			std::info \
 				"%s " \
 				"${module_name}/${module_version}:" \
@@ -1738,12 +1471,14 @@ _build_module() {
 		bm::compile_and_install
 		bm::post_install
 		bm::install_module_config
+		bm::install_runtime_dependencies
+		bm::set_relstages
 		bm::cleanup_build
 		bm::cleanup_src
 		bm::build_sub_packages "${ModuleConfig['sub_packages']}"
 
 	fi
-	if [[ "${opt_cleanup_modulefiles}" == 'yes' ]]; then
+	if [[ "${Options['cleanup_modulefiles']}" == 'yes' ]]; then
 		bm::cleanup_modulefiles
 	fi
  	std::info \

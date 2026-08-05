@@ -1,5 +1,12 @@
 #!/usr/bin/env modbuild
 
+declare -- in_git_repo='no'
+if [[ -e '../.git' ]]; then
+	pbuild::prep() { :; }
+	in_git_repo='yes'
+	SRC_DIR="${BUILDBLOCK_DIR}/.."
+fi
+
 pbuild::configure() {
 	:
 }
@@ -8,10 +15,19 @@ pbuild::compile() {
 }
 
 pbuild::install() {
+	local -- src_dir=''
+	if [[ "${in_git_repo}" == 'yes' ]]; then
+		src_dir="${BUILDBLOCK_DIR}/../src"
+	else
+		src_dir='./src'
+	fi
 	mkdir -p "${PREFIX}/bin"
 	mkdir -p "${PREFIX}/lib"
-	install --mode=0755 src/modbuild  "${PREFIX}/bin"
-	install --mode=0755 src/lib*  "${PREFIX}/lib"
+	install --mode=0755 "${src_dir}"/modbuild.in "${PREFIX}/bin/modbuild"
+	sed -i -e \
+	    "s:@PREFIX@:${PREFIX}:g;s:@VERSION@:${V}:g;" \
+	    "${PREFIX}/bin/modbuild"
+	install --mode=0755 "${src_dir}"/lib*  "${PREFIX}/lib"
 }
 
 # Local Variables:
