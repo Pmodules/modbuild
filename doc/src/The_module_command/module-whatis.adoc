@@ -1,0 +1,41 @@
+[id="module-whatis",reftext="`module whatis|keyword`"]
+= Show/search 'what is' information
+== NAME
+
+`module whatis` - print one-line information about module
+`module keyword|apropos` - search for keywords in 'whatis'
+
+== SYNOPSIS
+
+`module whatis [module...]` +
+`module apropos string...` +
+`module keyword string...`
+
+== DESCRIPTION
+
+`whatis`:: 
+Display the information set up by the `module-whatis` commands inside
+the specified modulefile(s). If no modulefile is specified, all whatis
+lines will be shown.  
+
+`keyword|apropos`:: 
+Search through the 'whatis' informations of all modulefiles for the
+specified string. All whatis informations matching the string will be
+displayed. 
+
+== EXAMPLES
+Get whatis for all available Git modules
+
+```sh
+$ module  whatis git
+----------- /opt/psi/Tools/modulefiles ------------- 
+           git/2.3.3: distributed version control system
+           git/2.5.2: distributed version control system
+           git/2.8.1: distributed version control system
+          git/2.11.1: distributed version control system
+----------- /opt/psi/Programming/modulefiles ------------- 
+```
+
+== SEE ALSO
+
+<<module-help>>

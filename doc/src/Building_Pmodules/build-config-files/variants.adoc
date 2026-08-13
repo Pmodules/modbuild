@@ -1,0 +1,87 @@
+= "legacy" configuration files in Pmodules 1.0
+
+[NOTE]
+=====================================================================
+These type of configuration file is deprecated in version 1.1 and
+newer. Starting with version 1.2 the use of YAML configuration files
+documented in the next section is recommended.
+=====================================================================
+
+In the Pmodules 1.0 configuration files the following properties are
+defined per version:
+
+* module name and version
+* release stage
+* dependencies
+
+Each definition must be on a single line.
+
+== Configuration filenames and search order
+
+Configuration files are searched in the following order:
+
+1. `*_build-recipe-dir_*/files/variants.*_system_*`
+2. `*_build-recipe-dir_*/files/variants.*_OS_*`
+3. `*_build-recipe-dir_*/files/variants`
+
+Whereby
+
+`*_system_*`:: If the build script is called with the option
+`-system=*_sytem_*`, this configuration file is used.
+
+`*_OS_*`:: Is the operating system/kernel name returned by `uname
+-s`. On Linux this is `Linux` on macOS this is `Darwin`.
+
+== Format
+
+A line in a configuration file is either
+
+* a comment line starting with `#`
+* a empty line or a with white-space only
+* a definition of a variant
+
+== Variant specifications
+
+The form of a variant specification is
+
+`*_module-name_*` `*_release_stage_*` `*_dependencies_*`
+
+Whereby:
+
+`*_module-name_*`:: Is the name of the module including the version, an
+optional release number and an optional suffix. The general form is
++
+`*_P_*/*_V_*[-*_V_RELEASE_*][*__SUFFIX_*]`
+
+`*_release_stage_*`:: Defines the release stage of this module
+variant. Allowed values are `unstable`, `stable`, `deprecated`,
+`remove` and `removed`. If the release stage is `remove` or `removed`,
+this module variant will be removed (if not already removed).
+
+`*_dependencies_*`:: Defines the module dependencies. Dependencies can
+ be either a hierarchical dependency, a runtime dependency or a build
+ dependency. Hierarchical and runtime dependencies are loaded before
+ a module itself. Build dependencies are only loaded during build-time
+ and must be prefixed with `b:`.
++ 
+Dependencies are loaded in the specified order. It is recommended to
+specify the dependencies of a the (hierarchical) group first, then
+additional modules required at run-time and the modules required to
+build it at the end. 
++
+If the module is in a hierarchical group like `MPI`, you must specify
+the modules required for this group. For modules in the group 
++
+* `Compiler` a compiler must be specified.
+* `MPI` a compiler and a MPI implementation must be specified.
+* `HDF5` a compiler, a MPI implementation and a parallel HDF5 module
+ must be specified.
+* `HDF5_serial` a compiler and a serial HDF5 module
+ must be specified.
+
+.*Example*
+----
+parmetis/4.0.3  stable gcc/7.3.0 openmpi/3.0.0  b:cmake/3.6.3
+----
+
+---

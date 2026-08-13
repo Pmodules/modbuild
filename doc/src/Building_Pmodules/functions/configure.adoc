@@ -1,0 +1,125 @@
+[id="pb_configure", reftext="`pbuild::configure`"]
+= Configure software: `pbuild::configure`
+
+== Synopsis
+[source,sh]
+----
+pbuild::pre_configure
+pbuild::configure
+pbuild::post_configure
+----
+
+== Description
+
+Configure the software for compilation.
+
+Before these functions are called, the build-system changes to the 
+build directory (`${BUILD_DIR}`).
+
+In the most uses cases the default function `pbuild::configure` provided by
+the build-system can be used and nothing must be implemented in the
+build-script. 
+
+The default function first searches whether the software can be
+configured with autotools. If yes, configuration with autotools will
+be performed. Otherwise the existence of a CMake script will be
+checked. If found, configuration will be done via CMake. If scripts
+for both configuration tools exist, the to be used tool can be
+selected with link:use_autotools[`pbuild::use_autotools`] or
+link:use_cmake[`pbuild::use_cmake`].  Arguments to `configure` or
+`cmake` can be set with
+link:add_configure_args[`pbuild::add_configure_args`].
+
+A common use case for the pre-configure hooks is to define arguments
+passed to autotools or CMake by the default function.
+
+If the default function cannot be used, the `pbuild::configure`
+function must be implemented in the build-script.
+
+== Examples
+Excerpt from the parallel HDF5 build-script
+[source,sh]
+----
+pbuild::pre_configure() {
+        pbuild::add_configure_args "CC=${MPICC}"
+        pbuild::add_configure_args "CXX=${MPICXX}"
+
+        pbuild::add_configure_args "--enable-shared"
+        pbuild::add_configure_args "--enable-parallel"
+        pbuild::add_configure_args "--enable-cxx"
+        pbuild::add_configure_args "--enable-unsupported"
+        #pbuild::add_configure_args "--enable-threadsafe"
+        pbuild::add_configure_args "--with-pic"
+
+        local enable_fortran='yes'
+
+        case "${COMPILER}" in
+                clang-macos )
+                        enable_fortran='no'
+                        # we do not have Fortran in Xcode
+                        ;;
+                pgi )
+                        # PGI uses GCC's include files, some object files and
+                        # the STL implementation!
+                        # The PGI C pre-processor is broken and doesn't work 
+                        # for HDF5. We use the pre-processor of the underlying
+                        # GCC...
+                        # This is a bit hackish!
+                        #
+                        # The following eval sets GCCDIR! Which is something 
+                        # like:
+                        # /opt/psi/Programming/gcc/7.3.0/bin/../lib/gcc/x86_64-pc-linux-gnu/7.3.0
+                        #
+                        eval $(pgcc -show 2>/dev/null | \
+                                awk '/^GCCDIR[[:space:]]*=/{gsub(/[[:space:]]/,""); print $0}')
+                        pbuild::add_configure_args "CPP=${GCCDIR%%/..*}/cpp"
+                        pbuild::add_configure_args "CFLAGS=-fPIC"
+                        pbuild::add_configure_args "CXXFLAGS=-fPIC"
+                        pbuild::add_configure_args "FCFLAGS=-fPIC"
+                        ;;
+        esac
+
+        if [[ "${enable_fortran}" ===== 'yes' ]]; then
+                pbuild::add_configure_args "F77=${MPIF77}"
+                pbuild::add_configure_args "F90=${MPIF90}"
+                pbuild::add_configure_args "FC=${MPIFC}"
+                pbuild::add_configure_args "FORTRAN=${MPIFORTRAN}"
+                pbuild::add_configure_args "--enable-fortran"
+        fi
+
+----
+
+Simplified excerpt from the OpenBLAS build-script
+[source,sh]
+----
+pbuild::configure() {
+        case ${COMPILER} in
+        gcc )
+                CC='gcc'
+                ;;
+        intel )
+                CC='icc'
+                ;;
+        clang-macos )
+                CC='gcc'
+                ;;
+        * )
+                die 3 "Oops: unknown compiler: ${COMPILER}"
+                ;;
+        esac
+        cat <<EOF > "${SRC_DIR}/make.inc"
+SHELL = /bin/sh
+PLAT =
+DRVOPTS  = \$(NOOPT)
+ARCHFLAGS= -ru
+EOF
+        echo "USE_SIMPLE_THREADED_LEVEL3 = 1" >> "${SRC_DIR}/Makefile.rule"
+        echo "NO_AVX = 1" >> "${SRC_DIR}/Makefile.rule"
+        echo "NO_AVX2 = 1" >> "${SRC_DIR}/Makefile.rule"
+        if pbuild::use_flag "omp"; then
+                echo "USE_THREAD = 1" >> "${SRC_DIR}/Makefile.rule"
+        else
+                echo "USE_THREAD = 0" >> "${SRC_DIR}/Makefile.rule"
+        fi
+}
+----

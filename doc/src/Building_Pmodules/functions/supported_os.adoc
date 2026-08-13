@@ -1,0 +1,11 @@
+[id="pb_supported_systems", reftext="`pbuild::supported_systems`"]
+= Set which OS are supported: `pbuild::supported_systems` (Pmodules 1.0)
+== Synopsis
+[source,sh]
+----
+pbuild::supported_system STRING...
+----
+
+== Description
+
+Some modules can be build only for dedicated operating systems. This is particularly the case for operating system specific tools like `patchelf`.

@@ -1,0 +1,206 @@
+= *TUTORIALS*
+
+== Step-by-step guide to build a 'Hello, world!' module
+
+[NOTE]
+====
+This is for Pmodules 2.0 or newer!
+====
+
+[NOTE]
+====
+For linting YAML files use the tool https://yamllint.readthedocs.io/en/stable/[`yamlint`] or an on-line linter like https://jsonformatter.org/yaml-validator[yaml-validator].
+====
+
+1. Download a stub for a new build-block
++
+[source,shell]
+----
+wget --output-document=stub.tgz https://github.com/Pmodules/buildblock_stub/archive/refs/tags/1.0.0.tar.gz 
+----
+1. Unpack the stub into the directory `hello_world`
++
+[source,shell]
+----
+mkdir hello_world && cd $_
+tar --strip-components 1 -xvf ../stub.tgz
+chmod 0755 build
+----
+1. Edit `files/config.yaml`
++
+[source,yaml]
+----
+---
+format: 1
+hello_world:                           # <1>
+  defaults:                            # <2>
+    group: Tools                       # <3>
+    relstage: stable                   # <4>
+    compile_in_sourcetree: true        # <5>
+    urls:                              # <6>
+      - url: https://github.com/Pmodules/$P/archive/refs/tags/$V.tar.gz 
+        name: $P-$V.tar.gz
+
+  shasums:                             # <7>
+    hello_world-1.0.0.tar.gz: bc1cfd90ac55e9f3babab0a426ed4b3c7edf15266363ab1b595d234797fbce7b 
+
+  versions:
+    1.0.0:
+      config:                          # <8>
+        relstage: unstable             # <9>
+----
++
+<1> The name of the module.
+<2> Default configuration for all version. This can be overwritten in the 'versions' section.
+<3> The group the module will be installed in.
+<4> If not otherwise specified in the version specific configuration, the release stage is set to `stable`.
+<5> Usually the software is compiled in a dedicated build directory. Here we have to compile in the source tree.
+<6> Download URL and filename. `$P` will be substituted by the module name and `$V` by the version. 
+<7> SHA256 hash sums for each source file. Hash sums are optional but recommended. Therefor you can start without the hash sum and add it later. If the hash sum is missing, you get a warning. If the hash sum is wrong, the build process aborts.
+<8> Configuration for version 1.0.0. 
+<9> Overwrite the default release stage.
+
+1. Edit the build script
++
+[source,shell]
+----
+#!/usr/bin/env modbuild
+
+pbuild::configure() {    # <1>
+	:
+}
+
+pbuild::install() {      # <2>
+	mkdir -p "${PREFIX}/bin"
+	install --mode=0755 "${SRC_DIR}/hello" "${PREFIX}/bin"
+}
+----
+<1> Don't use the default `pbuild::configure()`` function!
+    There is nothing to configure. :)
+<2> The Makefile doesn't have an 'install' target. Therefore we have to code it ourself. 
+1. Build the module
++
+[source,shell]
+----
+./build 1.0.0
+----
++
+1. Release module as 'stable'
++
+Remove the line `relstage: unstable` in the `config` section of version 1.0.0:
++
+[source,yaml]
+----
+---
+format: 1
+hello_world:
+  defaults:
+    group: Tools
+    relstage: stable
+    compile_in_sourcetree: true
+    urls:
+      - url: https://github.com/Pmodules/$P/archive/refs/tags/$V.tar.gz 
+        name: $P-$V.tar.gz
+
+  shasums:
+    hello_world-1.0.0.tar.gz: bc1cfd90ac55e9f3babab0a426ed4b3c7edf15266363ab1b595d234797fbce7b 
+
+  versions:
+    1.0.0:                   # <1>
+----
+<1> Since the `config` section is empty after removing the line `relstage: unstable` the entire section can be removed.
+
+[NOTE]
+====
+To change the release stage the build-script must be called again: `./build 1.0.0`
+====
+
+== Add new version, build with autotools
+
+In version 2.0.0 the author added autotools files. Let's add this version to our build-block.
+
+1. Edit `files/config.yaml`
++
+[source,yaml]
+----
+---
+format: 1
+hello_world:
+  defaults:
+    group: Tools
+    relstage: stable
+    urls:
+      - url: https://github.com/Pmodules/$P/archive/refs/tags/$V.tar.gz
+        name: $P-$V.tar.gz
+
+  shasums:
+    hello_world-1.0.0.tar.gz: bc1cfd90ac55e9f3babab0a426ed4b3c7edf15266363ab1b595d234797fbce7b
+    hello_world-2.0.0.tar.gz: cd4ef1a7581fd4306f9b045b4bb9d722e1a978be3f93c709e0e8436347e38cf4
+
+  versions:
+    1.0.0:
+      config:                          # <1>
+        compile_in_sourcetree: true
+        build_functions:
+          prep: [pbuild::prep]
+          compile: [pbuild::compile]
+          install: [install-1]
+    2.0.0:                             # <2>
+      config:
+        relstage: unstable
+----
+<1> Various changes are necessary in the config section:
+* With autotools the software can be compiled outside the sources. This is recommended and the default for autotools and CMake.
+* The build function must now be defined:
+** In version 1.x the default configure step must be skipped.
+** The default installation function cannot be used for version 1.x.
+<2> Configuration for version 2.0.0.
++
+2. Edit `./build`
++
+[source,shell]
+----
+#!/usr/bin/env modbuild
+
+pbuild::pre_configure(){
+        ./autogen.sh
+}
+
+# we need this function major version 1!
+install-1() {
+        mkdir -p "${PREFIX}/bin"
+        install --mode=0755 "${SRC_DIR}/hello" "${PREFIX}/bin"
+}
+----
+
+== Deprecate old version, make current version stable
+
+1. Edit `files/config.yaml`
++
+[source,yaml]
+----
+---
+format: 1
+hello_world:
+  defaults:
+    group: Tools
+    relstage: stable
+    urls:
+      - url: https://github.com/Pmodules/$P/archive/refs/tags/$V.tar.gz
+        name: $P-$V.tar.gz
+
+  shasums:
+    hello_world-1.0.0.tar.gz: bc1cfd90ac55e9f3babab0a426ed4b3c7edf15266363ab1b595d234797fbce7b
+    hello_world-2.0.0.tar.gz: cd4ef1a7581fd4306f9b045b4bb9d722e1a978be3f93c709e0e8436347e38cf4
+
+  versions:
+    1.0.0:
+      config:                          # <1>
+        compile_in_sourcetree: true
+        relstage: deprecated
+        build_functions:
+          prep: [pbuild::prep]
+          compile: [pbuild::compile]
+          install: [install-1]
+    2.0.0:                             # <2>
+----

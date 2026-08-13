@@ -1,0 +1,53 @@
+[id="module-help",reftext="`module help`"]
+= Print sub-command or module-specific help
+== NAME
+
+`module help` - print sub-command or module-specific help
+
+== SYNOPSIS
+
+`module help [module|sub-command...]`
+
+== DESCRIPTION
+
+Print help for specific modules, sub-commands or the module command itself. 
+
+== EXAMPLES
+
+Get help for the module git/2.3.3:
+```sh
+$ module help git/2.3.3 
+
+----------- Module Specific Help for 'git/2.3.3' ------------------
+
+distributed version control system
+Version:    2.3.3
+Homepage:   http://git-scm.com/
+License:    GNU GPL v2
+Maintainer: Achim Gsell <achim.gsell@psi.ch>
+
+Git is a free and open source distributed version control system
+designed to handle everything from small to very large projects
+with speed and efficiency.
+
+Git is easy to learn and has a tiny footprint with lightning fast
+performance. It outclasses SCM tools like Subversion, CVS, Perforce,
+and ClearCase with features like cheap local branching, convenient
+staging areas, and multiple workflows.
+```
+Print help for the sub-command load:
+```sh
+$ module help load
+
+USAGE:
+        module add     modulefile...
+        module load    modulefile...
+                Load modulefile(s) into the shell environment. Loading a
+		'group-head' will extend the MODULEPATH. E.g.: loading a 
+		compiler makes additional modules like openmpi and libraries
+		compiled with this compiler available.
+```
+
+== SEE ALSO
+
+<<module-whatis>>

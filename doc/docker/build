@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker build --no-cache -t pmodules/asciidoctor:0.0.1 .
+

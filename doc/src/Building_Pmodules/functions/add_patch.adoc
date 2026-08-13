@@ -1,0 +1,23 @@
+[id="pb_add_patch", reftext="`pbuild::add_patch`"]
+= Adding patches to be applied: `pbuild::add_patch`
+
+== Synopsis
+[source,sh]
+----
+pbuild::add_patch patch_fname [strip_num_dirs]
+----
+
+== Description
+Apply a patch to the unpacked sources. The argument `patch_fname` must be a relative file-name to the build-block directory. The argument `strip_num_dirs` is optional and defaults to `1`. Please read the `patch(1)` manual page for more details. The patches are applied inside the source directory with the command:
+[source,sh]
+----
+patch --strip=strip_num_dirs < "${BUILDBLOCK_DIR}/patch_fname"
+----
+
+== Example
+[source,sh]
+----
+pbuild::pre_prep(){
+        pbuild::add_patch 'files/Makefile.pncf.sed.patch'
+}
+----

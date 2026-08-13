@@ -1,0 +1,6 @@
+== Build-blocks for modules build from binary packages
+
+It is strongly recommended to write build-blocks for modules build from binary packages the same way as for modules build from source. Document each step in a `README.md`. If possible, try to script the installation.
+
+For more details and to get an idea please have a look at the 
+link:https://gitlab.psi.ch/Pmodules/buildblocks/tree/master/System/mxm[`mxm` module] in the `System` group as example.

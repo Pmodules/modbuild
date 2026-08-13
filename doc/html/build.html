@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.20">
+<title>BUILDING PMODULES</title>
+<style>
+/*! normalize.css v2.1.2 | MIT License | git.io/normalize */@import url("https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap");@import url(https://fonts.googleapis.com/css?family=Lato:400,700,700italic,400italic);@import url("https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;500;600;700;800;900&display=swap");article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}audio,canvas,video{display:inline-block}audio:not([controls]){display:none;height:0}[hidden],template{display:none}script{display:none !important}html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}a{background:transparent}a:focus{outline:thin dotted}a:active,a:hover{outline:0}h1{font-size:2em;margin:0.67em 0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}mark{background:#ff0;color:#000}code,kbd,pre,samp{font-family:monospace, serif;font-size:1em}pre{white-space:pre-wrap}q{quotes:"\201C" "\201D" "\2018" "\2019"}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:0}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em}legend{border:0;padding:0}button,input,select,textarea{font-family:inherit;font-size:100%;margin:0}button,input{line-height:normal}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}textarea{overflow:auto;vertical-align:top}table{border-collapse:collapse;border-spacing:0}meta.foundation-mq-small{font-family:"only screen and (min-width: 768px)";width:768px}meta.foundation-mq-medium{font-family:"only screen and (min-width:1280px)";width:1280px}meta.foundation-mq-large{font-family:"only screen and (min-width:1440px)";width:1440px}*,*:before,*:after{-moz-box-sizing:border-box;-webkit-box-sizing:border-box;box-sizing:border-box}html,body{font-size:100%}body{background:#fff;color:#222;padding:0;margin:0;font-family:"Helvetica Neue","Helvetica",Helvetica,Arial,sans-serif;font-weight:normal;font-style:normal;line-height:1;position:relative;cursor:auto}a:hover{cursor:pointer}img,object,embed{max-width:100%;height:auto}object,embed{height:100%}img{-ms-interpolation-mode:bicubic}#map_canvas img,#map_canvas embed,#map_canvas object,.map_canvas img,.map_canvas embed,.map_canvas object{max-width:none !important}.left{float:left !important}.right{float:right !important}.text-left{text-align:left !important}.text-right{text-align:right !important}.text-center{text-align:center !important}.text-justify{text-align:justify !important}.hide{display:none}.antialiased{-webkit-font-smoothing:antialiased}img{display:inline-block;vertical-align:middle}textarea{height:auto;min-height:50px}select{width:100%}p.lead{font-size:1.21875em;line-height:1.6}.subheader,.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{line-height:1.4;color:#6c818f;font-weight:300;margin-top:0.2em;margin-bottom:0.5em}div,dl,dt,dd,ul,ol,li,h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6,pre,form,p,blockquote,th,td{margin:0;padding:0;direction:ltr}a{color:#2980b9;text-decoration:none;line-height:inherit}a:hover,a:focus{color:#3091d1}a img{border:none}p{font-family:inherit;font-weight:normal;font-size:1em;line-height:1.5;margin-bottom:1.25em;text-rendering:optimizeLegibility}p aside{font-size:0.875em;line-height:1.35;font-style:italic}h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{font-family:"Roboto Slab",sans-serif;font-weight:bold;font-style:normal;color:#465158;text-rendering:optimizeLegibility;margin-top:1em;margin-bottom:0.5em;line-height:1.2125em}h1 small,h2 small,h3 small,#toctitle small,.sidebarblock>.content>.title small,h4 small,h5 small,h6 small{font-size:60%;color:#909ea7;line-height:0}h1{font-size:2.125em}h2{font-size:1.6875em}h3,#toctitle,.sidebarblock>.content>.title{font-size:1.375em}h4{font-size:1.125em}h5{font-size:1.125em}h6{font-size:1em}hr{border:solid #ddd;border-width:1px 0 0;clear:both;margin:1.25em 0 1.1875em;height:0}em,i{font-style:italic;line-height:inherit}strong,b{font-weight:bold;line-height:inherit}small{font-size:60%;line-height:inherit}code{font-family:"Inconsolata","Consolas","Deja Vu Sans Mono","Bitstream Vera Sans Mono",monospace;font-weight:normal;color:#2980b9}ul,ol,dl{font-size:1em;line-height:1.5;margin-bottom:1.25em;list-style-position:outside;font-family:inherit}ul,ol{margin-left:0}ul.no-bullet,ol.no-bullet{margin-left:0}ul li ul,ul li ol{margin-left:1.25em;margin-bottom:0;font-size:1em}ul.square li ul,ul.circle li ul,ul.disc li ul{list-style:inherit}ul.square{list-style-type:square}ul.circle{list-style-type:circle}ul.disc{list-style-type:disc}ul.no-bullet{list-style:none}ol li ul,ol li ol{margin-left:1.25em;margin-bottom:0}dl dt{margin-bottom:0.3em;font-weight:bold}dl dd{margin-bottom:0.75em}abbr,acronym{text-transform:uppercase;font-size:90%;color:#000;border-bottom:1px dotted #ddd;cursor:help}abbr{text-transform:none}blockquote{margin:0 0 1.25em;padding:0.5625em 1.25em 0 1.1875em;border-left:1px solid #ddd}blockquote cite{display:block;font-size:0.8125em;color:#748590}blockquote cite:before{content:"\2014 \0020"}blockquote cite a,blockquote cite a:visited{color:#748590}blockquote,blockquote p{line-height:1.5;color:#909ea7}.vcard{display:inline-block;margin:0 0 1.25em 0;border:1px solid #ddd;padding:0.625em 0.75em}.vcard li{margin:0;display:block}.vcard .fn{font-weight:bold;font-size:0.9375em}.vevent .summary{font-weight:bold}.vevent abbr{cursor:auto;text-decoration:none;font-weight:bold;border:none;padding:0 0.0625em}@media only screen and (min-width: 768px){h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.4}h1{font-size:2.75em}h2{font-size:2.3125em}h3,#toctitle,.sidebarblock>.content>.title{font-size:1.6875em}h4{font-size:1.4375em}}table{background:#fff;margin-bottom:1.25em;border:solid 0 #ddd}table thead,table tfoot{background:none;font-weight:bold}table thead tr th,table thead tr td,table tfoot tr th,table tfoot tr td{padding:1px 8px 1px 5px;font-size:1em;color:#222;text-align:left}table tr th,table tr td{padding:1px 8px 1px 5px;font-size:1em;color:#222}table tr.even,table tr.alt,table tr:nth-of-type(even){background:none}table thead tr th,table tfoot tr th,table tbody tr td,table tr td,table tfoot tr td{display:table-cell;line-height:1.5}body{tab-size:4;word-wrap:anywhere;font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased}table{word-wrap:normal}h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.4}object,svg{display:inline-block;vertical-align:middle}.center{margin-left:auto;margin-right:auto}.stretch{width:100%}.clearfix:before,.clearfix:after,.float-group:before,.float-group:after{content:" ";display:table}.clearfix:after,.float-group:after{clear:both}:not(pre).nobreak{word-wrap:normal}:not(pre).nowrap{white-space:nowrap}:not(pre).pre-wrap{white-space:pre-wrap}:not(pre):not([class^=L])>code{font-size:0.95em;font-style:normal !important;letter-spacing:0;padding:0;background-color:#f2f2f2;-webkit-border-radius:6px;border-radius:6px;line-height:inherit}pre{color:inherit;font-family:"Consolas","Deja Vu Sans Mono","Bitstream Vera Sans Mono",monospace;line-height:1.2}pre code,pre pre{color:inherit;font-size:inherit;line-height:inherit}pre>code{display:block}pre.nowrap,pre.nowrap pre{white-space:pre;word-wrap:normal}em em{font-style:normal}strong strong{font-weight:normal}.keyseq{color:#333}kbd{font-family:"Inconsolata","Consolas","Deja Vu Sans Mono","Bitstream Vera Sans Mono",monospace;display:inline-block;color:#000;font-size:0.65em;line-height:1.45;background-color:#f7f7f7;border:1px solid #ccc;-webkit-border-radius:3px;border-radius:3px;-webkit-box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 0.1em #fff inset;box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 0.1em #fff inset;margin:0 0.15em;padding:0.2em 0.5em;vertical-align:middle;position:relative;top:-0.1em;white-space:nowrap}.keyseq kbd:first-child{margin-left:0}.keyseq kbd:last-child{margin-right:0}.menuseq,.menuref{color:#000}.menuseq b:not(.caret),.menuref{font-weight:inherit}.menuseq{word-spacing:-0.02em}.menuseq b.caret{font-size:1.25em;line-height:0.8}.menuseq i.caret{font-weight:bold;text-align:center;width:0.45em}b.button:before,b.button:after{position:relative;top:-1px;font-weight:normal}b.button:before{content:"[";padding:0 3px 0 2px}b.button:after{content:"]";padding:0 2px 0 3px}#header,#content,#footnotes,#footer{width:100%;margin-left:auto;margin-right:auto;margin-top:0;margin-bottom:0;max-width:62.5em;*zoom:1;position:relative;padding-left:0.9375em;padding-right:0.9375em}#header:before,#header:after,#content:before,#content:after,#footnotes:before,#footnotes:after,#footer:before,#footer:after{content:" ";display:table}#header:after,#content:after,#footnotes:after,#footer:after{clear:both}#content{margin-top:1.25em}#content:before{content:none}#header>h1:first-child{color:#111;margin-top:2.25rem;margin-bottom:0}#header>h1:first-child+#toc{margin-top:8px;border-top:1px solid #ddd}#header>h1:only-child,body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #ddd;padding-bottom:8px}#header .details{border-bottom:1px solid #ddd;line-height:1.45;padding-top:0.25em;padding-bottom:0.25em;padding-left:0.25em;color:#748590;display:-ms-flexbox;display:-webkit-flex;display:flex;-ms-flex-flow:row wrap;-webkit-flex-flow:row wrap;flex-flow:row wrap}#header .details span:first-child{margin-left:-0.125em}#header .details span.email a{color:#909ea7}#header .details br{display:none}#header .details br+span:before{content:"\00a0\2013\00a0"}#header .details br+span.author:before{content:"\00a0\22c5\00a0";color:#909ea7}#header .details br+span#revremark:before{content:"\00a0|\00a0"}#header #revnumber{text-transform:capitalize}#header #revnumber:after{content:"\00a0"}#content>h1:first-child:not([class]){color:#111;border-bottom:1px solid #ddd;padding-bottom:8px;margin-top:0;padding-top:1rem;margin-bottom:1.25rem}#toc{border-bottom:1px solid #ddd;padding-bottom:0.5em}#toc>ul{margin-left:0.125em}#toc ul.sectlevel0>li>a{font-style:italic}#toc ul.sectlevel0 ul.sectlevel1{margin:0.5em 0}#toc ul{font-family:"Roboto Slab",sans-serif;list-style-type:none}#toc li{line-height:1.3334;margin-top:0.3334em}#toc a{text-decoration:none}#toc a:active{text-decoration:underline}#toctitle{color:#6c818f;font-size:1.2em}@media only screen and (min-width: 768px){#toctitle{font-size:1.375em}body.toc2{padding-left:15em;padding-right:0}#toc.toc2{margin-top:0 !important;background:#f2f2f2;position:fixed;width:15em;left:0;top:0;border-right:1px solid #ddd;border-top-width:0 !important;border-bottom-width:0 !important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}#toc.toc2 #toctitle{margin-top:0;margin-bottom:0.8rem;font-size:1.2em}#toc.toc2>ul{font-size:0.9em;margin-bottom:0}#toc.toc2 ul ul{margin-left:0;padding-left:1em}#toc.toc2 ul.sectlevel0 ul.sectlevel1{padding-left:0;margin-top:0.5em;margin-bottom:0.5em}body.toc2.toc-right{padding-left:0;padding-right:15em}body.toc2.toc-right #toc.toc2{border-right-width:0;border-left:1px solid #ddd;left:auto;right:0}}@media only screen and (min-width: 1280px){body.toc2{padding-left:20em;padding-right:0}#toc.toc2{width:20em}#toc.toc2 #toctitle{font-size:1.375em}#toc.toc2>ul{font-size:0.95em}#toc.toc2 ul ul{padding-left:1.25em}body.toc2.toc-right{padding-left:0;padding-right:20em}}#content #toc{border-style:solid;border-width:1px;border-color:#d9d9d9;margin-bottom:1.25em;padding:1.25em;background:#f2f2f2;-webkit-border-radius:6px;border-radius:6px}#content #toc>:first-child{margin-top:0}#content #toc>:last-child{margin-bottom:0}#footer{max-width:none;background:#000;padding:1.25em}#footer-text{color:#fff;line-height:1.35}#content{margin-bottom:0.625em}.sect1{padding-bottom:0.625em}@media only screen and (min-width: 768px){#content{margin-bottom:1.25em}.sect1{padding-bottom:1.25em}}.sect1:last-child{padding-bottom:0}.sect1+.sect1{border-top:1px solid #ddd}details,.audioblock,.imageblock,.literalblock,.listingblock,.stemblock,.videoblock{margin-bottom:1.25em}details>summary:first-of-type{cursor:pointer;display:list-item;outline:none;margin-bottom:0.75em}.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{text-rendering:optimizeLegibility;text-align:left}table.tableblock.fit-content>caption.title{white-space:nowrap;width:0}.paragraph.lead>p,#preamble>.sectionbody>[class="paragraph"]:first-of-type p{font-size:1.21875em;line-height:1.6;color:#111}table.tableblock #preamble>.sectionbody>[class="paragraph"]:first-of-type p{font-size:inherit}.admonitionblock>table{border-collapse:separate;border:0;background:none;width:100%}.admonitionblock>table td.icon{text-align:center;width:80px}.admonitionblock>table td.icon img{max-width:none}.admonitionblock>table td.icon .title{font-weight:bold;font-family:"Roboto Slab",sans-serif;text-transform:uppercase}.admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #ddd;color:#748590;word-wrap:anywhere}.admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}.exampleblock>.content{border-style:solid;border-width:1px;border-color:#e6e6e6;margin-bottom:1.25em;padding:1.25em;background:#fff;-webkit-border-radius:6px;border-radius:6px}.exampleblock>.content>:first-child{margin-top:0}.exampleblock>.content>:last-child{margin-bottom:0}.sidebarblock{border-style:solid;border-width:1px;border-color:#d4d4d4;margin-bottom:1.25em;padding:1.25em;background:#ededed;-webkit-border-radius:6px;border-radius:6px}.sidebarblock>:first-child{margin-top:0}.sidebarblock>:last-child{margin-bottom:0}.sidebarblock>.content>.title{color:#6c818f;margin-top:0}.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}.literalblock pre,.listingblock>.content>pre{border:1px solid #ccc;-webkit-border-radius:6px;border-radius:6px;overflow-x:auto;padding:0.5em;font-size:0.8125em}@media only screen and (min-width: 768px){.literalblock pre,.listingblock>.content>pre{font-size:0.90625em}}@media only screen and (min-width: 1280px){.literalblock pre,.listingblock>.content>pre{font-size:1em}}.literalblock pre,.listingblock>.content>pre:not(.highlight),.listingblock>.content>pre[class="highlight"],.listingblock>.content>pre[class^="highlight "]{background:#eee}.literalblock.output pre{color:#eee;background-color:inherit}.listingblock>.content{position:relative}.listingblock code[data-lang]:before{display:none;content:attr(data-lang);position:absolute;font-size:0.75em;top:0.425rem;right:0.5rem;line-height:1;text-transform:uppercase;color:inherit;opacity:0.5}.listingblock:hover code[data-lang]:before{display:block}.listingblock.terminal pre .command:before{content:attr(data-prompt);padding-right:0.5em;color:inherit;opacity:0.5}.listingblock.terminal pre .command:not([data-prompt]):before{content:"$"}.listingblock pre.highlightjs{padding:0}.listingblock pre.highlightjs>code{padding:0.5em;-webkit-border-radius:6px;border-radius:6px}.prettyprint{background:#eee}pre.prettyprint .linenums{line-height:1.2;margin-left:2em}pre.prettyprint li{background:none;list-style-type:inherit;padding-left:0}pre.prettyprint li code[data-lang]:before{opacity:1}pre.prettyprint li:not(:first-child) code[data-lang]:before{display:none}table.linenotable{border-collapse:separate;border:0;margin-bottom:0;background:none}table.linenotable td[class]{color:inherit;vertical-align:top;padding:0;line-height:inherit;white-space:normal}table.linenotable td.code{padding-left:0.75em}table.linenotable td.linenos{border-right:1px solid currentColor;opacity:0.35;padding-right:0.5em}pre.pygments .lineno{border-right:1px solid currentColor;opacity:0.35;display:inline-block;margin-right:0.75em}pre.pygments .lineno:before{content:"";margin-right:-0.125em}.quoteblock{margin:0 1em 1.25em 1.5em;display:table}.quoteblock:not(.excerpt)>.title{margin-left:-1.5em;margin-bottom:0.75em}.quoteblock blockquote,.quoteblock p{color:#909ea7;font-size:1.15rem;line-height:1.75;word-spacing:0.1em;letter-spacing:0;font-style:italic;text-align:justify}.quoteblock blockquote{margin:0;padding:0;border:0}.quoteblock blockquote:before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:0.6em;margin-left:-0.6em;color:#6c818f;text-shadow:0 1px 2px rgba(0,0,0,0.1)}.quoteblock blockquote>.paragraph:last-child p{margin-bottom:0}.quoteblock .attribution{margin-top:0.75em;margin-right:0.5ex;text-align:right}.verseblock{margin:0 1em 1.25em 1em}.verseblock pre{font-family:"Open Sans", "DejaVu Sans", sans;font-size:1.15rem;color:#909ea7;font-weight:300;text-rendering:optimizeLegibility}.verseblock pre strong{font-weight:400}.verseblock .attribution{margin-top:1.25rem;margin-left:0.5ex}.quoteblock .attribution,.verseblock .attribution{font-size:0.8125em;line-height:1.45;font-style:italic}.quoteblock .attribution br,.verseblock .attribution br{display:none}.quoteblock .attribution cite,.verseblock .attribution cite{display:block;letter-spacing:-0.025em;color:#748590}.quoteblock.abstract blockquote:before,.quoteblock.excerpt blockquote:before,.quoteblock .quoteblock blockquote:before{display:none}.quoteblock.abstract blockquote,.quoteblock.abstract p,.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{line-height:1.6;word-spacing:0}.quoteblock.abstract{margin:0 1em 1.25em 1em;display:block}.quoteblock.abstract>.title{margin:0 0 0.375em 0;font-size:1.15em;text-align:center}.quoteblock.excerpt>blockquote,.quoteblock .quoteblock{padding:0 0 0.25em 1em;border-left:0.25em solid #ddd}.quoteblock.excerpt,.quoteblock .quoteblock{margin-left:0}.quoteblock.excerpt blockquote,.quoteblock.excerpt p,.quoteblock .quoteblock blockquote,.quoteblock .quoteblock p{color:inherit;font-size:1.0625rem}.quoteblock.excerpt .attribution,.quoteblock .quoteblock .attribution{color:inherit;text-align:left;margin-right:0}p.tableblock:last-child{margin-bottom:0}td.tableblock>.content{margin-bottom:1.25em;word-wrap:anywhere}td.tableblock>.content>:last-child{margin-bottom:-1.25em}table.tableblock,th.tableblock,td.tableblock{border:0 solid #ddd}table.grid-all>*>tr>*{border-width:0}table.grid-cols>*>tr>*{border-width:0 0}table.grid-rows>*>tr>*{border-width:0 0}table.frame-all{border-width:0}table.frame-ends{border-width:0 0}table.frame-sides{border-width:0 0}table.frame-none>colgroup+*>:first-child>*,table.frame-sides>colgroup+*>:first-child>*{border-top-width:0}table.frame-none>:last-child>:last-child>*,table.frame-sides>:last-child>:last-child>*{border-bottom-width:0}table.frame-none>*>tr>:first-child,table.frame-ends>*>tr>:first-child{border-left-width:0}table.frame-none>*>tr>:last-child,table.frame-ends>*>tr>:last-child{border-right-width:0}table.stripes-all tr,table.stripes-odd tr:nth-of-type(odd),table.stripes-even tr:nth-of-type(even),table.stripes-hover tr:hover{background:none}th.halign-left,td.halign-left{text-align:left}th.halign-right,td.halign-right{text-align:right}th.halign-center,td.halign-center{text-align:center}th.valign-top,td.valign-top{vertical-align:top}th.valign-bottom,td.valign-bottom{vertical-align:bottom}th.valign-middle,td.valign-middle{vertical-align:middle}table thead th,table tfoot th{font-weight:bold}tbody tr th{display:table-cell;line-height:1.5;background:none}tbody tr th,tbody tr th p,tfoot tr th,tfoot tr th p{color:#222;font-weight:bold}p.tableblock{font-size:1em}ol{margin-left:0.25em}ul li ol{margin-left:0}dl dd{margin-left:1.125em}dl dd:last-child,dl dd:last-child>:last-child{margin-bottom:0}ol>li p,ul>li p,ul dd,ol dd,.olist .olist,.ulist .ulist,.ulist .olist,.olist .ulist{margin-bottom:0.625em}ul.checklist,ul.none,ol.none,ul.no-bullet,ol.no-bullet,ol.unnumbered,ul.unstyled,ol.unstyled{list-style-type:none}ul.no-bullet,ol.no-bullet,ol.unnumbered{margin-left:0.625em}ul.unstyled,ol.unstyled{margin-left:0}ul.checklist{margin-left:0.625em}ul.checklist li>p:first-child>.fa-square-o:first-child,ul.checklist li>p:first-child>.fa-check-square-o:first-child{width:1.25em;font-size:0.8em;position:relative;bottom:0.125em}ul.checklist li>p:first-child>input[type="checkbox"]:first-child{margin-right:0.25em}ul.inline{display:-ms-flexbox;display:-webkit-box;display:flex;-ms-flex-flow:row wrap;-webkit-flex-flow:row wrap;flex-flow:row wrap;list-style:none;margin:0 0 0.625em -1.25em}ul.inline>li{margin-left:1.25em}.unstyled dl dt{font-weight:normal;font-style:normal}ol.arabic{list-style-type:decimal}ol.decimal{list-style-type:decimal-leading-zero}ol.loweralpha{list-style-type:lower-alpha}ol.upperalpha{list-style-type:upper-alpha}ol.lowerroman{list-style-type:lower-roman}ol.upperroman{list-style-type:upper-roman}ol.lowergreek{list-style-type:lower-greek}.hdlist>table,.colist>table{border:0;background:none}.hdlist>table>tbody>tr,.colist>table>tbody>tr{background:none}td.hdlist1,td.hdlist2{vertical-align:top;padding:0 0.625em}td.hdlist1{font-weight:bold;padding-bottom:1.25em}td.hdlist2{word-wrap:anywhere}.literalblock+.colist,.listingblock+.colist{margin-top:-0.5em}.colist td:not([class]):first-child{padding:0.4em 0.75em 0 0.75em;line-height:1;vertical-align:top}.colist td:not([class]):first-child img{max-width:none}.colist td:not([class]):last-child{padding:0.25em 0}.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}.imageblock.left{margin:0.25em 0.625em 1.25em 0}.imageblock.right{margin:0.25em 0 1.25em 0.625em}.imageblock>.title{margin-bottom:0}.imageblock.thumb,.imageblock.th{border-width:6px}.imageblock.thumb>.title,.imageblock.th>.title{padding:0 0.125em}.image.left,.image.right{margin-top:0.25em;margin-bottom:0.25em;display:inline-block;line-height:0}.image.left{margin-right:0.625em}.image.right{margin-left:0.625em}a.image{text-decoration:none;display:inline-block}a.image object{pointer-events:none}sup.footnote,sup.footnoteref{font-size:0.875em;position:static;vertical-align:super}sup.footnote a,sup.footnoteref a{text-decoration:none}sup.footnote a:active,sup.footnoteref a:active{text-decoration:underline}#footnotes{padding-top:0.75em;padding-bottom:0.75em;margin-bottom:0.625em}#footnotes hr{width:20%;min-width:6.25em;margin:-0.25em 0 0.75em 0;border-width:1px 0 0 0}#footnotes .footnote{padding:0 0.375em 0 0.225em;line-height:1.3334;font-size:0.875em;margin-left:1.2em;margin-bottom:0.2em}#footnotes .footnote a:first-of-type{font-weight:bold;text-decoration:none;margin-left:-1.05em}#footnotes .footnote:last-of-type{margin-bottom:0}#content #footnotes{margin-top:-0.625em;margin-bottom:0;padding:0.75em 0}.gist .file-data>table{border:0;background:#fff;width:100%;margin-bottom:0}.gist .file-data>table td.line-data{width:99%}div.unbreakable{page-break-inside:avoid}.big{font-size:larger}.small{font-size:smaller}.underline{text-decoration:underline}.overline{text-decoration:overline}.line-through{text-decoration:line-through}.aqua{color:#00bfbf}.aqua-background{background-color:#00fafa}.black{color:#000}.black-background{background-color:#000}.blue{color:#0000bf}.blue-background{background-color:#0000fa}.fuchsia{color:#bf00bf}.fuchsia-background{background-color:#fa00fa}.gray{color:#606060}.gray-background{background-color:#7d7d7d}.green{color:#006000}.green-background{background-color:#007d00}.lime{color:#00bf00}.lime-background{background-color:#00fa00}.maroon{color:#600000}.maroon-background{background-color:#7d0000}.navy{color:#000060}.navy-background{background-color:#00007d}.olive{color:#606000}.olive-background{background-color:#7d7d00}.purple{color:#600060}.purple-background{background-color:#7d007d}.red{color:#bf0000}.red-background{background-color:#fa0000}.silver{color:#909090}.silver-background{background-color:#bcbcbc}.teal{color:#006060}.teal-background{background-color:#007d7d}.white{color:#bfbfbf}.white-background{background-color:#fafafa}.yellow{color:#bfbf00}.yellow-background{background-color:#fafa00}span.icon>.fa{cursor:default}a span.icon>.fa{cursor:inherit}.admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,0.5);cursor:default}.admonitionblock td.icon .icon-note:before{content:"\f05a";color:#1f608b}.admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,0.8);color:#111}.admonitionblock td.icon .icon-warning:before{content:"\f071";color:#bf6900}.admonitionblock td.icon .icon-caution:before{content:"\f06d";color:#bf3400}.admonitionblock td.icon .icon-important:before{content:"\f06a";color:#bf0000}.conum[data-value]{display:inline-block;color:#fff !important;background-color:#000;-webkit-border-radius:50%;border-radius:50%;text-align:center;font-size:0.75em;width:1.67em;height:1.67em;line-height:1.67em;font-family:"Open Sans", "DejaVu Sans", sans-serif;font-style:normal;font-weight:bold}.conum[data-value] *{color:#fff !important}.conum[data-value]+b{display:none}.conum[data-value]:after{content:attr(data-value)}pre .conum[data-value]{position:relative;top:-0.125em}b.conum *{color:inherit !important}.conum:not([data-value]):empty{display:none}h4{color:#6c818f}.literalblock>.content>pre,.listingblock>.content>pre{-webkit-border-radius:6px;border-radius:6px;margin-left:2em;margin-right:2em}.admonitionblock{margin-left:2em;margin-right:2em}.admonitionblock>table{border:1px solid #609060;border-top-width:1.5em;background-color:#e9ffe9;border-collapse:separate;-webkit-border-radius:0;border-radius:0}.admonitionblock>table td.icon{padding-top:.5em;padding-bottom:.5em}.admonitionblock>table td.content{padding:.5em 1em;color:#000;font-size:.9em;border-left:none}.sidebarblock{background-color:#e8ecef;border-color:#ccc}.sidebarblock>.content>.title{color:#2980b9}table.tableblock.grid-all{border-collapse:collapse;-webkit-border-radius:0;border-radius:0}table.tableblock.grid-all th.tableblock,table.tableblock.grid-all td.tableblock{border-bottom:1px solid #aaa}#footer{background-color:#465158;padding:2em}#footer-text{color:#eee;font-size:0.8em;text-align:center}#toc.toc2{font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;padding:0;background:#343131}#toc.toc2 #toctitle{padding:1.6em 1em;text-align:center;font-family:"Roboto Slab",sans-serif;color:#fff;background:#2980b9}#toc.toc2 #toctitle::before{vertical-align:middle;content:"\f02d";content:"\f1b2";padding-right:0.3em;margin-left:-1em;font-family:'FontAwesome';font-size:200%}#toc.toc2 a{display:block;color:#d9d9d9;padding:0.25em 1em}#toc.toc2 a:hover,#toc.toc2 a:focus{background:#696262}#toc.toc2 ul{font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif}#toc.toc2 ul.sectlevel1 a{font-weight:bold;color:#55a5d9}#toc.toc2 ul.sectlevel1 a:hover,#toc.toc2 ul.sectlevel1 a:focus{color:#d9d9d9}#toc.toc2 ul.sectlevel2,#toc.toc2 ul.sectlevel3,#toc.toc2 ul.sectlevel4,#toc.toc2 ul.sectlevel5,#toc.toc2 ul.sectlevel6{padding:0}#toc.toc2 ul.sectlevel2 a,#toc.toc2 ul.sectlevel3 a,#toc.toc2 ul.sectlevel4 a,#toc.toc2 ul.sectlevel5 a,#toc.toc2 ul.sectlevel6 a{font-weight:normal;color:#d9d9d9}#toc.toc2 ul.sectlevel2.sectlevel2 a,#toc.toc2 ul.sectlevel3.sectlevel2 a,#toc.toc2 ul.sectlevel4.sectlevel2 a,#toc.toc2 ul.sectlevel5.sectlevel2 a,#toc.toc2 ul.sectlevel6.sectlevel2 a{padding-left:2em}#toc.toc2 ul.sectlevel2.sectlevel3 a,#toc.toc2 ul.sectlevel3.sectlevel3 a,#toc.toc2 ul.sectlevel4.sectlevel3 a,#toc.toc2 ul.sectlevel5.sectlevel3 a,#toc.toc2 ul.sectlevel6.sectlevel3 a{padding-left:3em}#toc.toc2 ul.sectlevel2.sectlevel4 a,#toc.toc2 ul.sectlevel3.sectlevel4 a,#toc.toc2 ul.sectlevel4.sectlevel4 a,#toc.toc2 ul.sectlevel5.sectlevel4 a,#toc.toc2 ul.sectlevel6.sectlevel4 a{padding-left:4em}#toc.toc2 ul.sectlevel2.sectlevel5 a,#toc.toc2 ul.sectlevel3.sectlevel5 a,#toc.toc2 ul.sectlevel4.sectlevel5 a,#toc.toc2 ul.sectlevel5.sectlevel5 a,#toc.toc2 ul.sectlevel6.sectlevel5 a{padding-left:5em}#toc.toc2 ul.sectlevel2.sectlevel6 a,#toc.toc2 ul.sectlevel3.sectlevel6 a,#toc.toc2 ul.sectlevel4.sectlevel6 a,#toc.toc2 ul.sectlevel5.sectlevel6 a,#toc.toc2 ul.sectlevel6.sectlevel6 a{padding-left:6em}:not(pre):not([class^="L"])>code{font-size:0.95em;font-style:normal !important;letter-spacing:0;padding:0px 4px;background-color:#f6f6f6;-webkit-border-radius:4px;border-radius:4px;line-height:inherit;border:solid #ddd7d7 1px;color:#e74c3c}.admonitionblock{margin:0}.admonitionblock.note>table{background-color:#e7f2fa}.admonitionblock.note>table td.icon{background-color:#3e97d7;width:100%;text-align:left;padding-left:2em}.admonitionblock.note>table td.icon i.icon-note::before{color:white}.admonitionblock.note>table td.icon i.icon-note::after{color:white;content:"Note";padding-left:1em;font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;font-size:0.9em;font-weight:bold}.admonitionblock.tip>table{background-color:#e9ffe9}.admonitionblock.tip>table td.icon{background-color:#00b600;width:100%;text-align:left;padding-left:2em}.admonitionblock.tip>table td.icon i.icon-tip::before{color:white}.admonitionblock.tip>table td.icon i.icon-tip::after{color:white;content:"Tip";padding-left:1em;font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;font-size:0.9em;font-weight:bold}.admonitionblock.caution>table{background-color:#ffe3ca}.admonitionblock.caution>table td.icon{background-color:#fd7700;width:100%;text-align:left;padding-left:2em}.admonitionblock.caution>table td.icon i.icon-caution::before{color:white}.admonitionblock.caution>table td.icon i.icon-caution::after{color:white;content:"Caution";padding-left:1em;font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;font-size:0.9em;font-weight:bold}.admonitionblock.important>table{background-color:#ffd6ca}.admonitionblock.important>table td.icon{background-color:#fd3900;width:100%;text-align:left;padding-left:2em}.admonitionblock.important>table td.icon i.icon-important::before{color:white}.admonitionblock.important>table td.icon i.icon-important::after{color:white;content:"Important";padding-left:1em;font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;font-size:0.9em;font-weight:bold}.admonitionblock.warning>table{background-color:#ffedcc}.admonitionblock.warning>table td.icon{background-color:orange;width:100%;text-align:left;padding-left:2em}.admonitionblock.warning>table td.icon i.icon-warning::before{color:white}.admonitionblock.warning>table td.icon i.icon-warning::after{color:white;content:"Warning";padding-left:1em;font-family:"Lato","Roboto","Arial","Helvetica Neue",sans-serif;font-size:0.9em;font-weight:bold}.admonitionblock>table{border:none}.admonitionblock>table td{display:inline-block;width:100%;font-size:8px}.tableblock code{border:none}.literalblock>.content>pre,.listingblock>.content>pre{margin:0}.literalblock pre,.listingblock>.content>pre{background:#f8f8f8}@media only screen and (min-width: 768px){#toc.toc2{padding:0;background:#343131}#toc.toc2 #toctitle::before{margin-left:-0.5em}}.ulist:not(.checklist) ul,.ulist:not(.checklist) ol{margin-left:1.5em}.ulist:not(.checklist) ul li>p,.ulist:not(.checklist) ol li>p{padding-left:0.5em}.ulist:not(.checklist) ul>li::marker,.ulist:not(.checklist) ol>li::marker{content:"\f111";font-family:"FontAwesome";font-size:0.7em;color:#2980b9}.olist ol{margin-left:2em}i.conum[data-value]{background-color:#2980b9}#content h1:hover>a.anchor,#content h1>a.anchor:hover,h2:hover>a.anchor,h2>a.anchor:hover,h3:hover>a.anchor,#toctitle:hover>a.anchor,.sidebarblock>.content>.title:hover>a.anchor,h3>a.anchor:hover,#toctitle>a.anchor:hover,.sidebarblock>.content>.title>a.anchor:hover,h4:hover>a.anchor,h4>a.anchor:hover,h5:hover>a.anchor,h5>a.anchor:hover,h6:hover>a.anchor,h6>a.anchor:hover{visibility:visible}#content h1>a.link,h2>a.link,h3>a.link,#toctitle>a.link,.sidebarblock>.content>.title>a.link,h4>a.link,h5>a.link,h6>a.link{color:#465158;text-decoration:none}#content h1>a.link:hover,h2>a.link:hover,h3>a.link:hover,#toctitle>a.link:hover,.sidebarblock>.content>.title>a.link:hover,h4>a.link:hover,h5>a.link:hover,h6>a.link:hover{color:#3b444a}#content h1>a.link:hover:after,h2>a.link:hover:after,h3>a.link:hover:after,#toctitle>a.link:hover:after,.sidebarblock>.content>.title>a.link:hover:after,h4>a.link:hover:after,h5>a.link:hover:after,h6>a.link:hover:after{content:"\f0c1";font-family:'FontAwesome';font-size:0.65em;display:inline-block;color:#3091d1;margin-left:0.5em}
+
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body class="article">
+<div id="header">
+<h1><strong>BUILDING PMODULES</strong></h1>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In the simplest case adding a Pmodule can be done by adding a modulefile to a certain directory. Below is an example of a "do nothing" modulefile in the group <code>Sandbox</code>.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: <code>/opt/psi/Sandbox/modulefiles/null/1.0.0</code></div>
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">#%Pmodule
+
+module-whatis           "does absolutely nothing"
+module-maintainer       "Achim Gsell &lt;achim.gsell@psi.ch&gt;"
+module-license          "MIT"
+
+module-help     "
+This is a do nothing module.
+"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In addition to the modulefile a corresponding configuration file - defining for example the release stage - should be installed in the same directory as the modulefile. See next section for a detailed documentation of configuration files.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: configuration file <code>/opt/psi/Sandbox/modulefiles/null/.release-1.0.0</code> for the <code>null/1.0.0</code> module</div>
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">stable</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Modulefiles are written in the Tool Command Language (Tcl). See section <a href="#modulefiles">[modulefiles]</a> for a detailed documentation. In Pmodules version 1.1.16 and newer modulefiles written in Lua are also supported but with some limitations.</p>
+</div>
+<div class="paragraph">
+<p>The above example doesn&#8217;t provide any software. In the following example we show a simple 'HelloWorld' module with a 'Hello, world!' program.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: modulefile <code>/opt/psi/Sandbox/modulefiles/HelloWorld/1.0.0</code>:</div>
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">#%Pmodule
+
+module-whatis           "'Hello, world!' module"
+module-maintainer       "Achim Gsell &lt;achim.gsell@psi.ch&gt;"
+module-license          "MIT"
+module-url              "http://pmodules.gitpages.psi.ch"
+
+module-help     "
+The module provides a 'Hello, world!' program.
+"</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example: configuration file <code>/opt/psi/Sandbox/modulefiles/HelloWorld/.release-1.0.0</code> for the <code>HelloWorld/1.0.0</code> module</div>
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">unstable</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example: <code>/opt/psi/Sandbox/HelloWorld/1.0.0/bin/hello</code>:</div>
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">#!/usr/bin/env python3
+
+print("Hello, world!")</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In principal, it is possible to install modules 'by hand' by installing the software, module- and configuration files at the right place. For reproducibility, documentation and re-usability it is highly recommended to write build-recipes for each module or - at least - a README and host everything on a PSI Gitlab server.</p>
+</div>
+<div class="paragraph">
+<p>Overall the main cases for building modules are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Building a module from source. This is the most common case. Examples: git,
+gnuplot, openmpi, hdf5, &#8230;&#8203;<br>
+In this case it is highly recommended to code each step - usually download, configure, compile and install - in a script, write a modulefile and a configuration file.</p>
+</li>
+<li>
+<p>Building a module with a binary package. Examples: Intel compiler, Matlab,
+ANSYS, Mathematica, &#8230;&#8203;<br>
+In this case best practice is to install the package by hand and write a "dummy" build script, a modulefile and a configuration file. If it is possible and simple to script the installation, code this in the build script. If you cannot easily script the installation, document each step in a README file.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In any case: keep everything in a Git repository on either <a href="https://gitlab.psi.ch">gitlab.psi.ch</a> or <a href="https://git.psi.ch">git.psi.ch</a>.
+The Git repository for the groups <code>Tool</code>, <code>Programming</code>, <code>Compiler</code>, <code>HDF5</code>, <code>HDF_serial</code> and <code>System</code> is <a href="https://gitlab.psi.ch/Pmodules/buildblocks">Pmodules/buildblock</a>. Other groups can be hosted anywhere. But to keep everything together a project in <a href="https://gitlab.psi.ch/Pmodules/">Pmodules</a> might be a good choice.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Many modules for the Pmodules environment have to be build from
+source. The building plan of a module is coded in a so called
+<strong><em>build-block</em></strong>. A build-block consists at least of a build-script with instruction how to download, compile and install a dedicated piece of
+software, a modulefile and a configuration file.</p>
+</div>
+<div class="paragraph">
+<p>To avoid problems with dependencies to system libraries or installed software it is best practice to build modules on dedicated systems. At PSI:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For modules which should be able to run on all RHEL7 and newer systems, use the system pmod7.psi.ch. If you need access to the system please contact <a href="mailto:achim.gsell@psi.ch">achim.gsell@psi.ch</a>.</p>
+</li>
+<li>
+<p>Merlin6 specific modules - like <code>openmpi</code>, <code>mpich</code> and modules depending on them - must be compiled on a Merlin6 login node.</p>
+</li>
+<li>
+<p>Modules specific for a beamline should be compiled on a Ra login node with RHEL8 or a dedicated RHEL8 beamline system.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you build a module on RHEL7, it might not run on RHEL8 due to newer versions of system libraries. In must cases this can be solved by installing these system libraries in the module itself and setting the <code>RPATH</code>. The recommended path in this case is <code>$PREFIX/lib/system</code> whereby <code>$PREFIX</code> is the installation prefix of the software.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In the next section we describe how to write build recipes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_predefined_variables">Predefined variables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Since we use BASH for our build-scripts and Tcl for modulefiles, we use BASH/Tcl syntax for variables in this documentation. So, if <code>VARIABLE</code> is the name of a variable, <code>$VARIABLE</code> the value of it.</p>
+</div>
+<div class="paragraph">
+<p><strong>In modulefiles and build-scripts the following variables are predefined:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>P</code></dt>
+<dd>
+<p>the name of the module</p>
+</dd>
+<dt class="hdlist1"><code>V</code></dt>
+<dd>
+<p>the module version. The version number consists of a major- and a minor version number, a patch-level and a release number. All numbers but the major version number are optional. Major-, minor number and patch-level are separated by dots, the release number by a minus. Example: <code>1.0.3-2</code></p>
+</dd>
+<dt class="hdlist1"><code>V_MAJOR</code></dt>
+<dd>
+<p>the major version number. Example: <code>1</code></p>
+</dd>
+<dt class="hdlist1"><code>V_MINOR</code></dt>
+<dd>
+<p>the minor version number. Example: <code>0</code></p>
+</dd>
+<dt class="hdlist1"><code>V_PATCHLVL</code></dt>
+<dd>
+<p>the patch-level. Example: <code>3</code></p>
+</dd>
+<dt class="hdlist1"><code>V_RELEASE</code></dt>
+<dd>
+<p>the release number. Example: <code>2</code></p>
+</dd>
+<dt class="hdlist1"><code>V_PKG</code></dt>
+<dd>
+<p>version number without release.</p>
+</dd>
+<dt class="hdlist1"><code>GROUP</code></dt>
+<dd>
+<p>group the module is in.</p>
+</dd>
+<dt class="hdlist1"><code>PREFIX</code></dt>
+<dd>
+<p>installation prefix of the module.</p>
+</dd>
+<dt class="hdlist1"><code>PMODULES_ROOT</code></dt>
+<dd>
+<p>root of Pmodules installation. At PSI this is <code>/opt/psi</code>.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>In build-scripts the following variables are predefined too:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>TEMP_DIR</code></dt>
+<dd>
+<p>directory for temporary files.</p>
+</dd>
+<dt class="hdlist1"><code>SRC_DIR</code></dt>
+<dd>
+<p>directory of unpacked sources, set to <code>$PMODULES_TMPDIR/$P-$V/src</code></p>
+</dd>
+<dt class="hdlist1"><code>BUILD_DIR</code></dt>
+<dd>
+<p>build directory, set to <code>$PMODULES_TMPDIR/$P-$V/build</code></p>
+</dd>
+<dt class="hdlist1"><code>BUILDBLOCK_DIR</code></dt>
+<dd>
+<p>Directory where the build-script is in.</p>
+</dd>
+<dt class="hdlist1"><code>BUILD_SCRIPT</code></dt>
+<dd>
+<p>Name of the build script.</p>
+</dd>
+<dt class="hdlist1"><code>SYSTEM</code>,<code>OS</code></dt>
+<dd>
+<p>Can be set with the <code>--system</code> option. The value defaults to the string returned by <code>uname -s</code>. The use of <code>OS</code> is obsolete.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>In modulefiles the following variables are predefined too:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>name</code></dt>
+<dd>
+<p>Same as <code>P</code> (obsolete, for historical reasons).</p>
+</dd>
+<dt class="hdlist1"><code>version</code></dt>
+<dd>
+<p>Same as <code>V</code> (obsolete, for historical reasons).</p>
+</dd>
+<dt class="hdlist1"><code>group</code></dt>
+<dd>
+<p>The group the module is member of.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_build_scripts">Build scripts</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TBW</p>
+</div>
+<div class="sect2">
+<h3 id="_examples">Examples</h3>
+<div class="paragraph">
+<p>TBW</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_setup_functions">Setup functions</h3>
+<div class="sect3">
+<h4 id="pb_add_configure_args"><code>pbuild::add_configure_args</code>: Set configuration options</h4>
+<div class="sect4">
+<h5 id="_synopsis">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_configure_args arg...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description">Description</h5>
+<div class="paragraph">
+<p>Add arguments/options to the call of <code>configure</code> or <code>cmake</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example">Example</h5>
+<div class="paragraph">
+<p>Excerpt from libtasn1 build-script (autotools):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_configure_args "--disable-shared"
+pbuild::add_configure_args "CFLAGS=-fPIC"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Excerpt from ParMETIS build-script (CMake):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_configure_args "-DMETIS_PATH=${SRC_DIR}/metis"
+pbuild::add_configure_args "-DGKLIB_PATH=${SRC_DIR}/metis/GKlib"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_add_patch"><code>pbuild::add_patch</code>: Adding patches to be applied</h4>
+<div class="sect4">
+<h5 id="_synopsis_2">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_patch patch_fname [strip_num_dirs]</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_2">Description</h5>
+<div class="paragraph">
+<p>Apply a patch to the unpacked sources. The argument <code>patch_fname</code> must be a relative file-name to the build-block directory. The argument <code>strip_num_dirs</code> is optional and defaults to <code>1</code>. Please read the <code>patch(1)</code> manual page for more details. The patches are applied inside the source directory with the command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">patch --strip=strip_num_dirs &lt; "${BUILDBLOCK_DIR}/patch_fname"</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_2">Example</h5>
+<div class="paragraph">
+<p>Excerpt from ioapi build-script:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_patch 'files/Makefile.pncf.sed.patch'</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_add_to_group"><code>pbuild::add_to_group</code>: Define the group of a module</h4>
+<div class="sect4">
+<h5 id="_synopsis_3">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_to_group GROUP</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_3">Description</h5>
+<div class="paragraph">
+<p>Define the group the module will be installed in. Sometimes it is not obvious in which group a module should go. If in doubt, <code>Tools</code> might be the best.</p>
+</div>
+<div class="paragraph">
+<p>A (incomplete) list of available groups:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>Tools</code></dt>
+<dd>
+<p>Group for tools like Gnuplot, Git, vim, Emacs, openssl. This group is visible by default.</p>
+</dd>
+<dt class="hdlist1"><code>Programming</code></dt>
+<dd>
+<p>Group for compilers, scripting languages and tools used for programming, like GCC, Python, CMake, autotools, Matlab. This group is visible by default.</p>
+</dd>
+<dt class="hdlist1"><code>Compiler</code></dt>
+<dd>
+<p>Hierarchical group for modules compiled with a certain compiler module. Examples: open-mpi, MPICH, serial HDF5.</p>
+</dd>
+<dt class="hdlist1"><code>HDF5_serial</code></dt>
+<dd>
+<p>Hierarchical group for modules compiled with a certain compiler and serial HDF5  module. Examples: netCDF, H5hut.</p>
+</dd>
+<dt class="hdlist1"><code>MPI</code></dt>
+<dd>
+<p>Hierarchical group for modules compiled with a certain compiler and MPI module. Examples: parallel Boost, parallel HDF5, ParMETIS, Gromacs.</p>
+</dd>
+<dt class="hdlist1"><code>HDF5</code></dt>
+<dd>
+<p>Hierarchical group for modules compiled with a certain compiler, MPI and parallel HDF5  module. Examples: netCDF, H5hut, Trilinos.</p>
+</dd>
+<dt class="hdlist1"><code>System</code></dt>
+<dd>
+<p>Group for system tools. This group is <em>not</em> visible by default. Examples: filebench, fsstress, nmap, patchelf.</p>
+</dd>
+<dt class="hdlist1"><code>Libraries</code></dt>
+<dd>
+<p>Group for libraries required to compile other modules but not providing (useful) tools. This group is <em>not</em> visible by default. Examples: GMP, MPC, MPFR</p>
+</dd>
+<dt class="hdlist1"><code>MX</code></dt>
+<dd>
+<p>Group for special tools used at the MX beam-line. This group is visible only on dedicated systems.</p>
+</dd>
+<dt class="hdlist1"><code>EM</code></dt>
+<dd>
+<p>Group for Ra specific software. This group is only visible and available on Ra.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_3">Example</h5>
+<div class="exampleblock">
+<div class="title">Example 1. Define the group for the Gnuplot module:</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_to_group 'Tools'</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_set_download_url"><code>pbuild::set_download_url</code>: Set download URL</h4>
+<div class="sect4">
+<h5 id="_synopsis_4">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::set_download_url URL [fname]</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_4">Description</h5>
+<div class="paragraph">
+<p>Tell the build system where to download the required (source-)files. If <code>fname</code> is passed, it will be used as the output file-name of the download.</p>
+</div>
+<div class="paragraph">
+<p>In some cases software must be downloaded from a Git repository on Github, Bitbucket or Gitlab.</p>
+</div>
+<div class="paragraph">
+<p>To download a certain tag/version from Github, Bitbucket or Gitlab use:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>https://github.com/OWNER/PROJECT/archive/${V_PKG}/$P-${V_PKG}.tar.gz
+https://bitbucket.org/OWNER/PROJECT/get/${V_PKG}.tar.gz#/$P-%{V_PKG}.tar.gz
+https://gitlab.com/OWNER/PROJECT/-/archive/${V_PKG}/$P-${V_PKG}.tar.gz</pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_examples_2">Examples</h5>
+<div class="paragraph">
+<p>Excerpt from Trilinos build-script:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::set_download_url \
+        "https://github.com/$P/$P/tarball/$P-release-${V//./-}" \
+        "$P-$V.tar.gz"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_build_functions">Build functions</h3>
+<div class="sect3">
+<h4 id="pb_prep"><code>pbuild::prep</code>: Download and unpack</h4>
+<div class="sect4">
+<h5 id="_synopsis_5">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::pre_prep_${SYSTEM}
+pbuild::pre_prep
+pbuild::prep
+pbuild::post_prep_${SYSTEM}
+pbuild::post_prep</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_5">Description</h5>
+<div class="paragraph">
+<p>Functions to prepare the sources. This includes</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>downloading required files a verifying the checksums</p>
+</li>
+<li>
+<p>unpacking</p>
+</li>
+<li>
+<p>applying patches</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Before the prep-functions are called, the build-system changes to the source
+directory (<code>${SRC_DIR}</code>).</p>
+</div>
+<div class="paragraph">
+<p>In the most uses cases the default function <code>pbuild::prep</code> provided by
+the build-system can be used and nothing must be implemented in the
+build-script. In some rare cases pre- or post-hooks are required to
+make the default function feasible. One use case with autotools for a post-hook is to create the <code>configure</code> scripts, if only <code>configure.ac</code> is shipped with the software.</p>
+</div>
+<div class="paragraph">
+<p>The default hooks provided by the build system are only stubs and do
+nothing.</p>
+</div>
+<div class="paragraph">
+<p>If the default function cannot be used, it must be implemented in the build-script.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_4">Example</h5>
+<div class="paragraph">
+<p>The source distribution of the IOAPI library contains object files! These files must be removed after unpacking:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::post_prep() {
+        find "${SRC_DIR}" -name "*.mod" -exec rm {} \;
+        find "${SRC_DIR}" -name "*.o" -exec rm {} \;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_configure"><code>pbuild::configure</code>: Configure software</h4>
+<div class="sect4">
+<h5 id="_synopsis_6">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::pre_configure_${SYSTEM}
+pbuild::pre_configure
+pbuild::configure
+pbuild::post_configure_${SYSTEM}
+pbuild::post_configure</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_6">Description</h5>
+<div class="paragraph">
+<p>Configure the software for compilation.</p>
+</div>
+<div class="paragraph">
+<p>Before these functions are called, the build-system changes to the
+build directory (<code>${BUILD_DIR}</code>).</p>
+</div>
+<div class="paragraph">
+<p>In the most uses cases the default function <code>pbuild::configure</code> provided by
+the build-system can be used and nothing must be implemented in the
+build-script.</p>
+</div>
+<div class="paragraph">
+<p>The default function first searches whether the software can be
+configured with autotools. If yes, configuration with autotools will
+be performed. Otherwise the existence of a CMake script will be
+checked. If found, configuration will be done via CMake. If scripts
+for both configuration tools exist, the to be used tool can be
+selected with <a href="use_autotools"><code>pbuild::use_autotools</code></a> or
+<a href="use_cmake"><code>pbuild::use_cmake</code></a>.  Arguments to <code>configure</code> or
+<code>cmake</code> can be set with
+<a href="add_configure_args"><code>pbuild::add_configure_args</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>A common use case for the pre-configure hooks is to define arguments
+passed to autotools or CMake by the default function.</p>
+</div>
+<div class="paragraph">
+<p>If the default function cannot be used, the <code>pbuild::configure</code>
+function must be implemented in the build-script.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_examples_3">Examples</h5>
+<div class="paragraph">
+<p>Excerpt from the parallel HDF5 build-script</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::pre_configure() {
+        pbuild::add_configure_args "CC=${MPICC}"
+        pbuild::add_configure_args "CXX=${MPICXX}"
+
+        pbuild::add_configure_args "--enable-shared"
+        pbuild::add_configure_args "--enable-parallel"
+        pbuild::add_configure_args "--enable-cxx"
+        pbuild::add_configure_args "--enable-unsupported"
+        #pbuild::add_configure_args "--enable-threadsafe"
+        pbuild::add_configure_args "--with-pic"
+
+        local enable_fortran='yes'
+
+        case "${COMPILER}" in
+                clang-macos )
+                        enable_fortran='no'
+                        # we do not have Fortran in Xcode
+                        ;;
+                pgi )
+                        # PGI uses GCC's include files, some object files and
+                        # the STL implementation!
+                        # The PGI C pre-processor is broken and doesn't work
+                        # for HDF5. We use the pre-processor of the underlying
+                        # GCC...
+                        # This is a bit hackish!
+                        #
+                        # The following eval sets GCCDIR! Which is something
+                        # like:
+                        # /opt/psi/Programming/gcc/7.3.0/bin/../lib/gcc/x86_64-pc-linux-gnu/7.3.0
+                        #
+                        eval $(pgcc -show 2&gt;/dev/null | \
+                                awk '/^GCCDIR[[:space:]]*=/{gsub(/[[:space:]]/,""); print $0}')
+                        pbuild::add_configure_args "CPP=${GCCDIR%%/..*}/cpp"
+                        pbuild::add_configure_args "CFLAGS=-fPIC"
+                        pbuild::add_configure_args "CXXFLAGS=-fPIC"
+                        pbuild::add_configure_args "FCFLAGS=-fPIC"
+                        ;;
+        esac
+
+        if [[ "${enable_fortran}" ===== 'yes' ]]; then
+                pbuild::add_configure_args "F77=${MPIF77}"
+                pbuild::add_configure_args "F90=${MPIF90}"
+                pbuild::add_configure_args "FC=${MPIFC}"
+                pbuild::add_configure_args "FORTRAN=${MPIFORTRAN}"
+                pbuild::add_configure_args "--enable-fortran"
+        fi</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Simplified excerpt from the OpenBLAS build-script</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::configure() {
+        case ${COMPILER} in
+        gcc )
+                CC='gcc'
+                ;;
+        intel )
+                CC='icc'
+                ;;
+        clang-macos )
+                CC='gcc'
+                ;;
+        * )
+                die 3 "Oops: unknown compiler: ${COMPILER}"
+                ;;
+        esac
+        cat &lt;&lt;EOF &gt; "${SRC_DIR}/make.inc"
+SHELL = /bin/sh
+PLAT =
+DRVOPTS  = \$(NOOPT)
+ARCHFLAGS= -ru
+EOF
+        echo "USE_SIMPLE_THREADED_LEVEL3 = 1" &gt;&gt; "${SRC_DIR}/Makefile.rule"
+        echo "NO_AVX = 1" &gt;&gt; "${SRC_DIR}/Makefile.rule"
+        echo "NO_AVX2 = 1" &gt;&gt; "${SRC_DIR}/Makefile.rule"
+        if pbuild::use_flag "omp"; then
+                echo "USE_THREAD = 1" &gt;&gt; "${SRC_DIR}/Makefile.rule"
+        else
+                echo "USE_THREAD = 0" &gt;&gt; "${SRC_DIR}/Makefile.rule"
+        fi
+}
+
+pbuild::post_configure_Darwin() {
+        sed -i.bak "s/MACOSX_DEPLOYMENT_TARGET=.*/MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET/" \
+                "${SRC_DIR}/Makefile.system"
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_compile"><code>pbuild::compile</code>: Compile software</h4>
+<div class="sect4">
+<h5 id="_synopsis_7">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::pre_compile_${SYSTEM}
+pbuild::pre_compile
+pbuild::compile
+pbuild::post_compile_${SYSTEM}
+pbuild::post_compile</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_7">Description</h5>
+<div class="paragraph">
+<p>Compile the software.</p>
+</div>
+<div class="paragraph">
+<p>Before these functions are called, the build-system changes to the
+build directory (<code>${BUILD_DIR}</code>).</p>
+</div>
+<div class="paragraph">
+<p>In the most uses cases the default function <code>pbuild::compile</code> provided by
+the build-system can be used and nothing must be implemented in the
+build-script. The pre- and post-hooks might be useful in cases where</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>to run other make targets than <code>all</code></p>
+</li>
+<li>
+<p>multiple packages must be compiled into one module</p>
+</li>
+<li>
+<p>to compile a dependency required by the main package.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If the default function cannot be used, the <code>pbuild::compile</code>
+function must be implemented in the build-script.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_5">Example</h5>
+<div class="paragraph">
+<p>Excerpt from perl build-script</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::post_compile() {
+        make test
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_install"><code>pbuild::install</code>: Install software</h4>
+<div class="sect4">
+<h5 id="_synopsis_8">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::pre_install_${SYSTEM}
+pbuild::pre_install
+pbuild::install
+pbuild::post_install_${SYSTEM}
+pbuild::post_install</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_8">Description</h5>
+<div class="paragraph">
+<p>Compile the software.</p>
+</div>
+<div class="paragraph">
+<p>Before these functions are called, the build-system changes to the
+build directory (<code>${BUILD_DIR}</code>).</p>
+</div>
+<div class="paragraph">
+<p>In the many uses cases the default function <code>pbuild::install</code> provided by
+the build-system can be used and nothing must be implemented in the
+build-script. A typical use case for the post-install hook is to install required libraries from other modules or the system to reduce or eliminate run-time dependencies</p>
+</div>
+<div class="paragraph">
+<p>If the default function cannot be used, the <code>pbuild::install</code>
+function must be implemented in the build-script.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_6">Example</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_other_functions">Other functions</h3>
+<div class="sect3">
+<h4 id="pb_compile_in_source_tree"><code>pbuild::compile_in_sourcetree</code></h4>
+<div class="sect4">
+<h5 id="_synopsis_9">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::compile_in_sourcetree</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_9">Description</h5>
+<div class="paragraph">
+<p>By default the build-system compiles software in a separate build-directory. This is not possible with all software. With the function <code>pbuild::compile_in_sourcetree</code> the build-directory is set to the source-directory.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_7">Example</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::compile_in_sourcetree</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_install_docfiles"><code>pbuild::install_docfiles</code>: Set documentation files to be installed</h4>
+<div class="sect4">
+<h5 id="_synopsis_10">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::install_docfiles fname...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_10">Description</h5>
+<div class="paragraph">
+<p>Install the passed files into <code>$PREFIX/share/doc/$P</code>. At least the  file containing the license and copyright should be installed.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_8">Example</h5>
+<div class="paragraph">
+<p>Excerpt from parallel-netcdf build-script:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::add_docfiles 'AUTHORS' 'CREDITS'
+pbuild::add_docfiles 'COPYING' 'COPYRIGHT'
+pbuild::add_docfiles 'ChangeLog' 'NEWS'
+pbuild::add_docfiles 'RELEASE_NOTES'</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_set_sha26sum"><code>pbuild::set_sha256sum</code>: Pass SHA256 hash sum to build-system</h4>
+<div class="sect4">
+<h5 id="_synopsis_11">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::set_sha256sum SHA256_HASH</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_11">Description</h5>
+<div class="paragraph">
+<p>Tell the build-system which SHA256 hash sum a file must have. The format of the argument is <code>file-name:hash-sum</code>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_examples_4">Examples</h5>
+<div class="paragraph">
+<p>Excerpt from Trilinos build-script:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::set_sha256sum \
+	"trilinos-12.12.1.tar.gz:c8f2029fa36230b9f384c56139aaa33111227bcf653e73f7daf3c9efdecc1d2d"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_supported_compilers"><code>pbuild::set_supported_compilers</code></h4>
+<div class="sect4">
+<h5 id="_synopsis_12">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::supported_compilers STRING...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_12">Description</h5>
+<div class="paragraph">
+<p>Set list of compiler which can be used to compile the module.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_9">Example</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_supported_systems"><code>pbuild::supported_systems</code></h4>
+<div class="sect4">
+<h5 id="_synopsis_13">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::supported_system STRING...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_13">Description</h5>
+<div class="paragraph">
+<p>Some modules can be build only for dedicated operating systems. This is particularly the case for operating system specific tools like <code>patchelf</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_use_autotools"><code>pbuild::use_autotools</code></h4>
+<div class="sect4">
+<h5 id="_synopsis_14">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::use_autotools</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_14">Description</h5>
+<div class="paragraph">
+<p>Force the use of autotools.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_10">Example</h5>
+
+</div>
+</div>
+<div class="sect3">
+<h4 id="pb_use_cmake"><code>pbuild::use_cmake</code></h4>
+<div class="sect4">
+<h5 id="_synopsis_15">Synopsis</h5>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">pbuild::use_cmake</code></pre>
+</div>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_description_15">Description</h5>
+<div class="paragraph">
+<p>Force the use of CMake.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_example_11">Example</h5>
+
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_build_configuration_files">Build configuration files</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_legacy_configuration_files_in_pmodules_1_0">"legacy" configuration files in Pmodules 1.0</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>These type of configuration file is deprecated in version 1.1 and
+newer. Starting with version 1.2 the use of YAML configuration files
+documented in the next section is recommended.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>In the Pmodules 1.0 configuration files the following properties are
+defined per version:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>module name and version</p>
+</li>
+<li>
+<p>release stage</p>
+</li>
+<li>
+<p>dependencies</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Each definition must be on a single line.</p>
+</div>
+<div class="sect3">
+<h4 id="_configuration_filenames_and_search_order">Configuration filenames and search order</h4>
+<div class="paragraph">
+<p>Configuration files are searched in the following order:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code><strong><em>build-recipe-dir</em></strong>/files/variants.<strong><em>system</em></strong></code></p>
+</li>
+<li>
+<p><code><strong><em>build-recipe-dir</em></strong>/files/variants.<strong><em>OS</em></strong></code></p>
+</li>
+<li>
+<p><code><strong><em>build-recipe-dir</em></strong>/files/variants</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Whereby</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code><strong><em>system</em></strong></code></dt>
+<dd>
+<p>If the build script is called with the option
+<code>-system=<strong><em>sytem</em></strong></code>, this configuration file is used.</p>
+</dd>
+<dt class="hdlist1"><code><strong><em>OS</em></strong></code></dt>
+<dd>
+<p>Is the operating system/kernel name returned by <code>uname
+-s</code>. On Linux this is <code>Linux</code> on macOS this is <code>Darwin</code>.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_format">Format</h4>
+<div class="paragraph">
+<p>A line in a configuration file is either</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a comment line starting with <code>#</code></p>
+</li>
+<li>
+<p>a empty line or a with white-space only</p>
+</li>
+<li>
+<p>a definition of a variant</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_variant_specifications">Variant specifications</h4>
+<div class="paragraph">
+<p>The form of a variant specification is</p>
+</div>
+<div class="paragraph">
+<p><code><strong><em>module-name</em></strong></code> <code><strong><em>release_stage</em></strong></code> <code><strong><em>dependencies</em></strong></code></p>
+</div>
+<div class="paragraph">
+<p>Whereby:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code><strong><em>module-name</em></strong></code></dt>
+<dd>
+<p>Is the name of the module including the version, an
+optional release number and an optional suffix. The general form is</p>
+<div class="paragraph">
+<p><code><strong><em>P</em></strong>/<strong><em>V</em></strong>[-<strong><em>V_RELEASE</em></strong>][<strong><em>_SUFFIX</em></strong>]</code></p>
+</div>
+</dd>
+<dt class="hdlist1"><code><strong><em>release_stage</em></strong></code></dt>
+<dd>
+<p>Defines the release stage of this module
+variant. Allowed values are <code>unstable</code>, <code>stable</code>, <code>deprecated</code>,
+<code>remove</code> and <code>removed</code>. If the release stage is <code>remove</code> or <code>removed</code>,
+this module variant will be removed (if not already removed).</p>
+</dd>
+<dt class="hdlist1"><code><strong><em>dependencies</em></strong></code></dt>
+<dd>
+<p>Defines the module dependencies. Dependencies can
+be either a hierarchical dependency, a runtime dependency or a build
+dependency. Hierarchical and runtime dependencies are loaded before
+a module itself. Build dependencies are only loaded during build-time
+and must be prefixed with <code>b:</code>.</p>
+<div class="paragraph">
+<p>Dependencies are loaded in the specified order. It is recommended to
+specify the dependencies of a the (hierarchical) group first, then
+additional modules required at run-time and the modules required to
+build it at the end.</p>
+</div>
+<div class="paragraph">
+<p>If the module is in a hierarchical group like <code>MPI</code>, you must specify
+the modules required for this group. For modules in the group</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Compiler</code> a compiler must be specified.</p>
+</li>
+<li>
+<p><code>MPI</code> a compiler and a MPI implementation must be specified.</p>
+</li>
+<li>
+<p><code>HDF5</code> a compiler, a MPI implementation and a parallel HDF5 module
+must be specified.</p>
+</li>
+<li>
+<p><code>HDF5_serial</code> a compiler and a serial HDF5 module
+must be specified.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title"><strong>Example</strong></div>
+<div class="content">
+<pre>parmetis/4.0.3  stable gcc/7.3.0 openmpi/3.0.0  b:cmake/3.6.3</pre>
+</div>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_yaml_configuration_files_in_pmodules_1_1_and_newer">YAML configuration files in Pmodules 1.1 and newer</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Pmodules 1.1 and newer are supporting configuration files in YAML
+format. For backward compatibility the build-systems supports both
+types of configuration files with the YAML configuration file as
+default.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The old format of the variants file is simple but very limited and
+almost impossible to extend for new features. To overcome the
+limitations a new format using YAML for variants files has been
+introduced. For the time being both format are supported. But it is
+highly recommended to use the YAML format for new modules and to
+migrate existing variants files in the old format to the new.</p>
+</div>
+<div class="sect3">
+<h4 id="_path_to_configuration_file">Path to configuration file</h4>
+<div class="paragraph">
+<p>The path to the configuration file is</p>
+</div>
+<div class="paragraph">
+<p><code><strong><em>build-recipe-dir</em></strong>/files/config.yaml</code></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_format_2">Format</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">format: 1
+<strong><em>module-name-1</em></strong>:
+  defaults:                                       # optional
+    <strong><em>config-block</em></strong>
+  shasums:                                        # optional
+    <strong><em>filename-1</em></strong>: <strong><em>sha256sum-1</em></strong>
+    ...
+  versions:
+    <strong><em>version-keys-1</em></strong>:
+      config:                                     # optional
+        <strong><em>config-block</em></strong>
+      variants:                                   # optional
+        - <strong><em>config-block-1</em></strong>
+        - ...
+    ...
+<strong><em>module-name-2</em></strong>:
+  ...</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 71.4286%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field-Name</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>format</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">unsigned int</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Format version of the YAML configuration file. For now it must be <code>1</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><strong><em>module-name-N</em></strong></code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">config-block</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration for the Pmodule <code><strong><em>module-name-N</em></strong></code>. Example: <code>openmpi</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>defaults</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">config-block</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default configuration. This block is optional.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>shasums</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MAP of string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SHA256 hash sums of source files. Keys are filenames, the value the<br>
+ corresponding SHA256 hash sum. This block is optional. A warning is
+ printed if a hash-sum is missing for a required file.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>versions</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MAP of configurations for different version keys</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A version key is a semicolon separated string of version
+  numbers. Version numbers can be specified with shell brace
+  expansion. Example:<br>
+  <code>5.4.{0,1,2,3,4,5,8,9};5.2.{0,4,6,7,8};5.0.0;4.6.3</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>config</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">config-block</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional, version specific configuration block. Configurations
+  specified here are overriding the defaults.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>variants</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">map of config-block</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Variants can be used to compile the some software with different</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_configuration_blocks">Configuration blocks</h4>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In configuration blocks everything is optional!</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title"><code>config-block</code></div>
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">build_requires: [<strong><em>build-req-1</em></strong>, ...]
+compile_in_sourcetree: <strong><em>bool</em></strong>
+configure_with: auto|autotools|cmake
+default_variant: <strong><em>variant</em></strong>
+docfiles: [<strong><em>file-1</em></strong>, ...]
+group: <strong><em>group</em></strong>
+group_deps:
+  compilers:
+    <strong><em>cpmpiler-1</em></strong>: [<strong><em>version-1</em></strong>, ...]
+  mpi:
+    <strong><em>mpi-implemation-1</em></strong>: [<strong><em>version-1</em></strong>, ...]
+  hdf5:
+    hdf5: [<strong><em>version-1</em></strong>, ...]
+  hdf5_serial:
+    hdf5[<em>_serial]: [<strong>_version-1</em></strong>, ...]
+overlay: <strong><em>overlay</em></strong>
+relstage: <strong><em>release-stage</em></strong>
+runtime_deps: [<strong><em>rt-dep-1</em></strong>, ...]
+suffix: <strong><em>suffix</em></strong>
+systems: [<strong><em>system-1</em></strong>, ...]
+urls:
+  - url: <strong><em>link</em></strong>
+    name: <strong><em>filename</em></strong>
+  - ...
+variant: [<strong><em>variant-1</em></strong>, ...]</code></pre>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 71.4286%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field-Name</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>build_requires</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">array of string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Modules required to build this module</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>compile_in_sourcetree</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">boolean</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compile in source tree or in a dedicate build directory.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>configure_with</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Choose software configuration system. Allowed values are:<br>
+ <code>auto</code>: use autotools if available<br>
+ <code>autotools</code>: use autotools<br>
+ <code>cmake</code>: use cmake</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>default_variant</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">(opt) Specifies the default variant to build if no variant is specified</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>docfiles</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">array of string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Array with documentation files to be installed in <code>share/doc/</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>group</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Group of the module</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>group_deps</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">group-deps-object</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Group/hierarchical dependencies like compiler, MPI, HDF5 modules</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>overlay</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Overlay of the module</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>relstage</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Release stage of the module. Allowed values are:<br>
+<code>unstable</code>: the module is still under development<br>
+<code>stable</code>: the module is ready to be used<br>
+<code>deprecated</code>: the module is deprecated<br>
+<code>remove</code>: the module is deprecated and marked to be removed<br>
+<code>removed</code>: the module has been removed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>runtime_deps</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of strings</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Module to be loaded at runtime</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>suffix</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This string will be added to the version of the module</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>systems</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of strings</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A 'system' is either a hostname or OS name like <code>rhel8</code>. For<br>
+ hostnames shell glob pattern matching like <code>merlin-*</code> can be used.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>urls</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of links and optional file-names</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Software which must be downloaded to build a specific module.<br>
+  <code>url</code>: Download link<br>
+  <code>name</code>: optional output filename. The filename defaults the last
+  component of the <code>url</code>.<br>
+  Default URLs can be defined by using the variables <code>P</code>, <code>V</code>,
+  <code>V_PKG</code>, <code>V_MAJOR</code>, <code>V_MINOR</code> and <code>V_PATCHLVL</code>. Example:<br>
+  <a href="https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz" class="bare">https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>variant</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of strings</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sequence of synonyms for a variant.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_examples_5">Examples</h4>
+<div class="listingblock">
+<div class="title"><strong>Example: Gnuplot</strong></div>
+<div class="content">
+<pre>format: 1
+gnuplot:
+  defaults:                                             <i class="conum" data-value="1"></i><b>(1)</b>
+    group: Tools                                        <i class="conum" data-value="2"></i><b>(2)</b>
+    overlay: base                                       <i class="conum" data-value="3"></i><b>(3)</b>
+    relstage: stable                                    <i class="conum" data-value="4"></i><b>(4)</b>
+    systems: [rhel8, rhel7, rhel6]                      <i class="conum" data-value="5"></i><b>(5)</b>
+    docfiles: [Copyright, NEWS, README]                 <i class="conum" data-value="6"></i><b>(6)</b>
+    urls:                                               <i class="conum" data-value="7"></i><b>(7)</b>
+      - url: https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz
+  shasums:                                              <i class="conum" data-value="8"></i><b>(8)</b>
+    gnuplot-5.4.10.tar.gz: 975d8c1cc2c41c7cedc4e323aff035d977feb9a97f0296dd2a8a66d197a5b27c
+    gnuplot-5.4.9.tar.gz: a328a021f53dc05459be6066020e9a71e8eab6255d3381e22696120d465c6a97
+    gnuplot-5.4.8.tar.gz: 931279c7caad1aff7d46cb4766f1ff41c26d9be9daf0bcf0c79deeee3d91f5cf
+    gnuplot-5.4.5.tar.gz: 66f679115dd30559e110498fc94d926949d4d370b4999a042e724b8e910ee478
+    gnuplot-5.4.4.tar.gz: 372300b7867f5b3538b25fc5d0ac7734af6e3fe0d202b6db926e4369913f0902
+    gnuplot-5.4.3.tar.gz: 51f89bbab90f96d3543f95235368d188eb1e26eda296912256abcd3535bd4d84
+    gnuplot-5.4.2.tar.gz: e57c75e1318133951d32a83bcdc4aff17fed28722c4e71f2305cfc2ae1cae7ba
+    gnuplot-5.4.1.tar.gz: 6b690485567eaeb938c26936e5e0681cf70c856d273cc2c45fabf64d8bc6590e
+    gnuplot-5.4.0.tar.gz: eb4082f03a399fd1e9e2b380cf7a4f785e77023d8dcc7e17570c1b5570a49c47
+    gnuplot-5.2.8.tar.gz: 60a6764ccf404a1668c140f11cc1f699290ab70daa1151bb58fed6139a28ac37
+    gnuplot-5.2.7.tar.gz: 97fe503ff3b2e356fe2ae32203fc7fd2cf9cef1f46b60fe46dc501a228b9f4ed
+    gnuplot-5.2.6.tar.gz: 35dd8f013139e31b3028fac280ee12d4b1346d9bb5c501586d1b5a04ae7a94ee
+    gnuplot-5.2.4.tar.gz: 1515f000bd373aaa53b16183f274189d4f5e0ae47d22f434857933d16a4770cb
+    gnuplot-5.0.0.tar.gz: 417d4bc5bc914a60409bb75cf18dd14f48b07f53c6ad3c4a4d3cd9a8d7370faf
+    gnuplot-4.6.3.tar.gz: df5ffafa25fb32b3ecc0206a520f6bca8680e6dcc961efd30df34c0a1b7ea7f5
+  versions:
+    5.4.{0,1,2,3,4,5,8,9};5.2.{0,4,6,7,8};5.0.0;4.6.3:  <i class="conum" data-value="9"></i><b>(9)</b>
+    5.4.10:                                             <i class="conum" data-value="10"></i><b>(10)</b>
+      config:
+        relstage: unstable</pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Configuration is for <code>gnuplot</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>will be installed in the group <code>Tools</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>will be installed in the base overlay (<code>/opt/psi</code>)</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>the default release stage is <code>stable</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>the module is available on these systems</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>install these files to <code>$PREFIX/share/doc/gnuplot</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>download via this link</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="8"></i><b>8</b></td>
+<td>SHA256 hash sums for all available versions</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="9"></i><b>9</b></td>
+<td>no specific configuration required for these versions</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="10"></i><b>10</b></td>
+<td>release stage of version <code>5.4.10</code> is still <code>unstable</code>, override
+default release stage.
+---</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title"><strong>Example: HDF5</strong></div>
+<div class="content">
+<pre>---
+# yamllint disable rule:line-length             <i class="conum" data-value="1"></i><b>(1)</b>
+format: 1
+hdf5:                                           <i class="conum" data-value="2"></i><b>(2)</b>
+  defaults:
+    group: MPI                                  <i class="conum" data-value="3"></i><b>(3)</b>
+    overlay: base                               <i class="conum" data-value="4"></i><b>(4)</b>
+    relstage: stable                            <i class="conum" data-value="5"></i><b>(5)</b>
+    systems: [rhel7, rhel8, rhel9]              <i class="conum" data-value="6"></i><b>(6)</b>
+    urls:                                       <i class="conum" data-value="7"></i><b>(7)</b>
+      - url: https://support.hdfgroup.org/ftp/HDF5/releases/$P-${V_MAJOR}.${V_MINOR}/$P-${V_PKG}/src/$P-${V_PKG}.tar.bz2
+  shasums:                                      <i class="conum" data-value="8"></i><b>(8)</b>
+    hdf5-1.8.10-patch1.tar.bz2: 292afb3615ad9e68f4d5d18ebb11e4a73f2aece39f2da3875a457ff1e109fc41
+    hdf5-1.8.12.tar.bz2: 10a369a4fc207bb09245f57c758e587420e06dfc0e445e337a58b0848b75a949
+    ...
+    hdf5-1.13.1.tar.bz2: e16973ec893e2d5aa9c8dc73e196db9b99a605578e7317b421c713936f8bf57d
+
+  versions:
+    1.8.12:
+      config:
+        relstage: deprecated                    <i class="conum" data-value="9"></i><b>(9)</b>
+      variants:
+        -
+          group_deps:
+            compiler: {gcc: [4.7.4, 4.8.3, 4.8.4, 4.9.2]}
+            mpi: {openmpi: [1.6.5, 1.8.2, 1.8.4]}
+        -
+          group_deps:
+            compiler: {gcc: [4.8.2]}
+            mpi: {openmpi: [1.6.5]}
+        ...
+        -
+          group_deps:
+            compiler: {gcc: [5.1.0], intel: [15.2, 15.3]}
+            mpi: {openmpi: [1.8.4]}
+    ...
+    1.10.8_slurm:
+      variants:
+        -
+          group_deps:                           <i class="conum" data-value="10"></i><b>(10)</b>
+            compiler: {gcc: [10.4.0]}
+            mpi: {openmpi: [4.1.4_slurm]}
+        -
+          relstage: unstable                    <i class="conum" data-value="11"></i><b>(11)</b>
+          group_deps:
+            compiler: {gcc: [9.5.0, 10.4.0, 11.4.0, 12.3.0, 13.1.0]}
+            mpi: {openmpi: [4.1.5_slurm]}
+    ...
+    1.12.0:
+      variants:
+        -
+          group_deps:                           <i class="conum" data-value="12"></i><b>(12)</b>
+            compiler: {gcc: [7.5.0, 8.4.0, 9.3.0, 10.2.0]}
+            mpi: {openmpi: [4.0.5]}
+        -
+          relstage: unstable                    <i class="conum" data-value="13"></i><b>(13)</b>
+          group_deps:
+            compiler: {pgi: [21.5]}
+            mpi: {pgi-mpi: [21.5]}
+
+    1.13.1:
+      variants:
+        -
+          suffix: _slurm                        <i class="conum" data-value="14"></i><b>(14)</b>
+          variant: [_slurm]
+          relstage: unstable
+          group_deps:
+            compiler: {gcc: [11.2.0]}
+            mpi: {openmpi: [4.1.3_slurm]}</pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>disable rule to check line length in yamllint. Default is 80.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>this configuration is for HDF5</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="8"></i><b>8</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="9"></i><b>9</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="10"></i><b>10</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="11"></i><b>11</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="12"></i><b>12</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="13"></i><b>13</b></td>
+<td>TBW</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="14"></i><b>14</b></td>
+<td>TBW</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_modulefiles"><code>modulefiles</code></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="modulefile"><code>modulefiles</code></h3>
+<div class="sect3">
+<h4 id="_name">NAME</h4>
+<div class="paragraph">
+<p><code>modulefile</code> - files containing Tcl code for the Modules package</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_description_16">DESCRIPTION</h4>
+<div class="paragraph">
+<p>modulefiles are written in the Tool Command Language, <code>Tcl(n)</code> and are
+interpreted by the <code>modulecmd</code> program via the <code>module(1)</code> user
+interface. modulefiles can be loaded, unloaded, or switched on-the-fly
+while the user is working; and can be used to implement site policies
+regarding the access and use of applications.</p>
+</div>
+<div class="paragraph">
+<p>A modulefile begins with the shebang, &#8216;#%Pmodule&#8217; or
+&#8216;#%Module&#8217;. The shebang &#8216;#%Pmodule&#8217; should be used in modulefiles
+using the Pmodules extension. A version number may be placed after
+this string. The version number is useful as the modulefile format may
+change. If a version number doesn&#8217;t exist, then modulecmd will assume
+the modulefile is compatible with the latest version. The current
+modulefile version is 1.0. Files without the magic cookie will not be
+interpreted by <code>modulecmd</code>.</p>
+</div>
+<div class="paragraph">
+<p>Each modulefile contains the changes to a user&#8217;s environment needed to
+access an application. Tcl is a simple programming language which
+permits modulefiles to be arbitrarily complex, depending upon the
+application&#8217;s and the modulefile writer&#8217;s needs.</p>
+</div>
+<div class="paragraph">
+<p>A typical modulefiles is a simple bit of code that set or add entries
+to the <code>PATH</code>, <code>MANPATH</code>, or other environment variables. Tcl has
+conditional statements that are evaluated when the modulefile is
+loaded. This is very effective for managing path or environment
+changes due to different OS releases or architectures. The user
+environment information is encapsulated into a single modulefile kept
+in a central location. The same modulefile is used by every user on
+any machine. So, from the user&#8217;s perspective, starting an application
+is exactly the same irrespective of the machine or platform they are
+on.</p>
+</div>
+<div class="paragraph">
+<p>modulefiles also hide the notion of different types of shells. From
+the user&#8217;s perspective, changing the environment for one shell looks
+exactly the same as changing the environment for another shell. This
+is useful for new or novice users and eliminates the need for
+statements such as "if you&#8217;re using the C Shell do this &#8230;&#8203;, otherwise
+if you&#8217;re using the Bourne shell do this &#8230;&#8203;". Announcing and
+accessing new software is uniform and independent of the user&#8217;s
+shell. From the modulefile writer&#8217;s perspective, this means one set of
+information will take care of every type of shell.</p>
+</div>
+<div class="sect4">
+<h5 id="_module_specific_commands">Module specific commands</h5>
+<div class="paragraph">
+<p>The Pmodules Package uses commands which are extensions to the "standard" Tool Command Language <code>Tcl(n)</code> package.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The following commands are Pmodules extensions:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>module-addgroup</code></p>
+</li>
+<li>
+<p><code>module-url</code></p>
+</li>
+<li>
+<p><code>module-license</code></p>
+</li>
+<li>
+<p><code>module-maintainer</code></p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Unless otherwise specified, the Module commands return the empty string. Some commands behave differently when a modulefile is loaded or unloaded. The command descriptions assume the modulefile is being loaded.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>break</code></dt>
+<dd>
+<p>This is not a Modules-specific command, it&#8217;s actually part of Tcl, which has been overloaded similar to the continue and exit commands to have the effect of causing the module not to be listed as loaded and not affect other modules being loaded concurrently. All non-environment commands within the module will be performed up to this point and processing will continue on to the next module on the command line. The break command will only have this effect if not used within a Tcl loop though.</p>
+<div class="paragraph">
+<p>An example: Suppose that a full selection of modulefiles are needed for various different architectures, but some of the modulefiles are not needed and the user should be alerted. Having the unnecessary modulefile be a link to the following <code>notavail</code> modulefile will perform the task as required.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>#%Module1.0
+## notavail modulefile
+##
+proc ModulesHelp { } {
+            puts stderr "This module does nothing but alert the user"
+            puts stderr "that the [module-info name] module is not available"
+}
+
+module-whatis "Notifies user that module is not available."
+set curMod [module-info name]
+if { [ module-info mode load ] } {
+            puts stderr "Note: '$curMod' is not available for [uname sysname]."
+}
+break</pre>
+</div>
+</div>
+</dd>
+<dt class="hdlist1"><code>chdir directory</code></dt>
+<dd>
+<p>Set the current working directory to directory.</p>
+</dd>
+<dt class="hdlist1"><code>continue</code></dt>
+<dd>
+<p>This is not a modules specific command but another overloaded Tcl command and is similar to the break or exit commands except the module will be listed as loaded as well as performing any environment or Tcl commands up to this point and then continuing on to the next module on the command line. The continue command will only have this effect if not used within a Tcl loop though.</p>
+</dd>
+<dt class="hdlist1"><code>exit [N]</code></dt>
+<dd>
+<p>This is not a modules specific command but another overloaded Tcl command and is similar to the break or continue commands. However, this command will cause the immediate cessation of this module and any additional ones on the command line. This module and the subsequent modules will not be listed as loaded. No environment commands will be performed in the current module.</p>
+</dd>
+<dt class="hdlist1"><code>setenv variable value</code></dt>
+<dd>
+<p>Set environment variable to value. The <code>setenv</code> command will also change the process' environment. A reference using Tcl&#8217;s <code>env</code> associative array will reference changes made with the <code>setenv</code> command. Changes made using Tcl&#8217;s <code>env</code> associative array will NOT change the user&#8217;s environment variable like the <code>setenv</code> command. An environment change made this way will only affect the module parsing process. The <code>setenv</code> command is also useful for changing the environment prior to the <code>exec</code> or <code>system</code> command. When a modulefile is unloaded, <code>setenv</code> becomes <code>unsetenv</code>. If the environment variable had been defined it will be overwritten while loading the modulefile. A subsequent unload will unset the environment variable - the previous value cannot be restored! (Unless you handle it explicitly &#8230;&#8203; see below.)</p>
+</dd>
+<dt class="hdlist1"><code>unsetenv variable [value]</code></dt>
+<dd>
+<p>Unsets environment variable. However, if there is an optional value, then when unloading a module, it will set variable to value. The <code>unsetenv</code> command changes the process' environment like <code>setenv</code>.</p>
+</dd>
+<dt class="hdlist1"><code>append-path|prepend-path [-d C|--delim C|--delim=C] variable value</code></dt>
+<dd>
+<p>Append or prepend value to environment variable. The variable is a colon, or delimiter, separated list such as <code>PATH=directory:directory:directory</code>. The default delimiter is a colon ':', but an arbitrary one can be given by the <code>--delim</code> option. For example a space can be used instead (which will need to be handled in the Tcl specially by enclosing it in " " or { }). A space, however, can not be specified by the <code>--delim=C</code> form.</p>
+<div class="paragraph">
+<p>If the variable is not set, it is created. When a modulefile is unloaded, <code>append-path</code> and <code>prepend-path</code> become <code>remove-path</code>.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>remove-path [-d C|--delim C|--delim=C] variable value</code></dt>
+<dd>
+<p>Remove value from the colon, or delimiter, separated list in variable. See <code>prepend-path</code> or <code>append-path</code> for further explanation of using an arbitrary delimiter. Every string between colons, or delimiters, in variable is compared to value. If the two match, value is removed from variable.</p>
+</dd>
+<dt class="hdlist1"><code>prereq|conflict modulefile&#8230;&#8203;</code></dt>
+<dd>
+<p><code>prereq</code> and <code>conflict</code> control whether or not the modulefile will be loaded. The <code>prereq</code> command lists modulefiles which must have been previously loaded before the current modulefile will be loaded. Similarly, the conflict command lists modulefiles which conflict with the current modulefile. If a list contains more than one modulefile, then each member of the list acts as a Boolean OR operation. Multiple <code>prereq</code> and <code>conflict</code> commands may be used to create a Boolean AND operation. If one of the requirements have not been satisfied, an error is reported and the current modulefile makes no changes to the user&#8217;s environment.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>If an argument for <code>prereq</code> is a directory and any modulefile from the directory has been loaded, then the prerequisite is met. For example, specifying X11 as a <code>prereq</code> means that any version of X11, X11/R4 or X11/R5, must be loaded before proceeding.</p>
+</div>
+<div class="paragraph">
+<p>If an argument for <code>conflict</code> is a directory and any other modulefile from that directory has been loaded, then a conflict will occur. For example, specifying X11 as a conflict will stop X11/R4 and X11/R5 from being loaded at the same time.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>is-loaded modulefile&#8230;&#8203;</code></dt>
+<dd>
+<p>The <code>is-loaded</code> command returns a true value if any of the listed modulefiles has been loaded. If a list contains more than one modulefile, then each member acts as a boolean OR operation. If an argument for <code>is-loaded</code> is a directory and any modulefile from the directory has been loaded <code>is-loaded</code> would return a true value.</p>
+</dd>
+<dt class="hdlist1"><code>module [sub-command] [sub-command-args]</code></dt>
+<dd>
+<p>Contains the same sub-commands as described in the <code>module(1)</code> man page in the Module Sub-Commands section. This command permits a modulefile to load or unload other modulefiles. No checks are made to ensure that the modulefile does not try to load itself. Often it is useful to have a single modulefile that performs a number of module load commands. For example, if every user on the system requires a basic set of applications loaded, then a core modulefile would contain the necessary
+module load commands.</p>
+</dd>
+<dt class="hdlist1"><code>module-info mode [modetype]</code></dt>
+<dd>
+<p>Returns the current modulecmd&#8217;s mode as a string if no modetype is given.</p>
+<div class="paragraph">
+<p>Returns 1 if modulecmd&#8217;s mode is <code>modetype</code>. <code>modetype</code> can be: <code>load</code>, <code>unload</code>, <code>remove</code>, <code>switch</code>, <code>display</code>, <code>help</code>, <code>test</code> or <code>whatis</code>.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>module-info name</code></dt>
+<dd>
+<p>Return the name of the modulefile. This is not the full pathname for modulefile. See the Modules Variables section for information on the full pathname.</p>
+</dd>
+<dt class="hdlist1"><code>module-info specified</code></dt>
+<dd>
+<p>Return the name of the modulefile specified on the command line.</p>
+</dd>
+<dt class="hdlist1"><code>module-info shell [shellname]</code></dt>
+<dd>
+<p>Return the current shell under which modulecmd.tcl was invoked if no shellname is given. The current shell is the first parameter of modulecmd.tcl, which is normally hidden by the module alias.</p>
+<div class="paragraph">
+<p>If a shellname is given, returns 1 if modulecmd.tcl&#8217;s current shell is shellname, returns 0 elsewhere. shellname can be: sh, bash, ksh, zsh, csh, tcsh, fish, tcl, perl, python, ruby, lisp, cmake, r.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>module-info shelltype [shelltypename]</code></dt>
+<dd>
+<p>Return the family of the shell under which modulefile was invoked if no shelltypename is given. As of module-info shell this depends on the first parameter of modulecmd.tcl. The output reflects a shell type determining the shell syntax of the commands produced by modulecmd.tcl.</p>
+<div class="paragraph">
+<p>If a shelltypename is given, returns 1 if modulecmd.tcl&#8217;s current shell type is shelltypename, returns 0 elsewhere. shelltypename can be: sh, csh, fish, tcl, perl, python, ruby, lisp, cmake, r.</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>module-info alias name</code></dt>
+<dd>
+<p>Returns the full modulefile name to which the modulefile alias name is assigned</p>
+</dd>
+<dt class="hdlist1"><code>module-info version modulefile</code></dt>
+<dd>
+<p>Returns the physical module name and version of the passed symbolic version modulefile. The parameter modulefile might either be a full qualified modulefile with name and version, another symbolic modulefile name or a modulefile alias.</p>
+</dd>
+<dt class="hdlist1"><code>module-info symbols modulefile</code></dt>
+<dd>
+<p>Returns a list of all symbolic versions assigned to the passed modulefile. The parameter modulefile might either be a full qualified modulefile with name and version, another symbolic modulefile name or a modulefile alias.</p>
+</dd>
+<dt class="hdlist1"><code>module-version modulefile version-name&#8230;&#8203;</code></dt>
+<dd>
+<p>Assigns the symbolic version-name to the modulefile. This command should be placed in one of the modulecmd.tcl rc files in order to provide shorthand invocations of frequently used modulefile names.</p>
+<div class="paragraph">
+<p>The special version-name default specifies the default version to be used for module commands, if no specific version is given. This replaces the definitions made in the <code>.version</code> file in former modulecmd releases.</p>
+</div>
+<div class="paragraph">
+<p>The parameter <code>modulefile</code> may be either
+* a fully or partially qualified modulefile with name / version. If name is '.' then the current directory name is assumed to be the module name. (Use this for deep modulefile directories.)
+* a symbolic modulefile name
+* another modulefile alias</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>module-alias name modulefile</code></dt>
+<dd>
+<p>Assigns the modulefile to the alias name. This command should be placed in one of the modulecmd rc files in order to provide shorthand invocations of frequently used modulefile names.</p>
+<div class="paragraph">
+<p>The parameter modulefile may be either</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a fully qualified modulefile with name and version</p>
+</li>
+<li>
+<p>a symbolic modulefile name</p>
+</li>
+<li>
+<p>another modulefile alias</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1"><code>module-whatis string</code></dt>
+<dd>
+<p>Defines a string which is displayed in case of the invocation of the <code>module whatis</code> command. There may be more than one <code>module-whatis</code> line in a modulefile. This command takes no actions in case of <code>load</code>, <code>display</code>, etc. invocations of modulecmd.</p>
+<div class="paragraph">
+<p>The string parameter has to be enclosed in double-quotes if there&#8217;s more than one word specified. Words are defined to be separated by white-space characters (space, tab, cr).</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>module-url url</code></dt>
+<dd>
+<p>Sets an URL which is displayed in case of the invocation of the <code>module help</code> command. The URL should point to the home-page of the software loaded by the module if any.</p>
+</dd>
+<dt class="hdlist1"><code>module-license string</code></dt>
+<dd>
+<p>Defines a string which is displayed in case of the invocation of the <code>module help</code> command. The string should either be the name of a well known license (like GPL V2) or a filename with the license text installed in the module.</p>
+</dd>
+<dt class="hdlist1"><code>module-maintainer email</code></dt>
+<dd>
+<p>Defines a string which is displayed in case of the invocation of the <code>module help</code> command. The
+string should be the email address of the module maintainer.</p>
+</dd>
+<dt class="hdlist1"><code>module-addgroup group</code></dt>
+<dd>
+<p>Add the hierarchical group <code>group</code> to <code>MODULEPATH</code>.</p>
+</dd>
+<dt class="hdlist1"><code>set-alias alias-name alias-string</code></dt>
+<dd>
+<p>Sets an alias or function with the name <code>alias-name</code> in the user&#8217;s environment to the string <code>alias-string</code>. For some shells, aliases are not possible and the command has no effect. When a modulefile is unloaded, <code>set-alias</code> becomes <code>unset-alias</code>.</p>
+</dd>
+<dt class="hdlist1"><code>unset-alias alias-name</code></dt>
+<dd>
+<p>Unsets an alias with the name <code>alias-name</code> in the user&#8217;s environment.</p>
+</dd>
+<dt class="hdlist1"><code>system string</code></dt>
+<dd>
+<p>Pass string to the Tcl built-in command exec(n). For the exec(n) call modulecmd redirects stdout to stderr since stdout would be parsed by the evaluating shell. The exit status of the executed command is returned.</p>
+</dd>
+<dt class="hdlist1"><code>uname field</code></dt>
+<dd>
+<p>Provide lookup of system information. Most field information are retrieved from the tcl_platform array (see <code>tclvars(n)</code> man page). <code>Uname</code> will return the string "unknown" if information is unavailable for the field.</p>
+<div class="paragraph">
+<p><code>uname</code> will invoke <code>uname(1)</code> command in order to get the operating system version and <code>domainname(1)</code> to figure out the name of the domain.</p>
+</div>
+<div class="paragraph">
+<p>field values are:
+* <code>sysname</code>: the operating system name
+* <code>nodename</code>: the hostname
+* <code>domain</code>: the name of the domain
+* <code>release</code>: the operating system release
+* <code>version</code>: the operating system version
+* <code>machine</code>: a standard name that identifies the system&#8217;s hardware</p>
+</div>
+</dd>
+<dt class="hdlist1"><code>x-resource [resource-string|filename]</code></dt>
+<dd>
+<p>Merge resources into the X11 resource database. The resources are used to control look and behavior of X11 applications. The command will attempt to read resources from filename. If the argument isn&#8217;t a valid file name, then string will be interpreted as a resource. Either filename or <code>resource-string</code> is then passed down to be <code>xrdb(1)</code> command.</p>
+<div class="paragraph">
+<p>modulefiles that use this command, should in most cases contain one or more x-resource lines, each defining one X11 resource. The <code>DISPLAY</code> environment variable should be properly set and the X11 server should be accessible. If x-resource can&#8217;t manipulate the X11 resource database, the modulefile will exit with an error message.</p>
+</div>
+<div class="paragraph">
+<p>Examples:</p>
+</div>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>x-resource /u2/staff/leif/.xres/Ileaf</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The content of the Ileaf file is merged into the X11 resource database.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>x-resource [glob ~/.xres/ileaf]</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Tcl glob function is used to have the modulefile read different resource files for different users.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>x-resource {Ileaf.popup.saveUnder: True}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Merge the Ileaf resource into the X11 resource database.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modules_variables">Modules Variables</h5>
+<div class="paragraph">
+<p>The <code>ModulesCurrentModulefile</code> variable contains the full pathname of the modulefile being interpreted.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_locating_modulefiles">Locating Modulefiles</h5>
+<div class="paragraph">
+<p>Every directory in <code>MODULEPATH</code> is searched to find the modulefile. A directory in <code>MODULEPATH</code> can have an arbitrary number of sub-directories. If the user names a modulefile to be loaded which is actually a directory, the directory is opened and a search begins for an actual modulefile. First, modulecmd looks for a file with the name <code>.modulerc</code> in the directory. If this file exists, its contents will be evaluated as if it was a modulefile to be loaded. You may place <code>module-version</code> and <code>module-alias</code> commands inside this file.</p>
+</div>
+<div class="paragraph">
+<p>Additionally, before seeking for <code>.modulerc</code> files in the module directory, the global <code>modulerc</code> file is sourced, too. If a named version default now exists for the modulefile to be loaded, the assigned modulefile now will be sourced. Otherwise the file <code>.version</code> is looked up in the directory.</p>
+</div>
+<div class="paragraph">
+<p>If the <code>.version</code> file exists, it is opened and interpreted as Tcl code and takes precedence over a <code>.modulerc</code> file in the same directory. If the Tcl variable <code>ModulesVersion</code> is set by the <code>.version</code> file, modulecmd will use the name as if it specifies a modulefile in the directory. This will become the default modulefile in this case.</p>
+</div>
+<div class="paragraph">
+<p>If <code>ModulesVersion</code> is a directory, the search begins anew down that directory. If the name does not match any files located in the current directory, the search continues through the remaining directories in <code>MODULEPATH</code>.</p>
+</div>
+<div class="paragraph">
+<p>Every <code>.version</code> and <code>.modulerc</code> file found is Tcl interpreted. The difference is that <code>.version</code> only applies to the current directory, and the <code>.modulerc</code> applies to the current directory and all subdirectories. Changes made in these files will affect the subsequently interpreted modulefile.</p>
+</div>
+<div class="paragraph">
+<p>If no default version may be figured out, then the highest numerically sorted modulefile or module alias under the directory will be used. The dictionary comparison method of the <code>lsort(n)</code> Tcl command is used to achieve this sort. If highest numerically sorted element is an alias, search continues on its modulefile target.</p>
+</div>
+<div class="paragraph">
+<p>For example, it is possible for a user to have a directory named X11 which simply contains a <code>.version</code> file specifying which version of X11 is to be loaded. Such a file would look like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>#%Module1.0
+##
+##  The desired version of X11
+##
+set ModulesVersion "R4"</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The equivalent .modulerc would look like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>#%Module1.0
+##
+##  The desired version of X11
+##
+module-version "./R4" default</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If user names a modulefile that cannot be found in the first modulepath directory, modulefile will be searched in next modulepath directory and so on until a matching modulefile is found. If search goes through a module alias or a symbolic version, this alias or symbol is resolved by first looking at the modulefiles in the modulepath where this alias or symbol is defined. If not found, resolution looks at the other modulepaths in their definition order.</p>
+</div>
+<div class="paragraph">
+<p>When locating modulefiles, if a <code>.modulerc</code>, a <code>.version</code>, a directory or a modulefile cannot be read during the search it is simply ignored with no error message produced. Visibility of modulefiles can thus be adapted to the rights the user has been granted. Exception is made when trying to directly access a directory or a modulefile. In this case, the access issue is returned as an error message.</p>
+</div>
+<div class="paragraph">
+<p>A modulefile whose name or element in its name starts with a '.' dot is considered hidden. Hidden modulefile is not displayed or taken into account except if it is explicitly named. By inheritance, a symbolic version-name assigned to a hidden modulefile is displayed or taken into account only if explicitly named. Module alias targeting a hidden modulefile appears like any other module alias.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modulefile_specific_help">Modulefile Specific Help</h5>
+<div class="paragraph">
+<p>Users can request help about a specific modulefile through the <code>module(1)</code> command. The modulefile can print helpful information or start help oriented programs by defining a ModulesHelp subroutine. The subroutine will be called when the module help modulefile command is used.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modulefile_specific_test">Modulefile Specific Test</h5>
+<div class="paragraph">
+<p>Users can request test of a specific modulefile through the <code>module(1)</code> command. The modulefile can perform some sanity checks on its definition or on its underlying programs by defining a ModulesTest subroutine. The subroutine will be called when the module test modulefile command is used. The subroutine should return 1 in case of success. If no or any other value is returned, test is considered failed.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_modulefile_display">Modulefile Display</h5>
+<div class="paragraph">
+<p>The <code>module display</code> modulefile command will detail all changes that will be made to the environment. After displaying all of the environment changes modulecmd.tcl will call the <code>ModulesDisplay</code> subroutine. The <code>ModulesDisplay</code> subroutine is a good place to put additional descriptive information about the modulefile.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_environment">ENVIRONMENT</h4>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>MODULEPATH</code></dt>
+<dd>
+<p>Path of directories containing modulefiles.</p>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_see_also">SEE ALSO</h4>
+<div class="paragraph">
+<p><code>module(1)</code>, <code>Tcl(n)</code>, <code>TclX(n)</code>, <code>xrdb(1)</code>, <code>exec(n)</code>, <code>uname(1)</code>, <code>domainname(1)</code>, <code>tclvars(n)</code>, <code>lsort(n)</code></p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_notes">NOTES</h4>
+<div class="paragraph">
+<p>Tcl was developed by John Ousterhout at the University of California at Berkeley.</p>
+</div>
+<div class="paragraph">
+<p>TclX was developed by Karl Lehenbauer and Mark Diekhans.</p>
+</div>
+<div class="paragraph">
+<p>Modules is covered by the GNU General Public License, version 2 and the GNU Lesser General Public License, version 2.1. Copyright © 1996-1999 John L. Furlani &amp; Peter W. Osel, © 1998-2017 R.K.Owen, © 2002-2004 Mark Lakata, © 2004-2017 Kent Mein, © 2016-2017 Xavier Delaruelle. All rights reserved. Trademarks used are the property of their respective owners.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_runtime_configuration_files">Runtime configuration files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Table of Contents</strong><br>
+Pmodules 1.0 configuration file <a href="#release-file"><code>.release-<strong><em>version</em></strong></code></a><br>
+Pmodules 1.1 and newer configuration file <a href="#config-file"><code>.config-<strong><em>version</em></strong></code></a><br></p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The runtime configuration files are evaluated only for modules inside
+the Pmodules hierarchy. If you use <code>modbuild</code> these files are created
+automatically. Otherwise you have to create them by hand.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="release-file">Pmodules 1.0: <code>.release-<strong><em>version</em></strong></code></h3>
+<div class="paragraph">
+<p>In <code>.release-<strong><em>version</em></strong></code> the release stage of a module is
+defined. The file must be in the same directory as the modulefile. The
+content is a single line defining the release stage. Allowed text is</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>unstable</code></p>
+</li>
+<li>
+<p><code>stable</code></p>
+</li>
+<li>
+<p><code>deprecated</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If the file doesn&#8217;t exist and the module is inside the Pmodule
+hierarchy <code>unstable</code>. All modules outside the Pmodules hierarchy are
+considered as <code>stable</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This configuration file is deprecated in version 1.1 and newer. Please
+see next section.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="config-file">Pmodules 1.1 and newer: <code>.config-<strong><em>version</em></strong></code></h3>
+<div class="paragraph">
+<p>In <code>.config-<strong><em>version</em></strong></code> the following properties of a module can be
+configured:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>the release stage</p>
+</li>
+<li>
+<p>the systems on which a module is available</p>
+</li>
+<li>
+<p>the systems on which a module is unavailable</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The format of the file is YAML.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>relstage</code></dt>
+<dd>
+<p>The release stage of the module. Allowed values are
+<code>unstable</code>, <code>stable</code> and <code>deprecated</code>.</p>
+</dd>
+<dt class="hdlist1"><code>systems</code></dt>
+<dd>
+<p>Sequence of systems on which the module is available. Systems
+can be hostnames with shell style glob pattern or OS names like
+(<code>rhel7</code>, <code>rhel8</code>).</p>
+</dd>
+<dt class="hdlist1"><code>blocklist</code></dt>
+<dd>
+<p>Sequence of systems on which the module is no
+available. Systems can be hostnames with shell style glob patterns or
+OS names.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>relstage: unstable
+systems: [merlin-*, ra-*]
+blocklist: []</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+</div>
+</div>
+</body>
+</html>

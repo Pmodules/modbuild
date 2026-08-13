@@ -1,0 +1,60 @@
+[id="module-display",reftext="`module display`"]
+:sectnums:
+= Display information about a module
+:sectnums!:
+== NAME
+
+`module display\|show` - display information about chances in environment 
+
+== SYNOPSIS
+
+`module display modulefile...` +
+`module show modulefile...`
+
+== DESCRIPTION
+
+Display information about modulefile(s). The display sub-command will list the full path of the modulefile(s) and all of the environment changes the modulefile(s) will make if loaded. (It will not display any environment changes found within conditional statements.)
+
+== EXAMPLES
+
+Display chances the module `gcc/5.4.0` will make to the environment if loaded:
+```sh
+$ module display gcc/5.4.0
+-------------------------------------------------------------------
+/opt/psi/Programming/modulefiles/gcc/5.4.0:
+
+module-whatis	 GNU Compiler Collection 
+conflict	 gcc 
+setenv		 GCC_VERSION 5.4.0 
+setenv		 GCC_PREFIX /opt/psi/Programming/gcc/5.4.0 
+setenv		 GCC_DIR /opt/psi/Programming/gcc/5.4.0 
+setenv		 GCC_HOME /opt/psi/Programming/gcc/5.4.0 
+prepend-path	 PATH /opt/psi/Programming/gcc/5.4.0/bin 
+prepend-path	 MANPATH /opt/psi/Programming/gcc/5.4.0/share/man 
+prepend-path	 C_INCLUDE_PATH /opt/psi/Programming/gcc/5.4.0/include 
+prepend-path	 CPLUS_INCLUDE_PATH /opt/psi/Programming/gcc/5.4.0/include 
+setenv		 GCC_INCLUDE_DIR /opt/psi/Programming/gcc/5.4.0/include 
+prepend-path	 LIBRARY_PATH /opt/psi/Programming/gcc/5.4.0/lib 
+prepend-path	 LD_LIBRARY_PATH /opt/psi/Programming/gcc/5.4.0/lib 
+setenv		 GCC_LIBRARY_DIR /opt/psi/Programming/gcc/5.4.0/lib 
+prepend-path	 LIBRARY_PATH /opt/psi/Programming/gcc/5.4.0/lib64 
+prepend-path	 LD_LIBRARY_PATH /opt/psi/Programming/gcc/5.4.0/lib64 
+setenv		 GCC_LIBRARY_DIR /opt/psi/Programming/gcc/5.4.0/lib64 
+append-path	 PMODULES_LOADED_PROGRAMMING gcc/5.4.0 
+remove-path	 PMODULES_LOADED_PROGRAMMING --APPMARKER-- 
+setenv		 COMPILER gcc 
+setenv		 COMPILER_VERSION 5.4.0 
+setenv		 CC /opt/psi/Programming/gcc/5.4.0/bin/gcc 
+setenv		 CXX /opt/psi/Programming/gcc/5.4.0/bin/g++ 
+setenv		 F77 /opt/psi/Programming/gcc/5.4.0/bin/gfortran 
+setenv		 F90 /opt/psi/Programming/gcc/5.4.0/bin/gfortran 
+setenv		 FC /opt/psi/Programming/gcc/5.4.0/bin/gfortran 
+setenv		 FORTRAN /opt/psi/Programming/gcc/5.4.0/bin/gfortran 
+-------------------------------------------------------------------
+```
+
+== SEE ALSO
+
+<<module-help>>
+
+:sectnums:

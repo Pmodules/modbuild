@@ -1,0 +1,43 @@
+[id="pb_prep", reftext="`pbuild::prep`"]
+= Download and unpack: `pbuild::prep`
+
+== Synopsis
+[source,sh]
+----
+pbuild::pre_prep
+pbuild::prep
+pbuild::post_prep
+----
+
+== Description
+
+Functions to prepare the sources. This includes 
+
+* downloading required files a verifying the checksums
+* unpacking
+* applying patches
+
+Before the prep-functions are called, the build-system changes to the source 
+directory (`${SRC_DIR}`).
+
+In the most uses cases the default function `pbuild::prep` provided by
+the build-system can be used and nothing must be implemented in the
+build-script. In some rare cases pre- or post-hooks are required to
+make the default function feasible. One use case with autotools for a post-hook is to create the `configure` scripts, if only `configure.ac` is shipped with the software.
+
+The default hooks provided by the build system are only stubs and do
+nothing.
+
+If the default function cannot be used, it must be implemented in the build-script. 
+
+== Example
+
+The source distribution of the IOAPI library contains object files! These files must be removed after unpacking:
+
+[source,sh]
+----
+pbuild::post_prep() {
+        find "${SRC_DIR}" -name "*.mod" -exec rm {} \;
+        find "${SRC_DIR}" -name "*.o" -exec rm {} \;
+}
+----

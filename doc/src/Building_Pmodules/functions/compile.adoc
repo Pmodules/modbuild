@@ -1,0 +1,37 @@
+[id="pb_compile", reftext="`pbuild::compile`"]
+= Compile software: `pbuild::compile`
+
+== Synopsis
+[source,sh]
+----
+pbuild::pre_compile
+pbuild::compile
+pbuild::post_compile
+----
+
+== Description
+
+Compile the software.
+
+Before these functions are called, the build-system changes to the 
+build directory (`${BUILD_DIR}`).
+
+In the most uses cases the default function `pbuild::compile` provided by
+the build-system can be used and nothing must be implemented in the
+build-script. The pre- and post-hooks might be useful in cases where 
+
+* to run other make targets than `all`
+* multiple packages must be compiled into one module 
+* to compile a dependency required by the main package.
+
+If the default function cannot be used, the `pbuild::compile`
+function must be implemented in the build-script.
+
+== Example
+Excerpt from perl build-script
+[source,sh]
+----
+pbuild::post_compile() {
+        make test
+}
+----

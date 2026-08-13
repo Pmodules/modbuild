@@ -1,0 +1,933 @@
+.Example of a verbose output, click to expand
+[%collapsible]
+----
+pmod7:~/HelloWorld$ ./build 1.0.0 --verbose
+/opt/psi/Tools/Pmodules/1.1.17/bin/modbuild ./build 1.0.0 --verbose
+opt_verbose='yes'
+set -x
+++ echo shift
+shift
++ shift
+++ echo '(( $# > 0 ))'
+(( $# > 0 ))
++ ((  0 > 0  ))
+++ echo '(( ${#versions[@]} > 0))'
+(( ${#versions[@]} > 0))
++ ((  1 > 0 ))
+++ echo 'opt_system="${opt_system:-$(std::get_os_release)}"'
+opt_system="${opt_system:-$(std::get_os_release)}"
+++ std::get_os_release
+++ local -A func_map
+++ func_map['Linux']=std.get_os_release_linux
+++ func_map['Darwin']=std.get_os_release_macos
++++ uname -s
+++ std.get_os_release_linux
+++ local ID=
+++ local VERSION_ID=
++++ which lsb_release
+++ [[ -n /usr/bin/lsb_release ]]
++++ lsb_release -is
+++ ID=Springdale
++++ lsb_release -rs
+++ VERSION_ID=7.9
+++ case "${ID,,}" in
+++ echo rhel7
++ opt_system=rhel7
+++ echo '[[ ${opt_yaml,,} != '\''yes'\'' ]]'
+[[ ${opt_yaml,,} != 'yes' ]]
++ [[ yes != \y\e\s ]]
+++ echo 'yaml_config_file="${opt_config_file:-${BUILDBLOCK_DIR}/files/config.yaml}"'
+yaml_config_file="${opt_config_file:-${BUILDBLOCK_DIR}/files/config.yaml}"
++ yaml_config_file=/afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
+++ echo '[[ -r "${yaml_config_file}" ]]'
+[[ -r "${yaml_config_file}" ]]
++ [[ -r /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml ]]
+++ echo 'std::info "Using YAML configuration file - ${yaml_config_file}"'
+std::info "Using YAML configuration file - ${yaml_config_file}"
++ std::info 'Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml'
++ std::log 2 'Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml'
++ local -ri fd=2
++ local -r 'fmt=Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml'
++ shift 2
++ printf -- 'Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml'
+Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml+ printf -- '\n'
+
+++ echo '[[ "${opt_debug,,}" == '\''no'\'' ]]'
+[[ "${opt_debug,,}" == 'no' ]]
++ [[ no == \n\o ]]
+++ echo 'pbuild.jobs "${opt_jobs}"'
+pbuild.jobs "${opt_jobs}"
++ pbuild.jobs 0
++ ((  0 == 0  ))
+++ _get_num_cores
+++ case "${OS}" in
+++ /usr/bin/grep -c '^processor' /proc/cpuinfo
++ JOBS=4
++ ((  JOBS > 10  ))
++ :
+++ echo 'pbuild.force_rebuild "${opt_force_rebuild}"'
+pbuild.force_rebuild "${opt_force_rebuild}"
++ pbuild.force_rebuild no
++ force_rebuild=no
+++ echo 'pbuild.build_target "${opt_build_target}"'
+pbuild.build_target "${opt_build_target}"
++ pbuild.build_target all
++ build_target=all
+++ echo 'pbuild.dry_run "${opt_dry_run}"'
+pbuild.dry_run "${opt_dry_run}"
++ pbuild.dry_run no
++ dry_run=no
+++ echo 'pbuild.enable_cleanup_build "${opt_enable_cleanup_build}"'
+pbuild.enable_cleanup_build "${opt_enable_cleanup_build}"
++ pbuild.enable_cleanup_build yes
++ enable_cleanup_build=yes
+++ echo 'pbuild.enable_cleanup_src "${opt_enable_cleanup_src}"'
+pbuild.enable_cleanup_src "${opt_enable_cleanup_src}"
++ pbuild.enable_cleanup_src yes
++ enable_cleanup_src=yes
+++ echo 'pbuild.update_modulefiles "${opt_update_modulefiles}"'
+pbuild.update_modulefiles "${opt_update_modulefiles}"
++ pbuild.update_modulefiles no
++ opt_update_modulefiles=no
+++ echo 'pbuild.system "${opt_system}"'
+pbuild.system "${opt_system}"
++ pbuild.system rhel7
++ system=rhel7
+++ echo 'pbuild.verbose "${opt_verbose}"'
+pbuild.verbose "${opt_verbose}"
++ pbuild.verbose yes
++ verbose=yes
+++ echo pm::read_config
+pm::read_config
++ pm::read_config
++ config_files=()
++ local -a config_files
++ _get_config_files config_files
++ local -n fnames=config_files
++ [[ -v PMODULES_OVERLAYS_DEF ]]
++ [[ -r /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml ]]
++ fnames+=("${HOME}/.Pmodules/Pmodules.yaml")
++ test -r /opt/psi/config/Pmodules.yaml
++ fnames+=("${PMODULES_HOME%%/Tools*}/config/Pmodules.yaml")
+++ std::parse_yaml /opt/psi/config/Pmodules.yaml cfg_
+++ local -r fname=/opt/psi/config/Pmodules.yaml
+++ local -r prefix=cfg_
++++ echo @
++++ tr @ '\034'
+++ local 's=[[:space:]]*' 'w=[a-zA-Z0-9_]*' $'fs=\034'
+++ sed -ne 's|^\([[:space:]]*\)\([a-zA-Z0-9_]*\)[[:space:]]*:[[:space:]]*"\(.*\)"[[:space:]]*$|\1\2\3|p' -e 's|^\([[:space:]]*\)\([a-zA-Z0-9_]*\)[[:space:]]*:[[:space:]]*\(.*\)[[:space:]]*$|\1\2\3|p' /opt/psi/config/Pmodules.yaml
+++ awk $'-F\034' '{
+		      indent = length($1)/2;	
+		      vname[indent] = $2;	
+		      for (i in vname) {
+                          if (i > indent) {delete vname[i]}
+                      }
+		      if (length($3) > 0) {
+		          vn="";
+                          for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+		          printf("%s%s%s=\"%s\"\n", "cfg_",vn, $2, $3);
+	              }
+                }'
++ eval 'cfg_DefaultGroups="Tools:Programming"' 'cfg_DefaultReleaseStages="stable"' 'cfg_ReleaseStages="unstable:stable:deprecated"' 'cfg_TmpDir="/opt/psi/var/tmp/${USER}"' 'cfg_DistfilesDir="/opt/psi/var/distfiles"' 'cfg_Overlays_base_install_root="/opt/psi"'
+++ cfg_DefaultGroups=Tools:Programming
+++ cfg_DefaultReleaseStages=stable
+++ cfg_ReleaseStages=unstable:stable:deprecated
+++ cfg_TmpDir=/opt/psi/var/tmp/gsell
+++ cfg_DistfilesDir=/opt/psi/var/distfiles
+++ cfg_Overlays_base_install_root=/opt/psi
++ [[ -v cfg_DefaultGroups ]]
++ DefaultGroups=Tools:Programming
++ [[ -v cfg_DefaultReleaseStages ]]
++ DefaultReleaseStages=stable
++ [[ -v cfg_ReleaseStages ]]
++ ReleaseStages=unstable:stable:deprecated
++ [[ -v cfg_SysCollectionsDir ]]
++ unset cfg_DefaultGroups cfg_DefaultReleaseStages cfg_DistfilesDir cfg_Overlays_base_install_root cfg_ReleaseStages cfg_TmpDir
++ Overlays=($(_get_ol_names config_files))
+++ _get_ol_names config_files
+++ local -n fnames=config_files
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays|keys()' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ awk '{print $2}'
++ local ol=
++ local install_root=
++ local modulefiles_root=
++ local type=
++ excludes=()
++ local excludes
++ for ol in "${Overlays[@]}"
+++ _get_install_root config_files devel
+++ local -n fnames=config_files
+++ local -- _ol=devel
+++ local -- _tmp
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.devel.install_root' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ _tmp=/opt/psi
+++ echo /opt/psi
+++ envsubst
++ install_root=/opt/psi
+++ envsubst
++ install_root=/opt/psi
++ [[ -d /opt/psi ]]
++ OverlayInfo[${ol}:inst_root]=/opt/psi
+++ _get_modulefiles_root config_files devel
+++ local -n fnames=config_files
+++ local -- _ol=devel
+++ local -- _tmp
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.devel.modulefiles_root' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ _tmp='$HOME/Pmodules/devel'
+++ echo '$HOME/Pmodules/devel'
+++ envsubst
++ modulefiles_root=/afs/psi.ch/user/g/gsell/Pmodules/devel
++ [[ -d /afs/psi.ch/user/g/gsell/Pmodules/devel ]]
++ OverlayInfo[${ol}:mod_root]=/afs/psi.ch/user/g/gsell/Pmodules/devel
++ Dir2OverlayMap[${modulefiles_root}]=devel
+++ _get_type config_files devel
+++ local -n fnames=config_files
+++ local -- _ol=devel
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.devel.type' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
++ type=null
++ type=n
++ case ${type} in
++ :
++ OverlayInfo[${ol}:type]=n
+++ _get_excludes config_files devel
+++ local -n fnames=config_files
+++ local -- _ol=devel
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.devel.excludes[]' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
++ excludes=
++ excludes=()
+++ _join_array :
+++ local IFS=:
+++ shift
+++ echo -n ''
++ OverlayInfo[${ol}:excludes]=
++ OverlayInfo[${ol}:used]=no
++ for ol in "${Overlays[@]}"
+++ _get_install_root config_files oneAPI
+++ local -n fnames=config_files
+++ local -- _ol=oneAPI
+++ local -- _tmp
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.oneAPI.install_root' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ _tmp=/opt/psi/oneAPI
+++ echo /opt/psi/oneAPI
+++ envsubst
++ install_root=/opt/psi/oneAPI
+++ envsubst
++ install_root=/opt/psi/oneAPI
++ [[ -d /opt/psi/oneAPI ]]
++ OverlayInfo[${ol}:inst_root]=/opt/psi/oneAPI
+++ _get_modulefiles_root config_files oneAPI
+++ local -n fnames=config_files
+++ local -- _ol=oneAPI
+++ local -- _tmp
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.oneAPI.modulefiles_root' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ _tmp=/opt/psi/oneAPI
+++ echo /opt/psi/oneAPI
+++ envsubst
++ modulefiles_root=/opt/psi/oneAPI
++ [[ -d /opt/psi/oneAPI ]]
++ OverlayInfo[${ol}:mod_root]=/opt/psi/oneAPI
++ Dir2OverlayMap[${modulefiles_root}]=oneAPI
+++ _get_type config_files oneAPI
+++ local -n fnames=config_files
+++ local -- _ol=oneAPI
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.oneAPI.type' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
++ type=null
++ type=n
++ case ${type} in
++ :
++ OverlayInfo[${ol}:type]=n
+++ _get_excludes config_files oneAPI
+++ local -n fnames=config_files
+++ local -- _ol=oneAPI
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.oneAPI.excludes[]' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
++ excludes='intel
+intelcc'
+++ _join_array : 'intel
+intelcc'
+++ local IFS=:
+++ shift
+++ echo -n 'intel
+intelcc'
++ OverlayInfo[${ol}:excludes]='intel
+intelcc'
++ OverlayInfo[${ol}:used]=no
++ for ol in "${Overlays[@]}"
+++ _get_install_root config_files base
+++ local -n fnames=config_files
+++ local -- _ol=base
+++ local -- _tmp
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.base.install_root' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ _tmp=/opt/psi
+++ echo /opt/psi
+++ envsubst
++ install_root=/opt/psi
+++ envsubst
++ install_root=/opt/psi
++ [[ -d /opt/psi ]]
++ OverlayInfo[${ol}:inst_root]=/opt/psi
+++ _get_modulefiles_root config_files base
+++ local -n fnames=config_files
+++ local -- _ol=base
+++ local -- _tmp
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.base.modulefiles_root' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
+++ _tmp=null
+++ return 1
++ modulefiles_root=
++ modulefiles_root=/opt/psi
++ [[ -d /opt/psi ]]
++ OverlayInfo[${ol}:mod_root]=/opt/psi
++ Dir2OverlayMap[${modulefiles_root}]=base
+++ _get_type config_files base
+++ local -n fnames=config_files
+++ local -- _ol=base
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.base.type' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
++ type=null
++ type=n
++ case ${type} in
++ :
++ OverlayInfo[${ol}:type]=n
+++ _get_excludes config_files base
+++ local -n fnames=config_files
+++ local -- _ol=base
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne eval-all '. as $item ireduce ({}; . *+ $item) |.Overlays.base.excludes[]' /afs/psi.ch/user/g/gsell/.Pmodules/Pmodules.yaml /opt/psi/config/Pmodules.yaml
++ excludes=
++ excludes=()
+++ _join_array :
+++ local IFS=:
+++ shift
+++ echo -n ''
++ OverlayInfo[${ol}:excludes]=
++ OverlayInfo[${ol}:used]=no
+++ echo ': ${PMODULES_DISTFILESDIR:="${PMODULES_HOME%%/Tools*}/var/distfiles"}'
+: ${PMODULES_DISTFILESDIR:="${PMODULES_HOME%%/Tools*}/var/distfiles"}
++ : /opt/psi/var/distfiles
+++ echo ': ${PMODULES_TMPDIR:=/var/tmp/${USER}}'
+: ${PMODULES_TMPDIR:=/var/tmp/${USER}}
++ : /var/tmp/gsell
+++ echo 'export PMODULES_DISTFILESDIR PMODULES_TMPDIR'
+export PMODULES_DISTFILESDIR PMODULES_TMPDIR
++ export PMODULES_DISTFILESDIR PMODULES_TMPDIR
+++ echo 'declare -r BUILD_SCRIPT'
+declare -r BUILD_SCRIPT
++ declare -r BUILD_SCRIPT
+++ echo 'declare -r BUILDBLOCK_DIR'
+declare -r BUILDBLOCK_DIR
++ declare -r BUILDBLOCK_DIR
+++ echo '[[ -z ${module_name} ]]'
+[[ -z ${module_name} ]]
++ [[ -z '' ]]
+++ echo 'IFS=/ read -r -a fname <<< "${BUILD_SCRIPT:1}"'
+IFS=/ read -r -a fname <<< "${BUILD_SCRIPT:1}"
++ IFS=/
++ read -r -a fname
+++ echo 'module_name=${fname[${#fname[@]}-2]}'
+module_name=${fname[${#fname[@]}-2]}
++ module_name=HelloWorld
++ for version in "${versions[@]}"
+++ echo 'for version in "${versions[@]}"'
+for version in "${versions[@]}"
+++ echo 'build_modules "${module_name}" "${version}" "${opt_with_modules[@]}"'
+build_modules "${module_name}" "${version}" "${opt_with_modules[@]}"
++ build_modules HelloWorld 1.0.0
++ [[ yes == \y\e\s ]]
++ build_modules_yaml HelloWorld 1.0.0
++ local -- name=HelloWorld
++ local -- version=1.0.0
++ shift 2
++ with_modules=()
++ local -a with_modules
+++ get_yaml_file_fmt /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
+++ : '
+	Get format version of configuration file. Print the version number
+	to stdout if it is valid.
+	'
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -e . /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
+++ local -- fmt=
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -e .format /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
+++ fmt=1
+++ case "${fmt}" in
+++ :
+++ echo 1
++ local -- file_fmt=1
++ local -- yaml_mod_config=
+++ read_yaml_config_file /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml HelloWorld
+++ : '
+  	Test whether the configuration file '\''/afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml'\'' provides configurations
+	for the module '\''HelloWorld'\''. If yes, the YAML block with the configuration
+	is printed to stdout.
+	'
+++ local -- file_name=/afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
+++ local -- module_name=HelloWorld
+++ local -- yaml=
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne e .HelloWorld /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
+++ yaml='defaults:
+  group: Sandbox
+  relstage: stable
+versions:
+  1.0.0:'
+++ echo 'defaults:
+  group: Sandbox
+  relstage: stable
+versions:
+  1.0.0:'
++ yaml_mod_config='defaults:
+  group: Sandbox
+  relstage: stable
+versions:
+  1.0.0:'
++ case "${file_fmt}" in
++ build_modules_yaml_v1 'defaults:
+  group: Sandbox
+  relstage: stable
+versions:
+  1.0.0:' HelloWorld 1.0.0
++ : '
+	
+	'
++ local -- 'yaml_mod_config=defaults:
+  group: Sandbox
+  relstage: stable
+versions:
+  1.0.0:'
++ local -- name=HelloWorld
++ local -- version=1.0.0
++ shift 3
++ with_modules=()
++ local -a with_modules
++ used_keys=()
++ local -A used_keys
++ local -- yaml_input=
++ default_config=()
++ local -A default_config
++ local -- version_key=
++ version_keys=()
++ local -a version_keys
++ shasums=()
++ local -A shasums
++ check_yaml_keys Yaml_valid_keys_for_module used_keys
++ local -n valid_yaml_keys=Yaml_valid_keys_for_module
++ local -n used_yaml_keys=used_keys
++ used_yaml_keys=()
++ local -- key=
++ keys=()
++ local -a keys
++ keys=($(${yq} '.|keys().[]' 2> /dev/null))
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq '.|keys().[]'
++ debug 'top-level keys: defaults' versions
++ :
++ for key in "${keys[@]}"
++ [[ -v valid_yaml_keys[defaults] ]]
++ used_yaml_keys[${key}]=1
++ for key in "${keys[@]}"
++ [[ -v valid_yaml_keys[versions] ]]
++ used_yaml_keys[${key}]=1
++ [[ -v used_keys[versions] ]]
++ [[ -v used_keys[defaults] ]]
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq .defaults
++ yaml_input='group: Sandbox
+relstage: stable'
++ get_config 'group: Sandbox
+relstage: stable' default_config Yaml_default_config
++ local -- 'yaml_input=group: Sandbox
+relstage: stable'
++ local -n cfg=default_config
++ local -n dfl=Yaml_default_config
++ local -- key
++ local -- value
++ for key in "${!dfl[@]}"
++ cfg[${key}]=Tools
++ for key in "${!dfl[@]}"
++ cfg[${key}]=build
++ for key in "${!dfl[@]}"
++ cfg[${key}]=auto
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=base
++ for key in "${!dfl[@]}"
++ cfg[${key}]=unstable
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=no
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ [[ -z group: Sandbox
+relstage: stable ]]
++ keys=()
++ local -a keys
++ keys=($(${yq} -e ".|keys().[]" <<< "${yaml_input}" 2> /dev/null))
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -e '.|keys().[]'
++ debug 'config keys: group' relstage
++ :
++ local -- type
++ for key in "${keys[@]}"
++ [[ -v dfl[group] ]]
++ case ${key} in
++ get_value 'group: Sandbox
+relstage: stable' value group '!!str'
++ local -- 'yaml_input=group: Sandbox
+relstage: stable'
++ local -n val=value
++ local -- key=group
++ local -- 'expected_type=!!str'
++ local -- type=
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq '.group | type'
++ type='!!str'
++ [[ !!str != \!\!\s\t\r ]]
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -e .group
++ val=Sandbox
++ cfg[${key,,}]=Sandbox
++ for key in "${keys[@]}"
++ [[ -v dfl[relstage] ]]
++ case ${key} in
++ get_value 'group: Sandbox
+relstage: stable' value relstage '!!str'
++ local -- 'yaml_input=group: Sandbox
+relstage: stable'
++ local -n val=value
++ local -- key=relstage
++ local -- 'expected_type=!!str'
++ local -- type=
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq '.relstage | type'
++ type='!!str'
++ [[ !!str != \!\!\s\t\r ]]
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -e .relstage
++ val=stable
++ case ${value,,} in
++ cfg[${key,,}]=stable
++ [[ -v used_keys[shasums] ]]
++ get_matching_version_keys version_keys 1.0.0
++ : '
+		return list of version keys in refvar version_keys matching version specified in 1.0.0.
+	      	'
++ local -n refvar=version_keys
++ local version=1.0.0
++ keys=()
++ local -a keys
++ keys=($(${yq} -e '.versions|keys().[]' 2> /dev/null))
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -e '.versions|keys().[]'
++ refvar=()
++ for key in "${keys[@]}"
++ l=()
++ for k in ${key//;/ }
++ list=()
++ local list
++ eval 'list=(1.0.0)'
+++ list=(1.0.0)
++ [[ 1.0.0 =~ 1.0.0 ]]
++ refvar+=("${key}")
++ break
++ ((  1 == 0  ))
++ return 0
++ for version_key in "${version_keys[@]}"
+++ get_yaml_vk_config 1.0.0
+++ : '
+		Get configuration for version key 1.0.0.
+
+		Please note: this can be the empty string.
+		'
+++ local -- key=1.0.0
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq '.versions."1.0.0"'
+++ result=
+++ echo ''
++ local yaml_vk_config=
++ used_keys=()
++ check_yaml_keys Yaml_valid_vk_keys used_keys
++ local -n valid_yaml_keys=Yaml_valid_vk_keys
++ local -n used_yaml_keys=used_keys
++ used_yaml_keys=()
++ local -- key=
++ keys=()
++ local -a keys
++ keys=($(${yq} '.|keys().[]' 2> /dev/null))
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq '.|keys().[]'
++ debug 'top-level keys: '
++ :
++ vk_config=()
++ local -A vk_config
++ yaml_input=
++ [[ -v used_keys[config] ]]
++ get_config '' vk_config default_config
++ local -- yaml_input=
++ local -n cfg=vk_config
++ local -n dfl=default_config
++ local -- key
++ local -- value
++ for key in "${!dfl[@]}"
++ cfg[${key}]=Sandbox
++ for key in "${!dfl[@]}"
++ cfg[${key}]=build
++ for key in "${!dfl[@]}"
++ cfg[${key}]=auto
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=base
++ for key in "${!dfl[@]}"
++ cfg[${key}]=stable
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=no
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ for key in "${!dfl[@]}"
++ cfg[${key}]=
++ [[ -z '' ]]
++ return 0
+++ get_variants
+++ local yaml
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq .variants
+++ yaml=null
+++ echo null
++ local -- yaml_variants=null
+++ get_num_variants
++++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq '.|length'
+++ local -i n=0
+++ echo 0
++ local -i num_variants=0
++ versions=()
++ local versions
++ expand_version_key versions 1.0.0 1.0.0
++ local -n ev_result=versions
++ local -- key=1.0.0
++ local -- version=1.0.0
++ ev_result=()
++ for k in ${key//;/ }
++ local l
++ list=()
++ local list
++ eval 'list=(1.0.0)'
+++ list=(1.0.0)
++ for l in "${list[@]}"
++ [[ 1.0.0 =~ 1.0.0 ]]
++ ev_result+=("${l}")
++ local v=
++ for v in "${versions[@]}"
++ debug 'version: 1.0.0'
++ :
++ ((  num_variants == 0  ))
++ build_modules_variant HelloWorld 1.0.0 vk_config
++ local -- module_name=HelloWorld
++ local -- module_version=1.0.0
++ local -n module_config=vk_config
++ P=HelloWorld
++ parse_version 1.0.0
++ local v=1.0.0
++ V=1.0.0
++ :
++ local tmp=
++ [[ 1.0.0 =~ _ ]]
++ V_PKG=1.0.0
++ [[ 1.0.0 == *-* ]]
++ case "${V_PKG}" in
++ V_MAJOR=1
++ tmp=0.0
++ V_MINOR=0
++ V_PATCHLVL=0
++ VERSIONS=()
++ [[ -n '' ]]
++ [[ -n 0 ]]
++ VERSIONS+=(${V_MAJOR}.${V_MINOR}.${V_PATCHLVL})
++ [[ -n 0 ]]
++ VERSIONS+=(${V_MAJOR}.${V_MINOR})
++ VERSIONS+=(${V_MAJOR})
++ local build_variant=
++ [[ :: != *::* ]]
++ check_system
++ [[ -z '' ]]
++ return 0
++ debug 'build variant HelloWorld/1.0.0'
++ :
++ local ol_name=base
++ [[ -v OverlayInfo[base:inst_root] ]]
++ declare ol_inst_root=/opt/psi
++ declare ol_mod_root=/opt/psi
++ module_version+=
++ pbuild.compile_in_sourcetree no
++ [[ no == \Y\e\s ]]
++ pbuild.configure_with auto
++ configure_with=auto
++ pbuild.add_to_group Sandbox
++ GROUP=Sandbox
++ set_urls ''
++ local -- yaml=
++ local -i l=0
+++ /afs/psi.ch/sys/psi.x86_64_el7/Tools/Pmodules/1.1.17/libexec/yq -Ne e '.|length'
++ l=0
++ local -i i=0
++ local -- fname=
++ local -- url_yaml=
++ (( i=0 ))
++ (( i<l ))
++ runtime_deps=()
++ local -a runtime_deps
++ [[ -n '' ]]
++ build_requires=()
++ local -a build_requires
++ [[ -n '' ]]
++ [[ -n '' ]]
++ build_functions=(['Compiler']='build_modules_compiler' ['HDF5_serial']='build_modules_hdf5_serial' ['MPI']='build_modules_mpi' ['HDF5']='build_modules_hdf5')
++ local -A build_functions
++ local func=build_modules_other
++ [[ -v build_functions[Sandbox] ]]
++ build_modules_other HelloWorld 1.0.0 module_config
++ local -- module_name=HelloWorld
++ local -- module_version=1.0.0
++ local -n module_cfg=module_config
++ pbuild.build_module_yaml HelloWorld 1.0.0 module_config
++ local -- module_name=HelloWorld
++ local -- module_version=1.0.0
++ Config=module_config
++ local -- module_relstage=stable
++ local -- tmp=
++ Systems=
++ shift 3
++ _build_module HelloWorld 1.0.0 stable
++ declare -gx module_name=HelloWorld
++ declare -gx module_version=1.0.0
++ declare -gx module_release=stable
++ shift 3
++ with_modules=("$@")
++ runtime_dependencies=()
++ declare -a runtime_dependencies
++ install_dependencies=()
++ declare -a install_dependencies
++ std::info '%s ' HelloWorld/1.0.0: 'building ...'
++ std::log 2 '%s ' HelloWorld/1.0.0: 'building ...'
++ local -ri fd=2
++ local -r 'fmt=%s '
++ shift 2
++ printf -- '%s ' HelloWorld/1.0.0: 'building ...'
+HelloWorld/1.0.0: building ... + printf -- '\n'
+
++ init_module_environment
+++ /opt/psi/Tools/Pmodules/1.1.17/bin/modulecmd bash use unstable
++ eval export 'PMODULES_ENV="ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZSIKZGVjbGFyZSAteCBVc2VkR3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==";' export 'LOADEDMODULES="";' export '_LMFILES_="";' export 'MODULEPATH="/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles";' export 'PATH="/usr/bin:/bin:/usr/sbin:/sbin";' export 'MANPATH="/opt/psi/Tools/Pmodules/1.0.0/share/man:/usr/share/man:/opt/psi/Tools/Pmodules/1.1.17/share/man";' export 'LOADEDMODULES="Pmodules/1.1.17";' export '_LMFILES_="/opt/psi/Tools/modulefiles/Pmodules/1.1.17";' export 'MODULEPATH="/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles";' export 'PMODULES_ENV="ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZSIKZGVjbGFyZSAteCBVc2VkR3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==";'
+++ export PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZSIKZGVjbGFyZSAteCBVc2VkR3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==
+++ PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZSIKZGVjbGFyZSAteCBVc2VkR3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==
+++ export LOADEDMODULES=
+++ LOADEDMODULES=
+++ export _LMFILES_=
+++ _LMFILES_=
+++ export MODULEPATH=/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ MODULEPATH=/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+++ PATH=/usr/bin:/bin:/usr/sbin:/sbin
+++ export MANPATH=/opt/psi/Tools/Pmodules/1.0.0/share/man:/usr/share/man:/opt/psi/Tools/Pmodules/1.1.17/share/man
+++ MANPATH=/opt/psi/Tools/Pmodules/1.0.0/share/man:/usr/share/man:/opt/psi/Tools/Pmodules/1.1.17/share/man
+++ export LOADEDMODULES=Pmodules/1.1.17
+++ LOADEDMODULES=Pmodules/1.1.17
+++ export _LMFILES_=/opt/psi/Tools/modulefiles/Pmodules/1.1.17
+++ _LMFILES_=/opt/psi/Tools/modulefiles/Pmodules/1.1.17
+++ export MODULEPATH=/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ MODULEPATH=/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ export PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZSIKZGVjbGFyZSAteCBVc2VkR3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==
+++ PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZSIKZGVjbGFyZSAteCBVc2VkR3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==
+++ /opt/psi/Tools/Pmodules/1.1.17/bin/modulecmd bash use deprecated
++ eval export 'MODULEPATH="/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles";' export 'PMODULES_ENV="ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nIgpkZWNsYXJlIC0tIERlZmF1bHRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nIgpkZWNsYXJlIC0tIERlZmF1bHRSZWxlYXNlU3RhZ2VzPSJzdGFibGUiCmRlY2xhcmUgLS0gUmVsZWFzZVN0YWdlcz0idW5zdGFibGU6c3RhYmxlOmRlcHJlY2F0ZWQiCmRlY2xhcmUgLUEgR3JvdXBEZXB0aHM9KFtQcm9ncmFtbWluZ109IjAiIFtNWF09IjAiIFtFTV09IjAiIFtIREY1X3NlcmlhbF09IjQiIFtMZWdhY3ldPSIwIiBbSERGNV09IjYiIFtEZXRlY3RvclNvZnR3YXJlXT0iMCIgW1NhbmRib3hdPSIwIiBbU3lzdGVtXT0iMCIgW0NvbXBpbGVyXT0iMiIgW01QSV09IjQiIFtUb29sc109IjAiIFtDYWZlXT0iMCIgW0xpYnJhcmllc109IjAiICkKZGVjbGFyZSAtYSBPdmVybGF5cz0oWzBdPSJkZXZlbCIgWzFdPSJvbmVBUEkiIFsyXT0iYmFzZSIpCmRlY2xhcmUgLWEgVXNlZE92ZXJsYXlzPShbMF09ImJhc2UiKQpkZWNsYXJlIC1BIE92ZXJsYXlFeGNsdWRlcwpkZWNsYXJlIC1BIE92ZXJsYXlJbmZvPShbYmFzZTppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW29uZUFQSTpleGNsdWRlc109JCdpbnRlbFxuaW50ZWxjYycgW2RldmVsOmluc3Rfcm9vdF09Ii9vcHQvcHNpIiBbZGV2ZWw6dXNlZF09Im5vIiBbYmFzZTptb2Rfcm9vdF09Ii9vcHQvcHNpIiBbYmFzZTp0eXBlXT0ibiIgW2Jhc2U6dXNlZF09InllcyIgW2Jhc2U6ZXhjbHVkZXNdPSIiIFtkZXZlbDpleGNsdWRlc109IiIgW2RldmVsOnR5cGVdPSJuIiBbb25lQVBJOmluc3Rfcm9vdF09Ii9vcHQvcHNpL29uZUFQSSIgW29uZUFQSTptb2Rfcm9vdF09Ii9vcHQvcHNpL29uZUFQSSIgW29uZUFQSTp1c2VkXT0ibm8iIFtvbmVBUEk6dHlwZV09Im4iIFtkZXZlbDptb2Rfcm9vdF09Ii9hZnMvcHNpLmNoL3VzZXIvZy9nc2VsbC9QbW9kdWxlcy9kZXZlbCIgKQpkZWNsYXJlIC1BIERpcjJPdmVybGF5TWFwPShbL29wdC9wc2kvQ2FmZV09ImJhc2UiIFsvb3B0L3BzaS9NUEldPSJiYXNlIiBbL29wdC9wc2kvQ29tcGlsZXJdPSJiYXNlIiBbL29wdC9wc2kvVG9vbHNdPSJiYXNlIiBbL29wdC9wc2kvRU1dPSJiYXNlIiBbL29wdC9wc2kvRGV0ZWN0b3JTb2Z0d2FyZV09ImJhc2UiIFsvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWxdPSJkZXZlbCIgWy9vcHQvcHNpL29uZUFQSV09Im9uZUFQSSIgWy9vcHQvcHNpL01YXT0iYmFzZSIgWy9vcHQvcHNpXT0iYmFzZSIgWy9vcHQvcHNpL0hERjVfc2VyaWFsXT0iYmFzZSIgWy9vcHQvcHNpL1Byb2dyYW1taW5nXT0iYmFzZSIgWy9vcHQvcHNpL1N5c3RlbV09ImJhc2UiIFsvb3B0L3BzaS9MaWJyYXJpZXNdPSJiYXNlIiBbL29wdC9wc2kvTGVnYWN5XT0iYmFzZSIgWy9vcHQvcHNpL0hERjVdPSJiYXNlIiBbL29wdC9wc2kvU2FuZGJveF09ImJhc2UiICkK";'
+++ export MODULEPATH=/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ MODULEPATH=/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ export PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nIgpkZWNsYXJlIC0tIERlZmF1bHRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nIgpkZWNsYXJlIC0tIERlZmF1bHRSZWxlYXNlU3RhZ2VzPSJzdGFibGUiCmRlY2xhcmUgLS0gUmVsZWFzZVN0YWdlcz0idW5zdGFibGU6c3RhYmxlOmRlcHJlY2F0ZWQiCmRlY2xhcmUgLUEgR3JvdXBEZXB0aHM9KFtQcm9ncmFtbWluZ109IjAiIFtNWF09IjAiIFtFTV09IjAiIFtIREY1X3NlcmlhbF09IjQiIFtMZWdhY3ldPSIwIiBbSERGNV09IjYiIFtEZXRlY3RvclNvZnR3YXJlXT0iMCIgW1NhbmRib3hdPSIwIiBbU3lzdGVtXT0iMCIgW0NvbXBpbGVyXT0iMiIgW01QSV09IjQiIFtUb29sc109IjAiIFtDYWZlXT0iMCIgW0xpYnJhcmllc109IjAiICkKZGVjbGFyZSAtYSBPdmVybGF5cz0oWzBdPSJkZXZlbCIgWzFdPSJvbmVBUEkiIFsyXT0iYmFzZSIpCmRlY2xhcmUgLWEgVXNlZE92ZXJsYXlzPShbMF09ImJhc2UiKQpkZWNsYXJlIC1BIE92ZXJsYXlFeGNsdWRlcwpkZWNsYXJlIC1BIE92ZXJsYXlJbmZvPShbYmFzZTppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW29uZUFQSTpleGNsdWRlc109JCdpbnRlbFxuaW50ZWxjYycgW2RldmVsOmluc3Rfcm9vdF09Ii9vcHQvcHNpIiBbZGV2ZWw6dXNlZF09Im5vIiBbYmFzZTptb2Rfcm9vdF09Ii9vcHQvcHNpIiBbYmFzZTp0eXBlXT0ibiIgW2Jhc2U6dXNlZF09InllcyIgW2Jhc2U6ZXhjbHVkZXNdPSIiIFtkZXZlbDpleGNsdWRlc109IiIgW2RldmVsOnR5cGVdPSJuIiBbb25lQVBJOmluc3Rfcm9vdF09Ii9vcHQvcHNpL29uZUFQSSIgW29uZUFQSTptb2Rfcm9vdF09Ii9vcHQvcHNpL29uZUFQSSIgW29uZUFQSTp1c2VkXT0ibm8iIFtvbmVBUEk6dHlwZV09Im4iIFtkZXZlbDptb2Rfcm9vdF09Ii9hZnMvcHNpLmNoL3VzZXIvZy9nc2VsbC9QbW9kdWxlcy9kZXZlbCIgKQpkZWNsYXJlIC1BIERpcjJPdmVybGF5TWFwPShbL29wdC9wc2kvQ2FmZV09ImJhc2UiIFsvb3B0L3BzaS9NUEldPSJiYXNlIiBbL29wdC9wc2kvQ29tcGlsZXJdPSJiYXNlIiBbL29wdC9wc2kvVG9vbHNdPSJiYXNlIiBbL29wdC9wc2kvRU1dPSJiYXNlIiBbL29wdC9wc2kvRGV0ZWN0b3JTb2Z0d2FyZV09ImJhc2UiIFsvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWxdPSJkZXZlbCIgWy9vcHQvcHNpL29uZUFQSV09Im9uZUFQSSIgWy9vcHQvcHNpL01YXT0iYmFzZSIgWy9vcHQvcHNpXT0iYmFzZSIgWy9vcHQvcHNpL0hERjVfc2VyaWFsXT0iYmFzZSIgWy9vcHQvcHNpL1Byb2dyYW1taW5nXT0iYmFzZSIgWy9vcHQvcHNpL1N5c3RlbV09ImJhc2UiIFsvb3B0L3BzaS9MaWJyYXJpZXNdPSJiYXNlIiBbL29wdC9wc2kvTGVnYWN5XT0iYmFzZSIgWy9vcHQvcHNpL0hERjVdPSJiYXNlIiBbL29wdC9wc2kvU2FuZGJveF09ImJhc2UiICkK
+++ PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nIgpkZWNsYXJlIC0tIERlZmF1bHRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nIgpkZWNsYXJlIC0tIERlZmF1bHRSZWxlYXNlU3RhZ2VzPSJzdGFibGUiCmRlY2xhcmUgLS0gUmVsZWFzZVN0YWdlcz0idW5zdGFibGU6c3RhYmxlOmRlcHJlY2F0ZWQiCmRlY2xhcmUgLUEgR3JvdXBEZXB0aHM9KFtQcm9ncmFtbWluZ109IjAiIFtNWF09IjAiIFtFTV09IjAiIFtIREY1X3NlcmlhbF09IjQiIFtMZWdhY3ldPSIwIiBbSERGNV09IjYiIFtEZXRlY3RvclNvZnR3YXJlXT0iMCIgW1NhbmRib3hdPSIwIiBbU3lzdGVtXT0iMCIgW0NvbXBpbGVyXT0iMiIgW01QSV09IjQiIFtUb29sc109IjAiIFtDYWZlXT0iMCIgW0xpYnJhcmllc109IjAiICkKZGVjbGFyZSAtYSBPdmVybGF5cz0oWzBdPSJkZXZlbCIgWzFdPSJvbmVBUEkiIFsyXT0iYmFzZSIpCmRlY2xhcmUgLWEgVXNlZE92ZXJsYXlzPShbMF09ImJhc2UiKQpkZWNsYXJlIC1BIE92ZXJsYXlFeGNsdWRlcwpkZWNsYXJlIC1BIE92ZXJsYXlJbmZvPShbYmFzZTppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW29uZUFQSTpleGNsdWRlc109JCdpbnRlbFxuaW50ZWxjYycgW2RldmVsOmluc3Rfcm9vdF09Ii9vcHQvcHNpIiBbZGV2ZWw6dXNlZF09Im5vIiBbYmFzZTptb2Rfcm9vdF09Ii9vcHQvcHNpIiBbYmFzZTp0eXBlXT0ibiIgW2Jhc2U6dXNlZF09InllcyIgW2Jhc2U6ZXhjbHVkZXNdPSIiIFtkZXZlbDpleGNsdWRlc109IiIgW2RldmVsOnR5cGVdPSJuIiBbb25lQVBJOmluc3Rfcm9vdF09Ii9vcHQvcHNpL29uZUFQSSIgW29uZUFQSTptb2Rfcm9vdF09Ii9vcHQvcHNpL29uZUFQSSIgW29uZUFQSTp1c2VkXT0ibm8iIFtvbmVBUEk6dHlwZV09Im4iIFtkZXZlbDptb2Rfcm9vdF09Ii9hZnMvcHNpLmNoL3VzZXIvZy9nc2VsbC9QbW9kdWxlcy9kZXZlbCIgKQpkZWNsYXJlIC1BIERpcjJPdmVybGF5TWFwPShbL29wdC9wc2kvQ2FmZV09ImJhc2UiIFsvb3B0L3BzaS9NUEldPSJiYXNlIiBbL29wdC9wc2kvQ29tcGlsZXJdPSJiYXNlIiBbL29wdC9wc2kvVG9vbHNdPSJiYXNlIiBbL29wdC9wc2kvRU1dPSJiYXNlIiBbL29wdC9wc2kvRGV0ZWN0b3JTb2Z0d2FyZV09ImJhc2UiIFsvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWxdPSJkZXZlbCIgWy9vcHQvcHNpL29uZUFQSV09Im9uZUFQSSIgWy9vcHQvcHNpL01YXT0iYmFzZSIgWy9vcHQvcHNpXT0iYmFzZSIgWy9vcHQvcHNpL0hERjVfc2VyaWFsXT0iYmFzZSIgWy9vcHQvcHNpL1Byb2dyYW1taW5nXT0iYmFzZSIgWy9vcHQvcHNpL1N5c3RlbV09ImJhc2UiIFsvb3B0L3BzaS9MaWJyYXJpZXNdPSJiYXNlIiBbL29wdC9wc2kvTGVnYWN5XT0iYmFzZSIgWy9vcHQvcHNpL0hERjVdPSJiYXNlIiBbL29wdC9wc2kvU2FuZGJveF09ImJhc2UiICkK
+++ /opt/psi/Tools/Pmodules/1.1.17/bin/modulecmd bash purge
++ eval
++ [[ -e /opt/psi/Libraries ]]
+++ /opt/psi/Tools/Pmodules/1.1.17/bin/modulecmd bash use Libraries
++ eval export 'MODULEPATH="/opt/psi/Libraries/modulefiles:/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles";' export 'PMODULES_ENV="ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nOkxpYnJhcmllcyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==";'
+++ export MODULEPATH=/opt/psi/Libraries/modulefiles:/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ MODULEPATH=/opt/psi/Libraries/modulefiles:/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ export PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nOkxpYnJhcmllcyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==
+++ PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nOkxpYnJhcmllcyIKZGVjbGFyZSAtLSBEZWZhdWx0R3JvdXBzPSJUb29sczpQcm9ncmFtbWluZyIKZGVjbGFyZSAtLSBEZWZhdWx0UmVsZWFzZVN0YWdlcz0ic3RhYmxlIgpkZWNsYXJlIC0tIFJlbGVhc2VTdGFnZXM9InVuc3RhYmxlOnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC1BIEdyb3VwRGVwdGhzPShbUHJvZ3JhbW1pbmddPSIwIiBbTVhdPSIwIiBbRU1dPSIwIiBbSERGNV9zZXJpYWxdPSI0IiBbTGVnYWN5XT0iMCIgW0hERjVdPSI2IiBbRGV0ZWN0b3JTb2Z0d2FyZV09IjAiIFtTYW5kYm94XT0iMCIgW1N5c3RlbV09IjAiIFtDb21waWxlcl09IjIiIFtNUEldPSI0IiBbVG9vbHNdPSIwIiBbQ2FmZV09IjAiIFtMaWJyYXJpZXNdPSIwIiApCmRlY2xhcmUgLWEgT3ZlcmxheXM9KFswXT0iZGV2ZWwiIFsxXT0ib25lQVBJIiBbMl09ImJhc2UiKQpkZWNsYXJlIC1hIFVzZWRPdmVybGF5cz0oWzBdPSJiYXNlIikKZGVjbGFyZSAtQSBPdmVybGF5RXhjbHVkZXMKZGVjbGFyZSAtQSBPdmVybGF5SW5mbz0oW2Jhc2U6aW5zdF9yb290XT0iL29wdC9wc2kiIFtvbmVBUEk6ZXhjbHVkZXNdPSQnaW50ZWxcbmludGVsY2MnIFtkZXZlbDppbnN0X3Jvb3RdPSIvb3B0L3BzaSIgW2RldmVsOnVzZWRdPSJubyIgW2Jhc2U6bW9kX3Jvb3RdPSIvb3B0L3BzaSIgW2Jhc2U6dHlwZV09Im4iIFtiYXNlOnVzZWRdPSJ5ZXMiIFtiYXNlOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6ZXhjbHVkZXNdPSIiIFtkZXZlbDp0eXBlXT0ibiIgW29uZUFQSTppbnN0X3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6bW9kX3Jvb3RdPSIvb3B0L3BzaS9vbmVBUEkiIFtvbmVBUEk6dXNlZF09Im5vIiBbb25lQVBJOnR5cGVdPSJuIiBbZGV2ZWw6bW9kX3Jvb3RdPSIvYWZzL3BzaS5jaC91c2VyL2cvZ3NlbGwvUG1vZHVsZXMvZGV2ZWwiICkKZGVjbGFyZSAtQSBEaXIyT3ZlcmxheU1hcD0oWy9vcHQvcHNpL0NhZmVdPSJiYXNlIiBbL29wdC9wc2kvTVBJXT0iYmFzZSIgWy9vcHQvcHNpL0NvbXBpbGVyXT0iYmFzZSIgWy9vcHQvcHNpL1Rvb2xzXT0iYmFzZSIgWy9vcHQvcHNpL0VNXT0iYmFzZSIgWy9vcHQvcHNpL0RldGVjdG9yU29mdHdhcmVdPSJiYXNlIiBbL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsXT0iZGV2ZWwiIFsvb3B0L3BzaS9vbmVBUEldPSJvbmVBUEkiIFsvb3B0L3BzaS9NWF09ImJhc2UiIFsvb3B0L3BzaV09ImJhc2UiIFsvb3B0L3BzaS9IREY1X3NlcmlhbF09ImJhc2UiIFsvb3B0L3BzaS9Qcm9ncmFtbWluZ109ImJhc2UiIFsvb3B0L3BzaS9TeXN0ZW1dPSJiYXNlIiBbL29wdC9wc2kvTGlicmFyaWVzXT0iYmFzZSIgWy9vcHQvcHNpL0xlZ2FjeV09ImJhc2UiIFsvb3B0L3BzaS9IREY1XT0iYmFzZSIgWy9vcHQvcHNpL1NhbmRib3hdPSJiYXNlIiApCg==
++ [[ -e /opt/psi/System ]]
+++ /opt/psi/Tools/Pmodules/1.1.17/bin/modulecmd bash use System
++ eval export 'MODULEPATH="/opt/psi/System/modulefiles:/opt/psi/Libraries/modulefiles:/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles";' export 'PMODULES_ENV="ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nOkxpYnJhcmllczpTeXN0ZW0iCmRlY2xhcmUgLS0gRGVmYXVsdEdyb3Vwcz0iVG9vbHM6UHJvZ3JhbW1pbmciCmRlY2xhcmUgLS0gRGVmYXVsdFJlbGVhc2VTdGFnZXM9InN0YWJsZSIKZGVjbGFyZSAtLSBSZWxlYXNlU3RhZ2VzPSJ1bnN0YWJsZTpzdGFibGU6ZGVwcmVjYXRlZCIKZGVjbGFyZSAtQSBHcm91cERlcHRocz0oW1Byb2dyYW1taW5nXT0iMCIgW01YXT0iMCIgW0VNXT0iMCIgW0hERjVfc2VyaWFsXT0iNCIgW0xlZ2FjeV09IjAiIFtIREY1XT0iNiIgW0RldGVjdG9yU29mdHdhcmVdPSIwIiBbU2FuZGJveF09IjAiIFtTeXN0ZW1dPSIwIiBbQ29tcGlsZXJdPSIyIiBbTVBJXT0iNCIgW1Rvb2xzXT0iMCIgW0NhZmVdPSIwIiBbTGlicmFyaWVzXT0iMCIgKQpkZWNsYXJlIC1hIE92ZXJsYXlzPShbMF09ImRldmVsIiBbMV09Im9uZUFQSSIgWzJdPSJiYXNlIikKZGVjbGFyZSAtYSBVc2VkT3ZlcmxheXM9KFswXT0iYmFzZSIpCmRlY2xhcmUgLUEgT3ZlcmxheUV4Y2x1ZGVzCmRlY2xhcmUgLUEgT3ZlcmxheUluZm89KFtiYXNlOmluc3Rfcm9vdF09Ii9vcHQvcHNpIiBbb25lQVBJOmV4Y2x1ZGVzXT0kJ2ludGVsXG5pbnRlbGNjJyBbZGV2ZWw6aW5zdF9yb290XT0iL29wdC9wc2kiIFtkZXZlbDp1c2VkXT0ibm8iIFtiYXNlOm1vZF9yb290XT0iL29wdC9wc2kiIFtiYXNlOnR5cGVdPSJuIiBbYmFzZTp1c2VkXT0ieWVzIiBbYmFzZTpleGNsdWRlc109IiIgW2RldmVsOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6dHlwZV09Im4iIFtvbmVBUEk6aW5zdF9yb290XT0iL29wdC9wc2kvb25lQVBJIiBbb25lQVBJOm1vZF9yb290XT0iL29wdC9wc2kvb25lQVBJIiBbb25lQVBJOnVzZWRdPSJubyIgW29uZUFQSTp0eXBlXT0ibiIgW2RldmVsOm1vZF9yb290XT0iL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsIiApCmRlY2xhcmUgLUEgRGlyMk92ZXJsYXlNYXA9KFsvb3B0L3BzaS9DYWZlXT0iYmFzZSIgWy9vcHQvcHNpL01QSV09ImJhc2UiIFsvb3B0L3BzaS9Db21waWxlcl09ImJhc2UiIFsvb3B0L3BzaS9Ub29sc109ImJhc2UiIFsvb3B0L3BzaS9FTV09ImJhc2UiIFsvb3B0L3BzaS9EZXRlY3RvclNvZnR3YXJlXT0iYmFzZSIgWy9hZnMvcHNpLmNoL3VzZXIvZy9nc2VsbC9QbW9kdWxlcy9kZXZlbF09ImRldmVsIiBbL29wdC9wc2kvb25lQVBJXT0ib25lQVBJIiBbL29wdC9wc2kvTVhdPSJiYXNlIiBbL29wdC9wc2ldPSJiYXNlIiBbL29wdC9wc2kvSERGNV9zZXJpYWxdPSJiYXNlIiBbL29wdC9wc2kvUHJvZ3JhbW1pbmddPSJiYXNlIiBbL29wdC9wc2kvU3lzdGVtXT0iYmFzZSIgWy9vcHQvcHNpL0xpYnJhcmllc109ImJhc2UiIFsvb3B0L3BzaS9MZWdhY3ldPSJiYXNlIiBbL29wdC9wc2kvSERGNV09ImJhc2UiIFsvb3B0L3BzaS9TYW5kYm94XT0iYmFzZSIgKQo=";'
+++ export MODULEPATH=/opt/psi/System/modulefiles:/opt/psi/Libraries/modulefiles:/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ MODULEPATH=/opt/psi/System/modulefiles:/opt/psi/Libraries/modulefiles:/opt/psi/Programming/modulefiles:/opt/psi/Tools/modulefiles
+++ export PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nOkxpYnJhcmllczpTeXN0ZW0iCmRlY2xhcmUgLS0gRGVmYXVsdEdyb3Vwcz0iVG9vbHM6UHJvZ3JhbW1pbmciCmRlY2xhcmUgLS0gRGVmYXVsdFJlbGVhc2VTdGFnZXM9InN0YWJsZSIKZGVjbGFyZSAtLSBSZWxlYXNlU3RhZ2VzPSJ1bnN0YWJsZTpzdGFibGU6ZGVwcmVjYXRlZCIKZGVjbGFyZSAtQSBHcm91cERlcHRocz0oW1Byb2dyYW1taW5nXT0iMCIgW01YXT0iMCIgW0VNXT0iMCIgW0hERjVfc2VyaWFsXT0iNCIgW0xlZ2FjeV09IjAiIFtIREY1XT0iNiIgW0RldGVjdG9yU29mdHdhcmVdPSIwIiBbU2FuZGJveF09IjAiIFtTeXN0ZW1dPSIwIiBbQ29tcGlsZXJdPSIyIiBbTVBJXT0iNCIgW1Rvb2xzXT0iMCIgW0NhZmVdPSIwIiBbTGlicmFyaWVzXT0iMCIgKQpkZWNsYXJlIC1hIE92ZXJsYXlzPShbMF09ImRldmVsIiBbMV09Im9uZUFQSSIgWzJdPSJiYXNlIikKZGVjbGFyZSAtYSBVc2VkT3ZlcmxheXM9KFswXT0iYmFzZSIpCmRlY2xhcmUgLUEgT3ZlcmxheUV4Y2x1ZGVzCmRlY2xhcmUgLUEgT3ZlcmxheUluZm89KFtiYXNlOmluc3Rfcm9vdF09Ii9vcHQvcHNpIiBbb25lQVBJOmV4Y2x1ZGVzXT0kJ2ludGVsXG5pbnRlbGNjJyBbZGV2ZWw6aW5zdF9yb290XT0iL29wdC9wc2kiIFtkZXZlbDp1c2VkXT0ibm8iIFtiYXNlOm1vZF9yb290XT0iL29wdC9wc2kiIFtiYXNlOnR5cGVdPSJuIiBbYmFzZTp1c2VkXT0ieWVzIiBbYmFzZTpleGNsdWRlc109IiIgW2RldmVsOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6dHlwZV09Im4iIFtvbmVBUEk6aW5zdF9yb290XT0iL29wdC9wc2kvb25lQVBJIiBbb25lQVBJOm1vZF9yb290XT0iL29wdC9wc2kvb25lQVBJIiBbb25lQVBJOnVzZWRdPSJubyIgW29uZUFQSTp0eXBlXT0ibiIgW2RldmVsOm1vZF9yb290XT0iL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsIiApCmRlY2xhcmUgLUEgRGlyMk92ZXJsYXlNYXA9KFsvb3B0L3BzaS9DYWZlXT0iYmFzZSIgWy9vcHQvcHNpL01QSV09ImJhc2UiIFsvb3B0L3BzaS9Db21waWxlcl09ImJhc2UiIFsvb3B0L3BzaS9Ub29sc109ImJhc2UiIFsvb3B0L3BzaS9FTV09ImJhc2UiIFsvb3B0L3BzaS9EZXRlY3RvclNvZnR3YXJlXT0iYmFzZSIgWy9hZnMvcHNpLmNoL3VzZXIvZy9nc2VsbC9QbW9kdWxlcy9kZXZlbF09ImRldmVsIiBbL29wdC9wc2kvb25lQVBJXT0ib25lQVBJIiBbL29wdC9wc2kvTVhdPSJiYXNlIiBbL29wdC9wc2ldPSJiYXNlIiBbL29wdC9wc2kvSERGNV9zZXJpYWxdPSJiYXNlIiBbL29wdC9wc2kvUHJvZ3JhbW1pbmddPSJiYXNlIiBbL29wdC9wc2kvU3lzdGVtXT0iYmFzZSIgWy9vcHQvcHNpL0xpYnJhcmllc109ImJhc2UiIFsvb3B0L3BzaS9MZWdhY3ldPSJiYXNlIiBbL29wdC9wc2kvSERGNV09ImJhc2UiIFsvb3B0L3BzaS9TYW5kYm94XT0iYmFzZSIgKQo=
+++ PMODULES_ENV=ZGVjbGFyZSAtLSBWZXJzaW9uPSIxLjEuMTciCmRlY2xhcmUgLXggVXNlZFJlbGVhc2VTdGFnZXM9InN0YWJsZTp1bnN0YWJsZTpkZXByZWNhdGVkIgpkZWNsYXJlIC14IFVzZWRHcm91cHM9IlRvb2xzOlByb2dyYW1taW5nOkxpYnJhcmllczpTeXN0ZW0iCmRlY2xhcmUgLS0gRGVmYXVsdEdyb3Vwcz0iVG9vbHM6UHJvZ3JhbW1pbmciCmRlY2xhcmUgLS0gRGVmYXVsdFJlbGVhc2VTdGFnZXM9InN0YWJsZSIKZGVjbGFyZSAtLSBSZWxlYXNlU3RhZ2VzPSJ1bnN0YWJsZTpzdGFibGU6ZGVwcmVjYXRlZCIKZGVjbGFyZSAtQSBHcm91cERlcHRocz0oW1Byb2dyYW1taW5nXT0iMCIgW01YXT0iMCIgW0VNXT0iMCIgW0hERjVfc2VyaWFsXT0iNCIgW0xlZ2FjeV09IjAiIFtIREY1XT0iNiIgW0RldGVjdG9yU29mdHdhcmVdPSIwIiBbU2FuZGJveF09IjAiIFtTeXN0ZW1dPSIwIiBbQ29tcGlsZXJdPSIyIiBbTVBJXT0iNCIgW1Rvb2xzXT0iMCIgW0NhZmVdPSIwIiBbTGlicmFyaWVzXT0iMCIgKQpkZWNsYXJlIC1hIE92ZXJsYXlzPShbMF09ImRldmVsIiBbMV09Im9uZUFQSSIgWzJdPSJiYXNlIikKZGVjbGFyZSAtYSBVc2VkT3ZlcmxheXM9KFswXT0iYmFzZSIpCmRlY2xhcmUgLUEgT3ZlcmxheUV4Y2x1ZGVzCmRlY2xhcmUgLUEgT3ZlcmxheUluZm89KFtiYXNlOmluc3Rfcm9vdF09Ii9vcHQvcHNpIiBbb25lQVBJOmV4Y2x1ZGVzXT0kJ2ludGVsXG5pbnRlbGNjJyBbZGV2ZWw6aW5zdF9yb290XT0iL29wdC9wc2kiIFtkZXZlbDp1c2VkXT0ibm8iIFtiYXNlOm1vZF9yb290XT0iL29wdC9wc2kiIFtiYXNlOnR5cGVdPSJuIiBbYmFzZTp1c2VkXT0ieWVzIiBbYmFzZTpleGNsdWRlc109IiIgW2RldmVsOmV4Y2x1ZGVzXT0iIiBbZGV2ZWw6dHlwZV09Im4iIFtvbmVBUEk6aW5zdF9yb290XT0iL29wdC9wc2kvb25lQVBJIiBbb25lQVBJOm1vZF9yb290XT0iL29wdC9wc2kvb25lQVBJIiBbb25lQVBJOnVzZWRdPSJubyIgW29uZUFQSTp0eXBlXT0ibiIgW2RldmVsOm1vZF9yb290XT0iL2Fmcy9wc2kuY2gvdXNlci9nL2dzZWxsL1Btb2R1bGVzL2RldmVsIiApCmRlY2xhcmUgLUEgRGlyMk92ZXJsYXlNYXA9KFsvb3B0L3BzaS9DYWZlXT0iYmFzZSIgWy9vcHQvcHNpL01QSV09ImJhc2UiIFsvb3B0L3BzaS9Db21waWxlcl09ImJhc2UiIFsvb3B0L3BzaS9Ub29sc109ImJhc2UiIFsvb3B0L3BzaS9FTV09ImJhc2UiIFsvb3B0L3BzaS9EZXRlY3RvclNvZnR3YXJlXT0iYmFzZSIgWy9hZnMvcHNpLmNoL3VzZXIvZy9nc2VsbC9QbW9kdWxlcy9kZXZlbF09ImRldmVsIiBbL29wdC9wc2kvb25lQVBJXT0ib25lQVBJIiBbL29wdC9wc2kvTVhdPSJiYXNlIiBbL29wdC9wc2ldPSJiYXNlIiBbL29wdC9wc2kvSERGNV9zZXJpYWxdPSJiYXNlIiBbL29wdC9wc2kvUHJvZ3JhbW1pbmddPSJiYXNlIiBbL29wdC9wc2kvU3lzdGVtXT0iYmFzZSIgWy9vcHQvcHNpL0xpYnJhcmllc109ImJhc2UiIFsvb3B0L3BzaS9MZWdhY3ldPSJiYXNlIiBbL29wdC9wc2kvSERGNV09ImJhc2UiIFsvb3B0L3BzaS9TYW5kYm94XT0iYmFzZSIgKQo=
++ unset C_INCLUDE_PATH
++ unset CPLUS_INCLUDE_PATH
++ unset CPP_INCLUDE_PATH
++ unset LIBRARY_PATH
++ unset LD_LIBRARY_PATH
++ unset DYLD_LIBRARY_PATH
++ unset CFLAGS
++ unset CPPFLAGS
++ unset CXXFLAGS
++ unset LIBS
++ unset LDFLAGS
++ unset CC
++ unset CXX
++ unset FC
++ unset F77
++ unset F90
++ load_build_dependencies
++ local m=
++ init_build_environment HelloWorld 1.0.0
++ P=HelloWorld
++ V=1.0.0
++ parse_version 1.0.0
++ local v=1.0.0
++ V_MAJOR=
++ V_MINOR=
++ V_PATCHLVL=
++ V_RELEASE=
++ :
++ local tmp=
++ [[ 1.0.0 =~ _ ]]
++ V_PKG=1.0.0
++ [[ 1.0.0 == *-* ]]
++ V_RELEASE=
++ case "${V_PKG}" in
++ V_MAJOR=1
++ tmp=0.0
++ V_MINOR=0
++ V_PATCHLVL=0
++ VERSIONS=()
++ [[ -n '' ]]
++ [[ -n 0 ]]
++ VERSIONS+=(${V_MAJOR}.${V_MINOR}.${V_PATCHLVL})
++ [[ -n 0 ]]
++ VERSIONS+=(${V_MAJOR}.${V_MINOR})
++ VERSIONS+=(${V_MAJOR})
++ declare -g BUILD_ROOT=/var/tmp/gsell/HelloWorld-1.0.0
++ SRC_DIR=/var/tmp/gsell/HelloWorld-1.0.0/src
++ [[ no == \y\e\s ]]
++ BUILD_DIR=/var/tmp/gsell/HelloWorld-1.0.0/build
++ declare -g PREFIX=
++ source /afs/psi.ch/user/g/gsell/HelloWorld/build
++ local modulefile_dir=
++ local modulefile_name=
++ local -r logfile=/afs/psi.ch/user/g/gsell/HelloWorld/pbuild.log
++ /usr/bin/rm -f /afs/psi.ch/user/g/gsell/HelloWorld/pbuild.log
++ [[ yes == \y\e\s ]]
++ exec
++ exec
+++ /usr/bin/tee -a /afs/psi.ch/user/g/gsell/HelloWorld/pbuild.log
+++ /usr/bin/tee -a /afs/psi.ch/user/g/gsell/HelloWorld/pbuild.log
++ [[ -n Sandbox ]]
++ check_supported_systems
++ [[ yes == \n\o ]]
++ : debug 'Systems: '
++ check_supported_compilers
++ ((  0 == 0  ))
++ return 0
++ set_full_module_name_and_prefix
++ [[ -n Sandbox ]]
++ local -i grp_depth
++ compute_group_depth grp_depth /opt/psi/Sandbox/modulefiles
++ local -n result=grp_depth
++ local -r dir=/opt/psi/Sandbox/modulefiles
++ [[ ! -d /opt/psi/Sandbox/modulefiles ]]
++ local group=/opt/psi/Sandbox
++ local group=Sandbox
+++ /usr/bin/find /opt/psi/Sandbox/modulefiles -depth '(' -type f -o -type l ')' -printf %d -quit
++ result=2
++ ((  result-=2  ))
++ ((  result < 0  ))
++ ((  grp_depth == 0  ))
++ do_simple_group
++ modulefile_dir=/opt/psi/Sandbox/modulefiles/
++ modulefile_dir+=HelloWorld
++ modulefile_name=/opt/psi/Sandbox/modulefiles/HelloWorld/1.0.0
++ PREFIX=/opt/psi/Sandbox/HelloWorld/1.0.0
++ std::info '%s ' HelloWorld/1.0.0:
++ std::log 2 '%s ' HelloWorld/1.0.0:
++ local -ri fd=2
++ local -r 'fmt=%s '
++ shift 2
++ printf -- '%s ' HelloWorld/1.0.0:
+HelloWorld/1.0.0: + printf -- '\n'
+
++ [[ stable == \r\e\m\o\v\e ]]
++ [[ stable == \d\e\p\r\e\c\a\t\e\d ]]
++ [[ -d /opt/psi/Sandbox/HelloWorld/1.0.0 ]]
++ [[ no != \y\e\s ]]
++ std::info '%s ' HelloWorld/1.0.0: 'already exists, not rebuilding ...'
++ std::log 2 '%s ' HelloWorld/1.0.0: 'already exists, not rebuilding ...'
++ local -ri fd=2
++ local -r 'fmt=%s '
++ shift 2
++ printf -- '%s ' HelloWorld/1.0.0: 'already exists, not rebuilding ...'
+HelloWorld/1.0.0: already exists, not rebuilding ... + printf -- '\n'
+
++ [[ no == \y\e\s ]]
++ [[ ! -e /opt/psi/Sandbox/modulefiles/HelloWorld/1.0.0 ]]
++ install_release_file
++ local -r legacy_config_file=/opt/psi/Sandbox/modulefiles/HelloWorld/.release-1.0.0
++ local -- status_legay_config_file=unchanged
++ local -r yaml_config_file=/opt/psi/Sandbox/modulefiles/HelloWorld/.config-1.0.0
++ local -- status_yaml_config_file=unchanged
++ [[ -r /opt/psi/Sandbox/modulefiles/HelloWorld/.release-1.0.0 ]]
++ local relstage_legacy
++ read relstage_legacy
++ [[ stable != \s\t\a\b\l\e ]]
++ [[ unchanged != \u\n\c\h\a\n\g\e\d ]]
++ [[ -r /opt/psi/Sandbox/modulefiles/HelloWorld/.config-1.0.0 ]]
++ read key value
++ local -n ref=relstage
++ ref=stable
++ read key value
++ local -n ref=Systems
++ ref='[]'
++ read key value
++ [[ stable != \s\t\a\b\l\e ]]
++ [[ unchanged != \u\n\c\h\a\n\g\e\d ]]
++ case ${status_yaml_config_file},${status_legay_config_file} in
++ :
++ cleanup_modulefiles
++ local ol=
++ for ol in "${Overlays[@]}"
++ [[ devel == \b\a\s\e ]]
++ local mod_root=/afs/psi.ch/user/g/gsell/Pmodules/devel
++ local dir=/afs/psi.ch/user/g/gsell/Pmodules/devel/Sandbox/modulefiles/HelloWorld
++ local fname=/afs/psi.ch/user/g/gsell/Pmodules/devel/Sandbox/modulefiles/HelloWorld/1.0.0
++ [[ -e /afs/psi.ch/user/g/gsell/Pmodules/devel/Sandbox/modulefiles/HelloWorld/1.0.0 ]]
++ fname=/afs/psi.ch/user/g/gsell/Pmodules/devel/Sandbox/modulefiles/HelloWorld/.release-1.0.0
++ [[ -e /afs/psi.ch/user/g/gsell/Pmodules/devel/Sandbox/modulefiles/HelloWorld/.release-1.0.0 ]]
++ for ol in "${Overlays[@]}"
++ [[ oneAPI == \b\a\s\e ]]
++ local mod_root=/opt/psi/oneAPI
++ local dir=/opt/psi/oneAPI/Sandbox/modulefiles/HelloWorld
++ local fname=/opt/psi/oneAPI/Sandbox/modulefiles/HelloWorld/1.0.0
++ [[ -e /opt/psi/oneAPI/Sandbox/modulefiles/HelloWorld/1.0.0 ]]
++ fname=/opt/psi/oneAPI/Sandbox/modulefiles/HelloWorld/.release-1.0.0
++ [[ -e /opt/psi/oneAPI/Sandbox/modulefiles/HelloWorld/.release-1.0.0 ]]
++ for ol in "${Overlays[@]}"
++ [[ base == \b\a\s\e ]]
++ continue
++ std::info '* * * * *\n'
++ std::log 2 '* * * * *\n'
++ local -ri fd=2
++ local -r 'fmt=* * * * *\n'
++ shift 2
++ printf -- '* * * * *\n'
+* * * * *
++ printf -- '\n'
+
+pmod7:~/HelloWorld$ 
+----

@@ -1,0 +1,129 @@
+== Writing build-scripts
+
+=== Introduction
+
+Building a module consists of the following steps
+
+_setup_:: Setting up the environment includes +
+* name the group of the module.
+* specify the download location(s).
+* specify required patches.
+* set arguments for the configuration step - either autotools or CMake.
+* define additional files to install, like license, copyright etc. 
+
+_prepare_:: Download, unpack the sources and apply patches.
+_configure_:: Run autotools or CMake script or whatever is required to setup.
+_compile_:: Compile everything.
+_install_:: Install software and setup module environment.
+
+Except for the setup, the implementation of the steps is in many cases
+almost identical. The _prep_ step requires locations from where to
+download files. In some cases patches have to be applied. The
+_configure_ step usually requires some additional arguments: what
+features should be enabled, paths to required software etc. In most
+cases the _compile_ and _install_ steps are the same - just calling
+`make` and `make install`.
+
+The Pmodules build-system provides functions to set up the build
+environment and default functions for all build-steps. It is
+possible to hook into each build-step before and after the default functions
+are called. In cases where hooks are not sufficient to get the default function doing their job, the build-script must define functions for the corresponding step overwriting the default function.
+
+=== Before you begin
+
+The most challenging part in building a module is to compile the software in the right way. As soon as you know this, it is pretty easy to build a module.
+
+What you should have in mind when writing a build-script
+
+* a "standard" module for Linux should run on RHEL6 and 7 and other modern Linux distribution.
+* which feature are required?
+* which dependencies do we have to system libraries?
+* which dependencies do we have to other modules? Maybe we have to build these dependencies first.
+* be aware of the problems with (shared) libraries
+** if you copy them, another version from another module might be used!
+** more than one version might be used: library X is using version `libfoo.so.1.0` and library Y use using `libfoo.so.1.42`.  
+** do not mix shared and static versions of the same library
+** ..
+
+Recommendations
+
+* reduce dependencies be using (and building) static libraries
+* build static libraries with `-fPIC`!
+* if static libraries are not available or not usable, think about copying/installing  these shared libraries in the module 
+
+=== Executing the build-script
+
+Build-scripts are BASH scripts executed by `modbuild` - which is itself a bash script. The following shebang must be used for build-scripts:
+----
+#!/usr/bin/env modbuild
+----
+
+The build-script must be called with the version number of the module you want to build.
+
+.Calling build-script to build gnuplot 5.2.4
+======
+----
+./build 5.2.4
+----
+======
+
+In cases where several variants are available for the same version but with different compilers and/or MPI implementations, the compiler etc. must be specified on the command line.
+
+.Calling build-script for HDF5 1.10.3 with certain GCC and MPI implementation/version:
+======
+----
+./build 1.10.3 --with=gcc/7.3.0 --with=openmpit/3.1.2
+----
+======
+
+=== The master build-function
+
+The build-system provides a _master_ build function, which is 
+called after the build-script has been sourced. It executes the steps
+_prepare_, _configure_, _compile_ and _install_ in sequential
+order. The build-system provides default functions for each step:
+
+* `pbuild::prep` for preparing
+* `pbuild::configure` for configuring
+* `pbuild::compile` for compiling
+* `pbuild::install` for installing
+
+In many cases the default step-functions can be used. Sometime it is required to hook into a step before/after the default step-function is/has been called. Pre- and post-processing can be implemented with hooks. In more complicated cases the step-functions must be implemented in the build-script.
+
+Each build-step consist of the following sub-steps:
+
+* an OS/system specific _pre_ hook
+* a generic _pre_ hook
+* the main step-function
+* an OS/system specific _post_ hook
+* a generic _post_ hook
+
+.ParMETIS pre- and post-install hooks
+======
+[source=sh]
+----
+pbuild::pre_install() {
+        mkdir -p "${PREFIX}/include/metis"
+        mkdir -p "${PREFIX}/lib"
+}
+
+pbuild::post_install() {
+        case ${V_MAJOR} in
+        3 )
+                cd "${SRC_DIR}"
+                cp *.h $PREFIX/include
+                cp METISLib/*.h $PREFIX/include/metis
+                cp lib*.a $PREFIX/lib
+                ;;
+        4 )
+                LIBMETIS_A=$(find . -name libmetis.a)
+                METIS_H=$(find "${SRC_DIR}" -name metis.h)
+
+                install -m 0644 $METIS_H    $PREFIX/include
+                install -m 0644 $LIBMETIS_A $PREFIX/lib
+                ;;
+        esac
+}
+----
+======
+

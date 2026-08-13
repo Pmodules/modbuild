@@ -1,0 +1,51 @@
+[id="pb_add_to_group", reftext="`pbuild::add_to_group`"]
+= Define the group of a module: `pbuild::add_to_group`
+
+[NOTE]
+====
+This function is deprecated in Pmodules 1.1 and newer!
+
+The group should be defined in the YAML configuration file.
+====
+
+== Synopsis
+[source,sh]
+----
+pbuild::add_to_group GROUP
+----
+
+== Description
+
+Define the group the module will be installed in. Sometimes it is not obvious in which group a module should go. If in doubt, `Tools` might be the best.
+
+A (incomplete) list of available groups:
+
+`Tools`:: Group for tools like Gnuplot, Git, vim, Emacs, openssl. This group is visible by default.
+
+`Programming`:: Group for compilers, scripting languages and tools used for programming, like GCC, Python, CMake, autotools, Matlab. This group is visible by default.
+
+`Compiler`:: Hierarchical group for modules compiled with a certain compiler module. Examples: open-mpi, MPICH, serial HDF5. 
+
+`HDF5_serial`:: Hierarchical group for modules compiled with a certain compiler and serial HDF5  module. Examples: netCDF, H5hut.
+
+`MPI`:: Hierarchical group for modules compiled with a certain compiler and MPI module. Examples: parallel Boost, parallel HDF5, ParMETIS, Gromacs.
+
+`HDF5`:: Hierarchical group for modules compiled with a certain compiler, MPI and parallel HDF5  module. Examples: netCDF, H5hut, Trilinos.
+
+`System`:: Group for system tools. This group is _not_ visible by default. Examples: filebench, fsstress, nmap, patchelf.
+
+`Libraries`:: Group for libraries required to compile other modules but not providing (useful) tools. This group is _not_ visible by default. Examples: GMP, MPC, MPFR
+
+`MX`:: Group for special tools used at the MX beam-line. This group is visible only on dedicated systems.
+
+`EM`:: Group for Ra specific software. This group is only visible and available on Ra.
+
+== Example
+
+.Define the group for the Gnuplot module:
+====
+[source,sh]
+----
+pbuild::add_to_group 'Tools'
+----
+====

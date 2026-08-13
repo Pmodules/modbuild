@@ -1,0 +1,71 @@
+[id="module-search",reftext="`module search`"]
+= Search modules
+== NAME
+
+`module search` - search installed modules
+
+== SYNOPSIS
+
+`module search [switches] string...`
+
+== DESCRIPTION
+
+List all modules in the current `MODULEPATH` and the module hierarchy. If an argument is given, search for modules whose name match the argument.
+Options
+
+== OPTIONS
+
+`--no-header`:: Suppress output of a header. 
+
+`--release=RELEASE`:: Search for modules within this release. You can specify this switch multiple times. Without this switch, the used releases will be searched. 
+
+`-a|--all-releases`:: 
+Search within all releases. 
+
+`--with=STRING`:: 
+Search for modules compiled with modules matching string. The command. See example below. 
+
+`--src=dir`:: 
+Search module hierarchy in dir. 
+Eine Textbeschreibung der Funktionsweise des Befehls oder der Funktion. (Üblicherweise jedoch nicht der Benutzung, siehe unten.)
+
+== EXAMPLES
+
+Get list of all installed GCC:
+```shell
+$ module search --all-releases gcc
+Module               Release    Group        Requires
+------------------------------------------------------------
+gcc/4.7.4            stable     Programming  
+gcc/4.8.2            stable     Programming  
+gcc/4.8.3            stable     Programming  
+gcc/4.8.4            stable     Programming  
+gcc/4.8.5            stable     Programming  
+gcc/4.9.2            stable     Programming  
+gcc/4.9.3            stable     Programming  
+gcc/4.9.4            stable     Programming  
+gcc/5.1.0            deprecated Programming  
+gcc/5.2.0            deprecated Programming  
+gcc/5.3.0            stable     Programming  
+gcc/5.4.0            stable     Programming  
+gcc/6.1.0            stable     Programming  
+gcc/6.2.0            stable     Programming  
+gcc/6.3.0            stable     Programming  
+gcc/6.4.0            stable     Programming  
+gcc/7.1.0            stable     Programming  
+gcc/7.2.0            stable     Programming
+```
+
+Get list of all open-mpi versions compiled with GCC 5.4.0:
+```shell
+$ module search --all-releases openmpi --with=gcc/5.4.0
+Module               Release    Group        Requires
+------------------------------------------------------------
+openmpi/1.10.2       stable     Compiler     gcc/5.4.0
+openmpi/1.10.4       stable     Compiler     gcc/5.4.0
+openmpi/2.0.1        stable     Compiler     gcc/5.4.0
+```
+
+== SEE ALSO
+
+<<module-avail>>

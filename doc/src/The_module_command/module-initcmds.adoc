@@ -1,0 +1,53 @@
+[id="module-initcmds",reftext="`module initcmds`"]
+= Manipulate shell’s initialization file
+
+== NAME
+
+`module initadd|initprepend|initrm|initswitch|initrm|initlist|initclear` - add or remove modules from shell’s initialization file
+
+== SYNOPSIS
+
+`module initadd module...` +
+`module initprepend module...` +
+`module initrm module...` +
+`module initswitch module1 module2` +
+`module initlist` +
+`module initclear`
+
+== DESCRIPTION
+
+Add modulefile(s) to, list modulefile(s) in or remove modulefile(s) from the shell's initialization file in the user's home directory. The startup files checked (in order) are:
+
+**csh**:: 
+`.modules`, `.cshrc(.ext)`, `.csh_variables`, and `.login(.ext)` 
+
+**tcsh**::
+`.modules`, `.tcshrc`, `.cshrc(.ext)`, `.csh_variables`, and `.login(.ext)` 
+
+**bash**::
+`.modules`, `.bash_profile`, `.bash_login`, `.profile(.ext)`, and `.bashrc(.ext)` 
+
+**zsh**::
+`.modules`, `.zcshrc(.ext)`, `.zshenv(.ext)`, and `.zlogin(.ext)`
+
+`module initadd module...`:: 
+If a module load line is found in any of these files, the modulefile(s) is(are) appended to any existing list of modulefiles. The module load line must be located in at least one of the files listed above for any of the init sub-commands to work properly. If the module load line is found in multiple shell initialization files, all of the lines are changed. 
+
+`module initprepend module...`:: 
+Does the same as initadd but prepends the given modules to the beginning of the list. 
+
+`module initrm module...`:: 
+Remove modulefile(s) from the shell's initialization files. 
+
+`module initswitch module1 module2`:: 
+Switch `module1` with `module2` in the shell's initialization files. 
+
+`module initlist`:: 
+List all of the module(s) loaded from the shell's initialization file. 
+
+`module initclear`:: 
+Clear all of the module(s) from the shell's initialization files. 
+
+== SEE ALSO
+
+<<module-load>>, <<module-load>>, <<module-switch>>
