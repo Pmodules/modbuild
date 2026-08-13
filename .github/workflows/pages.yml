@@ -48,7 +48,7 @@ jobs:
             -a experimental \
             -a stylesheet=$GITHUB_WORKSPACE/src/stylesheets/readthedocs-new.css \
             -D /tmp \
-            -R src '**/*.adoc'
+            -R doc/src '**/*.adoc'
 
       - name: Chunk HTML
         run: |
