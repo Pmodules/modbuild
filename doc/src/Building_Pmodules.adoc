@@ -45,12 +45,6 @@ The module provides a 'Hello, world!' program.
 "
 ----
 
-.Example: configuration file `/opt/psi/Sandbox/modulefiles/HelloWorld/.release-1.0.0` for the `HelloWorld/1.0.0` module
-[source,sh]
-----
-unstable
-----
-
 .Example: `/opt/psi/Sandbox/HelloWorld/1.0.0/bin/hello`:
 [source,sh]
 ----
@@ -81,18 +75,6 @@ source. The building plan of a module is coded in a so called
 *_build-block_*. A build-block consists at least of a build-script with instruction how to download, compile and install a dedicated piece of 
 software, a modulefile and a configuration file.
 
-To avoid problems with dependencies to system libraries or installed software it is best practice to build modules on dedicated systems. At PSI:
-
-* For modules which should be able to run on all RHEL7 and newer systems, use the system pmod7.psi.ch. If you need access to the system please contact achim.gsell@psi.ch.
-
-* Merlin6 specific modules - like `openmpi`, `mpich` and modules depending on them - must be compiled on a Merlin6 login node.
-
-* Modules specific for a beamline should be compiled on a Ra login node with RHEL8 or a dedicated RHEL8 beamline system.
-
-[NOTE]
-====
-If you build a module on RHEL7, it might not run on RHEL8 due to newer versions of system libraries. In must cases this can be solved by installing these system libraries in the module itself and setting the `RPATH`. The recommended path in this case is `$PREFIX/lib/system` whereby `$PREFIX` is the installation prefix of the software.
-====
 
 In the next section we describe how to write build recipes.
 
@@ -130,8 +112,6 @@ Since we use BASH for our build-scripts and Tcl for modulefiles, we use BASH/Tcl
 
 [id="building-modules", reftext="Building Pmodules"]
 == Building a Pmodule
-
-To simplify the building of modules, Pmodules has a simple build system. The build system of Pmodules is far less powerful than the build system of Spack or NixOS, but fulfills its purpose for many modules.
 
 Perform the following steps for a new Pmodule:
 
