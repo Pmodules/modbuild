@@ -1,0 +1,46 @@
+[id="module-swap",reftext="`module swap`"]
+= Swapping modules
+== NAME
+
+`module swap|switch` - replace a loaded module by another
+
+== SYNOPSIS
+
+`module swap   [modulefile1] modulefile2` +
+`module switch [modulefile1] modulefile2`
+
+== DESCRIPTION
+
+Switch loaded `modulefile1` with `modulefile2`. If `modulefile1` is not specified, then it is assumed to be the currently loaded module with the same root name as `modulefile2`. 
+
+== OPTIONS / FLAGS
+
+None
+
+== EXAMPLES
+
+-----
+$ module load gcc/4.8.4 
+$ module swap gcc/4.9.2
+$ module list 
+Currently Loaded Modulefiles:
+  1) gcc/4.9.2
+-----
+
+== BUGS
+
+You can only swap between different version. The following commands are working (assuming that `gcc/4.8.2` is loaded):
+-----
+$ module swap gcc/4.9.2
+$ module swap gcc/4.9.2 gcc/5.4.0
+-----
+The following command does *not* working as expected:
+-----
+$ module swap gcc/4.8.2 intel/15.0
+-----
+
+This command does not work with the Tcl implementation (environment variable `PMOUDLE_PURETCL` set).
+
+== SEE ALSO
+
+<<module-load>>, <<module-load>>, <<module-list>>

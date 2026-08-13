@@ -1,0 +1,15 @@
+= *LINKS*
+
+== Other implementation of environment module systems
+* Home page of http://modules.sourceforge.net/index.html[Environment Modules]
+* Home page of https://www.tacc.utexas.edu/research-development/tacc-projects/lmod[Lmod]
+
+== Articles
+* http://www.admin-magazine.com/HPC/Articles/Environment-Modules[Environment Modules – A Great Tool for Clusters]; Jeff Layton;  http://www.admin-magazine.com/[Admin magazin]
+* http://www.admin-magazine.com/HPC/Articles/Lmod-Alternative-Environment-Modules[Lmod – Alternative Environment Modules]; Jeff Layton; http://www.admin-magazine.com/[Admin magazin]
+
+---
+
+== Talks
+* http://iweb.dl.sourceforge.net/project/lmod/lmod_build_install_talk.pdf[Lmod: A New Environment Modules System for HPC]; Robert !McLay; Texas Advanced Computing Center
+* link:files/Pmodules.pdf[Pmodules: The PSI central SW distribution framework]; Achim Gsell; Paul Scherrer Institute

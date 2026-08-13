@@ -1,0 +1,444 @@
+= *PMODULES IN A NUTSHELL* 
+
+Before reading this section you should be familiar with an environment module system - either http://modules.sourceforge.net/[Environment Modules] or https://www.tacc.utexas.edu/research-development/tacc-projects/lmod[Lmod].
+
+Pmodules organizes modules in groups like `Tools`, `Programming`, `Libraries`, `System` etc. for a clear arrangement. Groups of modules can easily be added to the available modules. Read section <<nutshell-module-groups>> for more details about module groups.
+
+One issue with Environment Modules is the flat naming scheme. Pmodules and Lmod solves the issue by organizing the modules hierarchically.  Providing modules for a toolkit like parallel HDF5 ends up in dozen of modules. One user wants to use GCC 4.8.4 and OpenMPI 1.6.5 another Intel C 15 and MPICH 3.1.4, a third user requires GCC 4.9.2 with MPICH 3.1.4. After a couple of month, some users want new versions. In a flat naming scheme you see all installed versions, even if you just want to see what is available for particular compiler. The solution to this problem is a hierarchical organization of the modules. In section <<nutshell-module-hierarchies>> we describe how to load and search for modules in a module hierarchy.
+
+Neither Lmod nor Environment Modules provides something like a life cycle management. A module is either available or not. There is no way to inform the users, whether a module is still unstable or already deprecated. Pmodules solves this problem by introducing releases like `unstable`, `stable` and `deprecated`. In section <<nutshell-module-lifecycle>> we explain what this means to the user.
+
+---
+
+[id="nutshell-motivation",reftext="Motivation"]
+== Motivation
+
+Environment module systems provide a solution for the dynamic
+modification of a user's environment by loading special files named
+'modulefiles'.
+
+Each modulefile contains the information needed to configure the shell
+for an application or library. The environment can be modified on a
+per-module basis using the `module` command which interprets
+modulefiles. Typically modulefiles instruct the `module` command to
+alter or set shell environment variables such as `PATH`, `MANPATH`
+etc. modulefiles may be shared by many users on a system and users may
+have their own collection to supplement or replace the shared
+modulefiles.
+
+Environment module systems are widely used on HPC systems to provide
+multiple compilers and multiple versions of the same library or API
+implementations to the users. The
+http://modules.sourceforge.net/[Environment Modules] system is the
+most widely used implementation. Another - more recent -
+implementation is
+https://www.tacc.utexas.edu/research-development/tacc-projects/lmod[Lmod]. Lmod
+addresses some weaknesses of the Environment Modules, but solves only
+some of them.
+
+One issue with the Environment Modules is the flat naming scheme. The
+Lmod system and Pmodules solves the problem by organizing the modules
+hierarchically. What is the problem with a flat naming scheme? Provide
+different versions of the same library, like openmpi 1.6.5/1.8.4,
+compiled with different (versions) of compilers, like gcc
+4.7.4/4.8.4/4.9.2 and Intel 14.0.2/15.2, the number of modules is
+growing quite fast. Providing dozens of libraries will end up in
+hundreds of modules - not very clear to the users.
+
+Neither Environment Modules nor Lmod have build-in support for phasing
+out modules or marking modules as unstable. Pmodules solves this
+problem by introducing 'releases' like stable, unstable and
+deprecated. A user will be warned while loading a non-stable module.
+
+With Environment Modules and Lmod everything must be coded in the
+modulefile - even things which are obvious. If a `bin` directory
+exists, why not adding this directory to the `PATH` variable
+automatically? The same can be done for `MANPATH`, `LD_LIBRARY_PATH`
+and other environment variables.
+
+Usually modules are installed on a network file-systems. In some cases
+it is convenient or even required to install modules locally. Pmodules
+provides a tool to install all or a sub-set of the modules from any
+location to another location.
+
+Pmodules has its own (simple) build environment. For a new module you
+have to write a build script and a modulefile. Updating an existing
+modules is very simple. In most cases it's downloading the new version
+and calling the build script. Anyway, nobody forces you to use this
+build environment, but in most cases it is very handy.
+
+[id="nutshell-module-groups",reftext="Module groups"]
+== Module groups
+Pmodules organizes modules in groups. By default only the groups
+`Tools` and `Programming` are visible. To get a list of 'used' and
+'unused' groups, run the command `module use`:
+----
+$ module use
+Used groups:
+	Tools
+	Programming
+
+Unused groups:
+	Libraries
+	System
+...
+----
+
+To make the modules in a given group available, run the command 
+
+----
+$ module use GROUP
+----
+
+Example::
+
+----
+$ module use System
+$ module avail 
+--------------------------------------------- System ---------------------------------------------
+
+fsstress/1.0.0  nmap/6.46       
+
+--------------------------------------------- Tools ---------------------------------------------
+
+Eclipse/4.4.2   Firefox/31.0    Opera/23.0      Thunderbird/31.0                emacs/24.4      
+global/6.3.1    gnuplot/4.6.3   
+
+------------------------------------------ Programming ------------------------------------------
+
+Python/3.4.0    Python/3.4.3    autoconf/2.69   automake/1.14   cmake/2.8.12.2  gcc/4.7.4       
+gcc/4.8.3       gcc/4.8.4       gcc/4.9.2       libtool/2.4.2   m4/1.4.17 
+----
+
+To make groups unavailable, run the command
+
+----
+$ module unuse GROUP
+----
+
+Example::
+Make modules in the groups `System` and `Programming` unavailable:
+
+----
+$ module unuse System Programming
+$ module avail
+--------------------------------------------- Tools ---------------------------------------------
+
+Eclipse/4.4.2   Firefox/31.0    Opera/23.0      Thunderbird/31.0                dialog/1.2.1(u) 
+emacs/24.4      emacs/24.5(u)   git/2.3.3(u)    global/6.3.1    gnuplot/4.6.3   gnuplot/5.0.0(u)
+----
+
+---
+
+[id="nutshell-module-hierarchies",reftext="Module hierarchies"]
+== Module hierarchies
+Unstructured, flat naming schemes are confusing. Why? Lets assume we have to
+provide modules for the compilers `gcc-4.8.4`, `gcc-4.9.2`, `intel-15.2`,
+the MPI implementations `openmpi-1.6.5`, `openmpi-1.8.4`, `mpich-3.1.4`
+and parallel versions of `hdf5-1.8.10` and `hdf5-1.8.14` compiled with
+all compiler/MPI combinations. So, we have to provide 30(!) modules:
+
+* 3 compiler modules
+* 9 MPI modules
+* 18 hdf5 modules
+
+Even with a reasonable naming convention this is quite confusing. In a flat naming scheme a listing of available modules might look like:
+
+----
+$ module avail
+gcc-4.8.4
+gcc-4.9.2
+hdf5-1.8.10-mpi-3.1.4-gcc-4.8.4
+hdf5-1.8.10-mpi-3.1.4-gcc-4.9.2
+hdf5-1.8.10-mpi-3.1.4-intel-15.2
+hdf5-1.8.10-openmpi-1.6.5-gcc-4.8.4
+hdf5-1.8.10-openmpi-1.6.5-gcc-4.9.2
+hdf5-1.8.10-openmpi-1.6.5-intel-15.2
+hdf5-1.8.10-openmpi-1.8.4-gcc-4.8.4
+hdf5-1.8.10-openmpi-1.8.4-gcc-4.9.2
+hdf5-1.8.10-openmpi-1.8.4-intel-15.2
+hdf5-1.8.14-mpi-3.1.4-gcc-4.8.4
+hdf5-1.8.14-mpi-3.1.4-gcc-4.9.2
+hdf5-1.8.14-mpi-3.1.4-intel-15.2
+hdf5-1.8.14-openmpi-1.6.5-gcc-4.8.4
+hdf5-1.8.14-openmpi-1.6.5-intel-15.2
+hdf5-1.8.14-openmpi-1.8.4-gcc-4.8.4
+hdf5-1.8.14-openmpi-1.8.4-gcc-4.9.2
+hdf5-1.8.14-openmpi-1.8.4-intel-15.2
+intel-15.3
+mpi-3.1.4-gcc-4.8.4
+mpi-3.1.4-gcc-4.9.2
+mpi-3.1.4-intel-15.2
+openmpi-1.6.5-gcc-4.8.4
+openmpi-1.6.5-gcc-4.9.2
+openmpi-1.6.5-intel-15.2
+openmpi-1.8.4-gcc-4.8.4
+openmpi-1.8.4-gcc-4.9.2
+openmpi-1.8.4-intel-15.2
+----
+
+Got it? One combination is missing. But which one? 
+
+Actually we have to provide more compilers than the three mentioned above: while writing this documentation the number is already seven(!): five GCC versions and two Intel C versions.
+
+Another issue with a flat naming scheme is, that all modules are listed independent of already loaded modules. But listing a module providing `hdf5 1.8.14` compiled with `Intel 15.2` and `mpich 3.1.4` makes not much sense if modules for `gcc 4.9.2` and `openmpi 1.8.4` are already loaded. A solution to these issues is a to structure the modules hierarchically.
+
+----
+                  ... _________________________________________|________________________________________...
+                     /                                         |                                        \
+                    gcc                                       gcc                                      intel
+                   4.8.4                                     4.9.2                                     15.2
+        _____________|_____________               _____________|_____________               _____________|_____________
+       /             |             \             /             |             \             /             |             \
+    openmpi       openmpi        mpich        openmpi       openmpi        mpich        openmpi       openmpi        mpich
+     1.6.5         1.8.4         3.1.4         1.6.5         1.8.4         3.1.4         1.6.5         1.8.4         3.1.4
+     __|__         __|__         __|__         __|__         __|__         __|__         __|__         __|__         __|__
+    /     \       /     \       /     \       /     \       /     \       /     \       /     \       /     \       /     \
+  hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5   hdf5
+ 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14 1.8.10 1.8.14
+----
+
+[NOTE]
+In a hierarchical structured module environment the command `module
+avail` does '''not''' reveal all modules. Modules like `openmpi` and
+`hdf5` are not listed as long as the dependencies are not loaded.
+
+ Example::
+ Before you can load a hdf5 module, you must first
+ * load a particular compiler module,
+ * than a particular MPI module
+ * and then the desired hdf5 module.
+
+----
+$ module list
+No Modulefiles Currently Loaded.
+$ module avail 
+ ------------------------------------------ Programming ------------------------------------------
+
+autoconf/2.69   automake/1.14   binutils/2.25(u)                cmake/2.8.12.2  cmake/3.1.3     
+gcc/4.7.4       gcc/4.8.3       gcc/4.8.4       gcc/4.9.2       gcc/5.1.0(u)    intel/14.0.3    
+intel/15.2(u)   libtool/2.4.2   m4/1.4.17       psi-python27/2.1.0(u)           
+psi-python34/2.1.0(u)           Python/3.4.3    Tcl/8.6.3(u)    Tcl/8.6.4(u)    Tk/8.6.4(u)
+----
+
+After loading the module `gcc/4.9.2` we see the available MPI implementations compiled with this compiler:
+
+----
+$ module load gcc/4.9.2
+$ module avail 
+------------------------------------------ Programming ------------------------------------------
+
+autoconf/2.69   automake/1.14   binutils/2.25(u)                cmake/2.8.12.2  cmake/3.1.3     
+gcc/4.7.4       gcc/4.8.3       gcc/4.8.4       gcc/4.9.2       gcc/5.1.0(u)    intel/14.0.3    
+intel/15.2(u)   libtool/2.4.2   m4/1.4.17       psi-python27/2.1.0(u)           
+psi-python34/2.1.0(u)           Python/3.4.3    Tcl/8.6.3(u)    Tcl/8.6.4(u)    Tk/8.6.4(u)     
+
+--------------------------------------- Compiler/gcc/4.9.2 ---------------------------------------
+
+boost/1.55.0    boost/1.57.0    gsl/1.15        hdf5_serial/1.8.12              hdf5_serial/1.8.13
+hdf5_serial/1.8.14              mpich/3.1.4(u)  OpenBLAS/0.2.9  OpenBLAS_OMP/0.2.9              
+openmpi/1.6.5   openmpi/1.8.2   openmpi/1.8.4   root/5.34.19    root/5.34.26    SuperLU/4.3     
+UMFPACK/5.6.2   vtk/5.10.1 
+----
+
+Next step is loading a MPI module:
+
+----
+$ module load openmpi/1.8.4
+$ module avail 
+------------------------------------------ Programming ------------------------------------------
+
+autoconf/2.69   automake/1.14   binutils/2.25(u)                cmake/2.8.12.2  cmake/3.1.3     
+gcc/4.7.4       gcc/4.8.3       gcc/4.8.4       gcc/4.9.2       gcc/5.1.0(u)    intel/14.0.3    
+intel/15.2(u)   libtool/2.4.2   m4/1.4.17       psi-python27/2.1.0(u)           
+psi-python34/2.1.0(u)           Python/3.4.3    Tcl/8.6.3(u)    Tcl/8.6.4(u)    Tk/8.6.4(u)     
+
+--------------------------------------- Compiler/gcc/4.9.2 ---------------------------------------
+
+boost/1.55.0    boost/1.57.0    gsl/1.15        hdf5_serial/1.8.12              hdf5_serial/1.8.13
+hdf5_serial/1.8.14              mpich/3.1.4(u)  OpenBLAS/0.2.9  OpenBLAS_OMP/0.2.9              
+openmpi/1.6.5   openmpi/1.8.2   openmpi/1.8.4   root/5.34.19    root/5.34.26    SuperLU/4.3     
+UMFPACK/5.6.2   vtk/5.10.1      
+
+---------------------------------- MPI/gcc/4.9.2/openmpi/1.8.4 ----------------------------------
+
+BoxLib/2014-02-28               hdf5/1.8.12     hdf5/1.8.13     hdf5/1.8.14     ippl/1.1.4      
+parmetis/3.2.0  SuperLU_DIST/3.3                trilinos/11.10.2                trilinos/11.12.1
+trilinos/11.14.1 
+----
+
+Now you can load the HDF5 module:
+
+----
+$ module load hdf5/1.8.14
+----
+
+Instead of 
+
+----
+$ module load gcc/4.9.2
+$ module load openmpi/1.8.4
+$ module load hdf5/1.8.14
+----
+you can also execute
+----
+$ module load gcc/4.9.2 openmpi/1.8.4 hdf5/1.8.14
+----
+[NOTE]
+Modules marked with `(u)` are unstable.
+---
+
+[id="nutshell-searching",reftext="Searching the module hierarchy"]
+== Searching the module hierarchy
+
+Now you may ask: How do I know which hdf5 (or Trilinos, boost...) modules are really available? To get an answer to this question you can run the `module search` command.
+
+Example::
+To get a list of all installed hdf5 modules run
+----
+$ module search hdf5 --all-releases
+Module               Release    Group        Requires
+------------------------------------------------------------
+hdf5/1.8.12          unstable   MPI          gcc/4.7.4 mpich/3.1.4
+hdf5/1.8.12          stable     MPI          gcc/4.7.4 openmpi/1.6.5
+hdf5/1.8.12          stable     MPI          gcc/4.7.4 openmpi/1.8.2
+hdf5/1.8.12          stable     MPI          gcc/4.7.4 openmpi/1.8.4
+hdf5/1.8.12          stable     MPI          gcc/4.8.3 openmpi/1.6.5
+hdf5/1.8.12          stable     MPI          gcc/4.8.3 openmpi/1.8.2
+hdf5/1.8.12          stable     MPI          gcc/4.8.3 openmpi/1.8.4
+hdf5/1.8.12          unstable   MPI          gcc/4.8.4 mpich/3.1.4
+hdf5/1.8.12          stable     MPI          gcc/4.8.4 openmpi/1.6.5
+hdf5/1.8.12          stable     MPI          gcc/4.8.4 openmpi/1.8.2
+hdf5/1.8.12          stable     MPI          gcc/4.8.4 openmpi/1.8.4
+hdf5/1.8.12          unstable   MPI          gcc/4.9.2 mpich/3.1.4
+hdf5/1.8.12          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.12          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.12          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+hdf5/1.8.12          unstable   MPI          gcc/5.1.0 mpich/3.1.4
+hdf5/1.8.12          unstable   MPI          gcc/5.1.0 openmpi/1.6.5
+hdf5/1.8.12          unstable   MPI          gcc/5.1.0 openmpi/1.8.4
+hdf5/1.8.12          unstable   MPI          intel/15.2 mpich/3.1.4
+hdf5/1.8.12          unstable   MPI          intel/15.2 openmpi/1.6.5
+hdf5/1.8.12          unstable   MPI          intel/15.2 openmpi/1.8.4
+hdf5/1.8.13          stable     MPI          gcc/4.7.4 openmpi/1.6.5
+hdf5/1.8.13          stable     MPI          gcc/4.7.4 openmpi/1.8.2
+hdf5/1.8.13          stable     MPI          gcc/4.7.4 openmpi/1.8.4
+hdf5/1.8.13          stable     MPI          gcc/4.8.3 openmpi/1.6.5
+hdf5/1.8.13          stable     MPI          gcc/4.8.3 openmpi/1.8.2
+hdf5/1.8.13          stable     MPI          gcc/4.8.3 openmpi/1.8.4
+hdf5/1.8.13          stable     MPI          gcc/4.8.4 openmpi/1.6.5
+hdf5/1.8.13          stable     MPI          gcc/4.8.4 openmpi/1.8.2
+hdf5/1.8.13          stable     MPI          gcc/4.8.4 openmpi/1.8.4
+hdf5/1.8.13          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.13          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.13          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+hdf5/1.8.14          unstable   MPI          gcc/4.7.4 mpich/3.1.4
+hdf5/1.8.14          stable     MPI          gcc/4.7.4 openmpi/1.6.5
+hdf5/1.8.14          stable     MPI          gcc/4.7.4 openmpi/1.8.2
+hdf5/1.8.14          stable     MPI          gcc/4.7.4 openmpi/1.8.4
+hdf5/1.8.14          stable     MPI          gcc/4.8.3 openmpi/1.6.5
+hdf5/1.8.14          stable     MPI          gcc/4.8.3 openmpi/1.8.2
+hdf5/1.8.14          stable     MPI          gcc/4.8.3 openmpi/1.8.4
+hdf5/1.8.14          unstable   MPI          gcc/4.8.4 mpich/3.1.4
+hdf5/1.8.14          stable     MPI          gcc/4.8.4 openmpi/1.6.5
+hdf5/1.8.14          stable     MPI          gcc/4.8.4 openmpi/1.8.2
+hdf5/1.8.14          stable     MPI          gcc/4.8.4 openmpi/1.8.4
+hdf5/1.8.14          unstable   MPI          gcc/4.9.2 mpich/3.1.4
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+hdf5/1.8.14          unstable   MPI          gcc/5.1.0 mpich/3.1.4
+hdf5/1.8.14          unstable   MPI          gcc/5.1.0 openmpi/1.6.5
+hdf5/1.8.14          unstable   MPI          gcc/5.1.0 openmpi/1.8.4
+hdf5/1.8.14          unstable   MPI          intel/15.2 mpich/3.1.4
+hdf5/1.8.14          unstable   MPI          intel/15.2 openmpi/1.6.5
+hdf5/1.8.14          unstable   MPI          intel/15.2 openmpi/1.8.4
+hdf5_serial/1.8.12   stable     Compiler     gcc/4.7.4
+hdf5_serial/1.8.12   stable     Compiler     gcc/4.8.3
+hdf5_serial/1.8.12   stable     Compiler     gcc/4.8.4
+hdf5_serial/1.8.12   stable     Compiler     gcc/4.9.2
+hdf5_serial/1.8.12   unstable   Compiler     intel/15.2
+hdf5_serial/1.8.14   stable     Compiler     gcc/4.7.4
+hdf5_serial/1.8.14   stable     Compiler     gcc/4.8.3
+hdf5_serial/1.8.14   stable     Compiler     gcc/4.8.4
+hdf5_serial/1.8.14   stable     Compiler     gcc/4.9.2
+hdf5_serial/1.8.14   unstable   Compiler     intel/15.2
+----
+Example::
+To get a list of all installed hdf5 modules compiled with GCC 4.9.2, run
+----
+$ module search hdf5 --with=gcc/4.9.2 --all-releases
+Module               Release    Group        Requires
+------------------------------------------------------------
+hdf5/1.8.12          unstable   MPI          gcc/4.9.2 mpich/3.1.4
+hdf5/1.8.12          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.12          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.12          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+hdf5/1.8.13          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.13          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.13          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+hdf5/1.8.14          unstable   MPI          gcc/4.9.2 mpich/3.1.4
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+hdf5_serial/1.8.12   stable     Compiler     gcc/4.9.2
+hdf5_serial/1.8.13   stable     Compiler     gcc/4.9.2
+hdf5_serial/1.8.14   stable     Compiler     gcc/4.9.2
+----
+Example::
+To get a list of all installed modules providing (parallel) HDF5 1.8.14, execute
+----
+$ module search hdf5/1.8.14 --with=gcc/4.9.2 --all-releases
+Module               Release    Group        Requires
+------------------------------------------------------------
+hdf5/1.8.14          unstable   MPI          gcc/4.9.2 mpich/3.1.4
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.6.5
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.8.2
+hdf5/1.8.14          stable     MPI          gcc/4.9.2 openmpi/1.8.4
+----
+
+[NOTE]
+Without the option `--all-releases`, only modules of "used" releases are listed.
+
+
+---
+
+[id="nutshell-module-lifecycle",reftext="Module lifecycle"]
+== Module lifecycle
+Pmodules supports a simple lifecycle management. This solves the
+problem of introducing new modules, which are still in development or
+considered to be unstable and it supports phasing out old and
+deprecated modules. The lifecycle of a module is `unstable` ->
+`stable` -> `deprecated`. By default only stable modules are
+visible. If you want to use unstable or deprecated modules, you have
+to run
+
+----
+$ module use unstable
+----
+
+or
+
+----
+$ module use deprecated
+----
+
+first.
+
+All modules start as `unstable`. This implies something like "use on
+your on risk". Unstable modules may be changed without warning or even
+be removed. If you load an unstable module, a warning will be printed.
+
+A `stable` module is, well, stable. It will not be changed during the
+remaining life time and the provided software is considered to be
+stable.
+
+A `deprecated` module should not be used any more. Deprecated modules
+might be removed without further warning. While loading a deprecated
+module, a warning will be printed. Kind module developers might add an
+end of life message with more detailed information.
+
+[id="nutshell-overlays",reftext="Overlays"]
+== Overlays
+
+TBW

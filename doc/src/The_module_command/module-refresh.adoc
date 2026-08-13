@@ -1,0 +1,17 @@
+[id="module-refresh",reftext="`module refresh`"]
+= Refresh loaded modules
+== NAME
+
+`module refresh` - refresh loaded modules
+
+== SYNOPSIS
+
+`module refresh`
+
+== DESCRIPTION
+
+Force a refresh of all non-persistent components of currently loaded modules. This should be used on derived shells where aliases need to be reinitialized but the environment variables have already been set by the currently loaded modules. 
+
+== SEE ALSO
+
+<<module-load>>

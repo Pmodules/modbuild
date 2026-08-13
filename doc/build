@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [[ -z "$CI_PROJECT_DIR" ]]; then
+	echo "CI_PROJECT_DIR not defined" 1>&2
+	exit 1
+fi
+
+asciidoctor -a data-uri \
+        -a reproducible \
+        -a icons=font \
+        -a source-highlighter=Pygments \
+        -a experimental \
+        -a stylesheet="$CI_PROJECT_DIR/src/stylesheets/readthedocs-new.css" \
+        -D "$CI_PROJECT_DIR/html" \
+        -R "$CI_PROJECT_DIR/src" '**/*.adoc'
+
+"$CI_PROJECT_DIR/asciidoctor-chunker_v1.0.6/asciidoctor-chunker.js" \
+	--no-strictMode \
+        --depth 2 \
+        --outdir "$CI_PROJECT_DIR/public" \
+        --titlePage '' "$CI_PROJECT_DIR/html/index.html"

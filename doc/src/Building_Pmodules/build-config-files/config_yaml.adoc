@@ -1,0 +1,334 @@
+= YAML configuration files in Pmodules 1.1 and newer
+
+[NOTE]
+=====================================================================
+Pmodules 1.1 and newer are supporting configuration files in YAML
+format. For backward compatibility the build-systems supports both
+types of configuration files with the YAML configuration file as
+default.
+=====================================================================
+
+The old format of the variants file is simple but very limited and
+almost impossible to extend for new features. To overcome the
+limitations a new format using YAML for variants files has been
+introduced. For the time being both format are supported. But it is
+highly recommended to use the YAML format for new modules and to
+migrate existing variants files in the old format to the new. 
+
+== Path to configuration file
+
+The path to the configuration file is
+
+`*_build-recipe-dir_*/files/config.yaml`
+
+== Format
+
+[source,yaml,subs="verbatim,quotes"]
+----
+format: 1
+*_module-name-1_*:
+  defaults:                                       # optional
+    *_config-block_*
+  shasums:                                        # optional
+    *_filename-1_*: *_sha256sum-1_*
+    ...
+  versions:
+    *_version-keys-1_*:
+      config:                                     # optional
+        *_config-block_*
+      variants:                                   # optional
+        - *_config-block-1_*
+        - ...
+    ...
+*_module-name-2_*:
+  ...
+----
+
+[cols="1,1,5"]
+|===
+| Field-Name | Type | Description
+
+| `format`
+| unsigned int
+| Format version of the YAML configuration file. For now it must be `1`
+
+| `*_module-name-N_*`
+| config-block
+| Configuration for the Pmodule `*_module-name-N_*`. Example: `openmpi`
+
+| `defaults`
+| config-block
+| Default configuration. This block is optional.
+
+| `shasums`
+| MAP of string
+| SHA256 hash sums of source files. Keys are filenames, the value the +
+ corresponding SHA256 hash sum. This block is optional. A warning is
+ printed if a hash-sum is missing for a required file.
+
+| `versions`
+| MAP of configurations for different version keys
+| A version key is a semicolon separated string of version
+  numbers. Version numbers can be specified with shell brace
+  expansion. Example: + 
+  `5.4.{0,1,2,3,4,5,8,9};5.2.{0,4,6,7,8};5.0.0;4.6.3`
+
+| `config`
+| config-block
+| Optional, version specific configuration block. Configurations
+  specified here are overriding the defaults.
+
+| `variants`
+| map of config-block
+| Variants can be used to compile the some software with different
+| options. Example: `openmpi`` with and without Slurm support are
+| variants of the same software. 
+
+|===
+
+== Configuration blocks
+
+[NOTE]
+=====================================================================
+In configuration blocks everything is optional!
+=====================================================================
+
+.`config-block`
+[source,yaml,subs="verbatim,quotes"]
+----
+build_requires: [*_build-req-1_*, ...]
+compile_in_sourcetree: *_bool_*
+configure_with: auto|autotools|cmake
+default_variant: *_variant_*
+docfiles: [*_file-1_*, ...]
+group: *_group_*
+group_deps:
+  compilers:
+    *_cpmpiler-1_*: [*_version-1_*, ...]
+  mpi:
+    *_mpi-implemation-1_*: [*_version-1_*, ...]
+  hdf5:
+    hdf5: [*_version-1_*, ...]
+  hdf5_serial:
+    hdf5[__serial]: [*_version-1_*, ...]
+overlay: *_overlay_*
+relstage: *_release-stage_*
+runtime_deps: [*_rt-dep-1_*, ...]
+suffix: *_suffix_*
+systems: [*_system-1_*, ...]
+urls:
+  - url: *_link_*
+    name: *_filename_*
+  - ...
+variant: [*_variant-1_*, ...]
+----
+
+[cols="1,1,5"]
+|===
+| Field-Name | Type | Description
+
+| `build_requires`
+| array of string
+| Modules required to build this module
+
+| `compile_in_sourcetree`
+| boolean
+| Compile in source tree or in a dedicate build directory.
+
+| `configure_with`
+| string 
+| Choose software configuration system. Allowed values are: +
+ `auto`: use autotools if available +
+ `autotools`: use autotools +
+ `cmake`: use cmake
+
+| `default_variant`
+| string
+| (opt) Specifies the default variant to build if no variant is specified
+
+| `docfiles`
+| array of string
+| Array with documentation files to be installed in `share/doc/`
+
+| `group`
+| string
+| Group of the module
+
+| `group_deps`
+| group-deps-object
+| Group/hierarchical dependencies like compiler, MPI, HDF5 modules
+
+| `overlay`
+| string
+| Overlay of the module
+
+| `relstage`
+| string
+| Release stage of the module. Allowed values are: +
+`unstable`: the module is still under development +
+`stable`: the module is ready to be used +
+`deprecated`: the module is deprecated +
+`remove`: the module is deprecated and marked to be removed +
+`removed`: the module has been removed
+
+| `runtime_deps`
+| sequence of strings
+| Module to be loaded at runtime
+
+| `suffix`
+| string
+| This string will be added to the version of the module
+
+| `systems`
+| sequence of strings
+| A 'system' is either a hostname or OS name like `rhel8`. For +
+ hostnames shell glob pattern matching like `merlin-*` can be used.
+
+| `urls`
+| sequence of links and optional file-names
+| Software which must be downloaded to build a specific module. +
+  `url`: Download link +
+  `name`: optional output filename. The filename defaults the last
+  component of the `url`. +
+  Default URLs can be defined by using the variables `P`, `V`,
+  `V_PKG`, `V_MAJOR`, `V_MINOR` and `V_PATCHLVL`. Example: +
+  https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz
+
+| `variant`
+| sequence of strings
+| Sequence of synonyms for a variant.
+
+|===
+
+== Examples
+
+.*Example: Gnuplot*
+----
+format: 1
+gnuplot:
+  defaults:                                             <1>
+    group: Tools                                        <2>
+    overlay: base                                       <3>
+    relstage: stable                                    <4>
+    systems: [rhel8, rhel7, rhel6]                      <5>
+    docfiles: [Copyright, NEWS, README]                 <6>
+    urls:                                               <7>
+      - url: https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz 
+  shasums:                                              <8>
+    gnuplot-5.4.10.tar.gz: 975d8c1cc2c41c7cedc4e323aff035d977feb9a97f0296dd2a8a66d197a5b27c
+    gnuplot-5.4.9.tar.gz: a328a021f53dc05459be6066020e9a71e8eab6255d3381e22696120d465c6a97
+    gnuplot-5.4.8.tar.gz: 931279c7caad1aff7d46cb4766f1ff41c26d9be9daf0bcf0c79deeee3d91f5cf
+    gnuplot-5.4.5.tar.gz: 66f679115dd30559e110498fc94d926949d4d370b4999a042e724b8e910ee478
+    gnuplot-5.4.4.tar.gz: 372300b7867f5b3538b25fc5d0ac7734af6e3fe0d202b6db926e4369913f0902
+    gnuplot-5.4.3.tar.gz: 51f89bbab90f96d3543f95235368d188eb1e26eda296912256abcd3535bd4d84
+    gnuplot-5.4.2.tar.gz: e57c75e1318133951d32a83bcdc4aff17fed28722c4e71f2305cfc2ae1cae7ba
+    gnuplot-5.4.1.tar.gz: 6b690485567eaeb938c26936e5e0681cf70c856d273cc2c45fabf64d8bc6590e
+    gnuplot-5.4.0.tar.gz: eb4082f03a399fd1e9e2b380cf7a4f785e77023d8dcc7e17570c1b5570a49c47
+    gnuplot-5.2.8.tar.gz: 60a6764ccf404a1668c140f11cc1f699290ab70daa1151bb58fed6139a28ac37
+    gnuplot-5.2.7.tar.gz: 97fe503ff3b2e356fe2ae32203fc7fd2cf9cef1f46b60fe46dc501a228b9f4ed
+    gnuplot-5.2.6.tar.gz: 35dd8f013139e31b3028fac280ee12d4b1346d9bb5c501586d1b5a04ae7a94ee
+    gnuplot-5.2.4.tar.gz: 1515f000bd373aaa53b16183f274189d4f5e0ae47d22f434857933d16a4770cb
+    gnuplot-5.0.0.tar.gz: 417d4bc5bc914a60409bb75cf18dd14f48b07f53c6ad3c4a4d3cd9a8d7370faf
+    gnuplot-4.6.3.tar.gz: df5ffafa25fb32b3ecc0206a520f6bca8680e6dcc961efd30df34c0a1b7ea7f5
+  versions:
+    5.4.{0,1,2,3,4,5,8,9};5.2.{0,4,6,7,8};5.0.0;4.6.3:  <9>
+    5.4.10:                                             <10>
+      config:
+        relstage: unstable
+----
+<1> Configuration is for `gnuplot`
+<2> will be installed in the group `Tools`
+<3> will be installed in the base overlay (`/opt/psi`)
+<4> the default release stage is `stable`
+<5> the module is available on these systems
+<6> install these files to `$PREFIX/share/doc/gnuplot`
+<7> download via this link
+<8> SHA256 hash sums for all available versions
+<9> no specific configuration required for these versions
+<10> release stage of version `5.4.10` is still `unstable`, override
+default release stage.
+---
+
+.*Example: HDF5*
+----
+---
+# yamllint disable rule:line-length             <1>
+format: 1
+hdf5:                                           <2>
+  defaults:
+    group: MPI                                  <3>
+    overlay: base                               <4>
+    relstage: stable                            <5>
+    systems: [rhel7, rhel8, rhel9]              <6>
+    urls:                                       <7>
+      - url: https://support.hdfgroup.org/ftp/HDF5/releases/$P-${V_MAJOR}.${V_MINOR}/$P-${V_PKG}/src/$P-${V_PKG}.tar.bz2
+  shasums:                                      <8>
+    hdf5-1.8.10-patch1.tar.bz2: 292afb3615ad9e68f4d5d18ebb11e4a73f2aece39f2da3875a457ff1e109fc41
+    hdf5-1.8.12.tar.bz2: 10a369a4fc207bb09245f57c758e587420e06dfc0e445e337a58b0848b75a949
+    ...
+    hdf5-1.13.1.tar.bz2: e16973ec893e2d5aa9c8dc73e196db9b99a605578e7317b421c713936f8bf57d
+
+  versions:
+    1.8.12:
+      config:
+        relstage: deprecated                    <9>
+      variants:
+        -
+          group_deps:
+            compiler: {gcc: [4.7.4, 4.8.3, 4.8.4, 4.9.2]}
+            mpi: {openmpi: [1.6.5, 1.8.2, 1.8.4]}
+        -
+          group_deps:
+            compiler: {gcc: [4.8.2]}
+            mpi: {openmpi: [1.6.5]}
+        ...
+        -
+          group_deps:
+            compiler: {gcc: [5.1.0], intel: [15.2, 15.3]}
+            mpi: {openmpi: [1.8.4]}
+    ...
+    1.10.8_slurm:
+      variants:                                <10>
+        -
+          group_deps:
+            compiler: {gcc: [10.4.0]}
+            mpi: {openmpi: [4.1.4_slurm]}
+        -
+          relstage: unstable
+          group_deps:
+            compiler: {gcc: [9.5.0, 10.4.0, 11.4.0, 12.3.0, 13.1.0]}
+            mpi: {openmpi: [4.1.5_slurm]}
+    ...
+    1.12.0:
+      variants:
+        -
+          group_deps:
+            compiler: {gcc: [7.5.0, 8.4.0, 9.3.0, 10.2.0]}
+            mpi: {openmpi: [4.0.5]}
+        -
+          relstage: unstable
+          group_deps:
+            compiler: {pgi: [21.5]}
+            mpi: {pgi-mpi: [21.5]}
+
+    1.13.1:
+      variants:
+        -
+          suffix: _slurm                        <11>
+          variant: [_slurm]
+          relstage: unstable
+          group_deps:
+            compiler: {gcc: [11.2.0]}
+            mpi: {openmpi: [4.1.3_slurm]}
+----
+<1> disable rule to check line length in yamllint. Default is 80. 
+<2> this configuration is for HDF5
+<3> default group is MPI.
+<4> default overlay is `base`
+<5> default release stage is `stable`
+<6> this build-block can be used on RHEL7, RHEL8 and RHEL9
+<7> download via this link
+<8> SHA256 hash sums for all available versions
+<9> all variants of version 1.8.12 are `deprecated`
+<10> hdf5/1.10.8_slurm has two variants. The first variant compiled with GCC 10.4.0 and openmpi/4.1.4_slurm. The second variant is unstable and compiled with with GCC 9.5.0, 10.4.0, 11.4.0, 12.3.0, 13.1.0 and openmpi/4.1.5_slurm.
+<11> TBW

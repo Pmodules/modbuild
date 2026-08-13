@@ -1,0 +1,114 @@
+[id="module-use",reftext="`module use`"]
+= Manipulate module path, used releases, groups or overlays
+== NAME
+
+`module use|unuse` - manipulate module path, used releases or groups
+
+== SYNOPSIS
+
+`module use [OPTIONS] [string...]`
+
+`module unuse string...`
+
+== DESCRIPTION
+
+If called *without* arguments, print a summary about used groups, releases and additional directories in `MODULEPATH`.
+
+If string is a *directory*, append, prepend or remove this directory to/from `MODULEPATH`.
+
+If string is a *group name*, append, prepend or remove the corresponding directory to/from `MODULEPATH`.
+
+If string is a *releases name*, make all modules with this release available/unavailable. Known releases are;
+
+*stable*:: Modules released as stable are considered to be production ready. The files of a stable module will never change. 
+
+*unstable*:: These modules are still unstable. They may not be ready for production use. The files of unstable modules may change to fix bugs or add functionality. Use at your own risk. 
+
+*deprecated*:: Deprecated modules should not be used any more and may be removed without further notice. 
+
+If string matches `flag=[-_a-zA-Z0-9]*` the RHS will be interpreted as use-flag.
+
+== OPTIONS / FLAGS
+
+`-a | --append`:: append directory or group to `MODULEPATH`.
+
+`-p | --prepend`:: prepend directory or group to `MODULEPATH`. 
+
+== EXAMPLES
+
+*List used/unused groups, releases and additional directories in `MODULEPATH`:*
+-----
+$ module use
+Used groups:
+	Tools
+	Programming
+	Compiler
+
+Unused groups:
+	Legacy
+	Libraries
+	System
+
+Used releases:
+	stable
+	unstable
+
+Unused releases:
+	deprecated
+
+Used flags:
+	omp
+
+Additonal directories in MODULEPATH:
+	none
+-----
+*Adding the 'System' group*
+-----
+$ module use System
+$ module avail 
+-------------------------------------------- System:  --------------------------------------------
+
+filebench/1.4.9.1               fsstress/1.0.0  nmap/6.46       patchelf/0.8.1  
+
+-------------------------------------------- Tools:  --------------------------------------------
+
+ANSYS/18.2      emacs/24.4      git/2.3.3       global/6.3.1    gnuplot/4.6.3   gnuplot/5.0.0 
+...
+
+----------------------------------------- Programming:  -----------------------------------------
+
+autoconf/2.69   automake/1.14   automake/1.15   binutils/2.25   cmake/2.8.12.2  cmake/3.1.3     
+cmake/3.6.3     gcc/4.7.4       gcc/4.8.3       gcc/4.8.4       gcc/4.9.2       gcc/4.8.5
+...
+-----
+*Adding a directory to `MODULEPATH`*
+-----
+$ module use /afs/psi.ch/project/amas/modulefiles
+$ module avail 
+----------------------------------- /afs/psi.ch/project/amas:  -----------------------------------
+
+H5hut_parallel-toolchain/2.0    H5hut_serial-toolchain/2.0      OPAL/1.6        OPAL/1.6.0rc5   
+opal-toolschain/1.6             opal-toolschain/2.0             
+
+-------------------------------------------- Tools:  --------------------------------------------
+
+ANSYS/18.2      emacs/24.4      git/2.3.3       global/6.3.1    gnuplot/4.6.3   gnuplot/5.0.0   
+...
+----------------------------------------- Programming:  -----------------------------------------
+
+autoconf/2.69   automake/1.14   automake/1.15   binutils/2.25   cmake/2.8.12.2  cmake/3.1.3     
+cmake/3.6.3     gcc/4.7.4       gcc/4.8.3       gcc/4.8.4       gcc/4.9.2       gcc/4.8.5       
+...
+-----
+
+-----
+$ module unuse /afs/psi.ch/project/amas/modulefiles
+$ module unuse System
+$ module unuse unstable
+-----
+
+== SEE ALSO
+
+<<module-unuse>>, <<module-avail>>, <<module-search>>
+
+

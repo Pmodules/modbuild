@@ -1,0 +1,54 @@
+[id="module-list",reftext="`module list`"]
+= List loaded modules
+== NAME
+
+`module list` - list loaded modules
+
+== SYNOPSIS
+
+`module list [OPTIONS]`
+
+== DESCRIPTION
+
+List loaded modules.
+
+== OPTIONS
+
+`-t | --terse`:: 
+Terse output. 
+
+`-h | --human`:: 
+Human readable output. This is the default. 
+
+`-l | --long`::
+Long output. 
+
+== EXAMPLES
+
+Assuming the modules `gcc/4.8.3`, `openmpi/1.8.2` and `hdf5/1.8.12`. List with default (human readable) output:
+```sh
+$ module list 
+Currently Loaded Modulefiles:
+  1) gcc/4.8.3       2) openmpi/1.8.2   3) hdf5/1.8.12
+```
+List in terse output:
+```sh
+$ module list -t
+Currently Loaded Modulefiles:
+gcc/4.8.3
+openmpi/1.8.2
+hdf5/1.8.12
+```
+Long listing:
+```sh
+$ module list -l
+- Package -----------------------------+- Versions -+- Last mod. ------
+Currently Loaded Modulefiles:
+gcc/4.8.3                                            2014/12/05 17:39:24
+openmpi/1.8.2                                        2014/11/25  8:15:40
+hdf5/1.8.12                                          2014/11/25  8:15:40
+```
+
+== SEE ALSO
+
+<<module-load>>, <<module-avail>>

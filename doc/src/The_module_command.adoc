@@ -1,0 +1,36 @@
+= THE `module` COMMAND
+
+*Table of Content* +
+The module-command: <<module-cmd>> +
+List available modules: <<module-avail>> +
+Clear list of loaded modules: <<module-clear>> +
+Display information about chances in environment when loaded: <<module-display>> +
+Print sub-command or module-specific help: <<module-help>> +
+Add or remove modules from shell’s initialization file: <<module-initcmds>> +
+Search for keywords in 'whatis': <<module-keyword>> +
+List loaded modules: <<module-list>> +
+Load and unload modules: <<module-load>> +
+Purge all loaded modules: <<module-purge>> +
+Refresh loaded modules: <<module-refresh>> +
+Search installed modules: <<module-search>> +
+Replace a loaded module by another: <<module-swap>> +
+Manipulate module path, used releases, groups and overlays: <<module-use>> +
+Search for keywords in 'whatis': <<module-whatis>> +
+
+include::The_module_command/module.adoc[leveloffset=+1]
+
+== Sub-commands
+
+include::The_module_command/module-avail.adoc[leveloffset=+2]
+include::The_module_command/module-clear.adoc[leveloffset=+2]
+include::The_module_command/module-display.adoc[leveloffset=+2]
+include::The_module_command/module-help.adoc[leveloffset=+2]
+include::The_module_command/module-initcmds.adoc[leveloffset=+2]
+include::The_module_command/module-list.adoc[leveloffset=+2]
+include::The_module_command/module-load.adoc[leveloffset=+2]
+include::The_module_command/module-purge.adoc[leveloffset=+2]
+include::The_module_command/module-refresh.adoc[leveloffset=+2]
+include::The_module_command/module-search.adoc[leveloffset=+2]
+include::The_module_command/module-swap.adoc[leveloffset=+2]
+include::The_module_command/module-use.adoc[leveloffset=+2]
+include::The_module_command/module-whatis.adoc[leveloffset=+2]

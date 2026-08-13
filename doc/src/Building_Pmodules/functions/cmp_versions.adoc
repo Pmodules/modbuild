@@ -1,0 +1,45 @@
+[id="pb_cmp_versions", reftext="`pbuild::version_compare`"]
+= Compare two versions: `pbuild::version_compare`
+
+== Synopsis
+[source,sh]
+----
+pbuild::version_compare VERSION1 VERSION2
+pbuild::version_lt VERSION1 VERSION2
+pbuild::version_le VERSION1 VERSION2
+pbuild::version_gt VERSION1 VERSION2
+pbuild::version_ge VERSION1 VERSION2
+pbuild::version_eq VERSION1 VERSION2
+----
+
+== Description
+
+The function splits the version strings at the dots an compares each component. If a component is a number the comparison is numerical otherwise lexical. 
+
+`pbuild::version_compare VERSION1 VERSION2` returns +
+ `0` if the versions are equal +
+ `1` if `VERSION1` is higher then `VERSION2` +
+ `2` if `VERSION1` is lower then `VERSION2`
+
+`pbuild::version_lt VERSION1 VERSION2` returns +
+`0` if `VERSION1` is lower then `VERSION2` otherwise a values greater than zero.
+
+`pbuild::version_le VERSION1 VERSION2` returns +
+`0` if `VERSION1` is lower then or equal to `VERSION2` otherwise a values greater than zero.
+
+`pbuild::version_gt VERSION1 VERSION2` returns +
+`0` if `VERSION1` is higher then `VERSION2` otherwise a values greater than zero.
+
+`pbuild::version_ge VERSION1 VERSION2` returns +
+`0` if `VERSION1` is higher then or equal to `VERSION2` otherwise a values greater than zero.
+
+`pbuild::version_eq VERSION1 VERSION2` returns +
+`0` if `VERSION1` is equal to `VERSION2` otherwise a values greater than zero.
+
+== Example
+
+[source,sh]
+----
+pbuild::version_lt '1.1.0' '1.2.2'  # result is 0
+pbuild::version_ge '9.1.2' '10.0.0' # result is greater zero  
+----

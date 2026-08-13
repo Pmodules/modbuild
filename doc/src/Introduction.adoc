@@ -1,0 +1,18 @@
+= *INTRODUCTION*
+
+Pmodules is the environment modules system at PSI. Since it uses AFS as storage backend it is an easy and convinient solution for software distribution.
+
+It is available for all PSI supported Linux systems including
+
+* login.psi.ch (llc.psi.ch)
+* Merlin6
+* Ra 
+
+A list of available modules and changes is avail https://pmodules.gitpages.psi.ch/Pmodules_tools/[*here*].
+
+[NOTE]
+=====================================================================
+Some parts of this documentation has been copied from the documentation
+of http://modules.sourceforge.net/[Environment Modules] and
+https://www.tacc.utexas.edu/research-development/tacc-projects/lmod[Lmod].
+=====================================================================

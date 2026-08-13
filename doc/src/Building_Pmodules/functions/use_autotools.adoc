@@ -1,0 +1,10 @@
+[id="pb_use_autotools", reftext="`pbuild::use_autotools`"]
+= Forece use of autotools: `pbuild::use_autotools` (Pmodules 1.0)
+== Synopsis
+[source,sh]
+----
+pbuild::use_autotools
+----
+
+== Description
+Force the use of autotools.

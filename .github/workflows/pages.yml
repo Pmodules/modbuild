@@ -1,0 +1,88 @@
+name: Build & Deploy Asciidoctor Pages
+
+on:
+  push:
+    branches: ["**"]     # build on all branches; deploy only from default branch
+  pull_request:
+
+# GitHub Pages needs these permissions on the deploy job
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    # Use the same container image as in GitLab
+    container:
+      image: asciidoctor/docker-asciidoctor
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools (apk) and Node.js
+        run: |
+          apk update
+          apk add --no-cache nodejs curl unzip tar
+          which node || true
+      - name: Install asciidoctor-chunker
+        working-directory: /tmp
+        run: |
+          curl -L -o asciidoctor-chunker_v1.0.4.zip \
+            https://github.com/wshito/asciidoctor-chunker/releases/download/v1.0.4/asciidoctor-chunker_v1.0.4.zip
+          unzip -p asciidoctor-chunker_v1.0.4.zip '*/asciidoctor-chunker.js' > /usr/bin/asciidoctor-chunker
+          chmod 0755 /usr/bin/asciidoctor-chunker
+
+      - name: Run Asciidoctor
+        run: |
+          asciidoctor -a data-uri \
+            -a reproducible \
+            -a icons=font \
+            -a source-highlighter=Pygments \
+            -a experimental \
+            -a stylesheet=$GITHUB_WORKSPACE/src/stylesheets/readthedocs-new.css \
+            -D /tmp \
+            -R src '**/*.adoc'
+
+      - name: Chunk HTML
+        run: |
+          mkdir -p public
+          asciidoctor-chunker \
+            --depth 1 \
+            --outdir public \
+            --titlePage '' \
+            /tmp/index.html
+
+      - name: Copy stylesheet to public
+        run: |
+          cp -v src/asciidoctor-chunker.css public || true
+
+      # Upload the 'public' folder as the artifact GitHub Pages will deploy
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' &&
+      github.ref_name == github.event.repository.default_branch
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+

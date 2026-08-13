@@ -1,0 +1,61 @@
+[id="module-avail",reftext="`module avail`"]
+= List available/loadable modules
+:sectnums!:
+== NAME
+
+`module avail` - list loadable modules
+
+== SYNOPSIS
+
+`module avail [OPTIONS] [string...]`
+
+== DESCRIPTION
+
+List all available module in the current `MODULEPATH`. If an argument is given, then each directory in the `MODULEPATH` is searched for modules whose pathname match the argument.
+
+This command does *not* display all installed modules on the system. Only loadable modules are listed. To get a list of all installed modules use the command link:module%20search[`module search`].
+
+The list of available modules may change either by loading other modules, e.g. a compiler, or by using/accepting unstable or deprecated modules. For the later read the description of link:module%20use[`module use`].
+
+With the switches you can change the output format. The default output format is 'human' (readable). For the time being terse and long output are identical.
+
+== OPTIONS
+
+`-a`:: List loadable modules in all release-stages. Unstable modules are marked with `(u)`,
+       deprecated modules with `(d)`.
+
+`-t | --terse`:: Terse output. 
+
+`-h | --human`:: Human readable output. This is the default. 
+
+`-l | --long`:: Long output. 
+
+== EXAMPLES
+
+-----
+$ module avail git
+----------------------------------------- Tools -----------------------------------------
+
+ygit/2.3.3       git/2.8.1       git/2.21.0      git/2.22.0      git/2.30.0      git/2.33.1
+
+$ module avail -a gcc
+-------------------------------------- Programming --------------------------------------
+
+gcc/4.7.4       gcc/4.8.2       gcc/4.8.3       gcc/4.8.4       gcc/4.8.5       gcc/4.9.2
+gcc/4.9.3       gcc/4.9.4       gcc/5.1.0(d)    gcc/5.2.0(d)    gcc/5.3.0       gcc/5.4.0
+gcc/5.5.0       gcc/6.1.0       gcc/6.2.0       gcc/6.3.0       gcc/6.4.0       gcc/6.5.0
+gcc/7.1.0       gcc/7.2.0       gcc/7.3.0       gcc/7.4.0       gcc/7.5.0       gcc/8.1.0
+gcc/8.2.0       gcc/8.3.0       gcc/8.4.0       gcc/8.5.0       gcc/9.1.0       gcc/9.2.0
+gcc/9.3.0       gcc/9.5.0       gcc/10.1.0      gcc/10.2.0      gcc/10.3.0      gcc/11.2.0
+gcc/11.3.0      gcc/12.1.0
+-----
+
+=== SEE ALSO
+
+<<module-list>>,
+<<module-load>>,
+<<module-search>>,
+<<module-use>>,
+<<module-unuse>>
+
+:sectnums:

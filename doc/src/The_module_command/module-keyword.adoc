@@ -1,0 +1,29 @@
+[id="module-keyword",reftext="`module keyword|apropos`"]
+= Show/search 'whatis' information
+== NAME
+
+`module keyword|apropos` - search for keywords in 'whatis'
+
+== SYN[]OPSIS
+
+`module apropos string...` +
+`module keyword string...`
+
+== Description
+
+Search through the 'whatis' informations of all modulefiles for the specified string. All whatis informations matching the string will be displayed.
+
+== EXAMPLES
+
+```sh
+$ module keyword editor
+----------- /opt/psi/Tools/modulefiles ------------- 
+          emacs/24.3: extensible, customizable text editor—and more
+          emacs/24.4: extensible, customizable text editor—and more
+          emacs/24.5: extensible, customizable text editor—and more
+          emacs/25.1: extensible, customizable text editor—and more
+----------- /opt/psi/Programming/modulefiles -------------
+```
+== SEE ALSO
+
+<<module-help>>, <<module-whatis>>

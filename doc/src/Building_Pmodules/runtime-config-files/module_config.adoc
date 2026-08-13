@@ -1,0 +1,61 @@
+
+*Table of Contents* +
+Pmodules 1.0 configuration file <<release-file>> +
+Pmodules 1.1 and newer configuration file <<config-file>> +
+
+[NOTE]
+=====================================================================
+The runtime configuration files are evaluated only for modules inside
+the Pmodules hierarchy. If you use `modbuild` these files are created
+automatically. Otherwise you have to create them by hand.
+=====================================================================
+
+[id="release-file",reftext="`.release-*_version_*`"]
+== Pmodules 1.0: `.release-*_version_*`
+
+In `.release-*_version_*` the release stage of a module is
+defined. The file must be in the same directory as the modulefile. The
+content is a single line defining the release stage. Allowed text is
+
+* `unstable`
+* `stable`
+* `deprecated`
+
+If the file doesn't exist and the module is inside the Pmodule
+hierarchy `unstable`. All modules outside the Pmodules hierarchy are
+considered as `stable`.
+
+[NOTE]
+=====================================================================
+This configuration file is deprecated in version 1.1 and newer. Please
+see next section.
+=====================================================================
+
+[id="config-file",reftext="`.config-*_version_*`"]
+== Pmodules 1.1 and newer: `.config-*_version_*`
+In `.config-*_version_*` the following properties of a module can be
+configured:
+
+*  the release stage
+*  the systems on which a module is available
+*  the systems on which a module is unavailable
+
+The format of the file is YAML.
+
+`relstage`:: The release stage of the module. Allowed values are
+`unstable`, `stable` and `deprecated`.
+
+`systems`:: Sequence of systems on which the module is available. Systems
+can be hostnames with shell style glob pattern or OS names like
+(`rhel7`, `rhel8`).
+
+`blocklist`:: Sequence of systems on which the module is no
+available. Systems can be hostnames with shell style glob patterns or
+OS names.
+
+Example:
+----
+relstage: unstable
+systems: [merlin-*, ra-*]
+blocklist: []
+----

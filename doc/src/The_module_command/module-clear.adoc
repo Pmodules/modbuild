@@ -1,0 +1,50 @@
+[id="module-clear",reftext="`module clear`"]
+:secnums:
+= Clear list of loaded modules
+:secnums!:
+== NAME
+
+`module clear` - clear list of loaded modules.
+
+== SYNOPSIS
+
+`module clear`
+
+== DESCRIPTION
+
+Force the Pmodules package to believe that no modules are currently loaded. The sub-command clear does not unload the loaded modules! In other words: changes made to the shell's environment by loaded modules are not reverted. 
+
+== EXAMPLES
+
+After loading the module for `gcc/4.9.2` the following environment variables are set:
+
+-----
+$ env | grep ^GCC
+GCC_HOME=/opt/psi/Programming/gcc/4.9.2
+GCC_DIR=/opt/psi/Programming/gcc/4.9.2
+GCC_PREFIX=/opt/psi/Programming/gcc/4.9.2
+GCC_VERSION=4.9.2
+GCC_INCLUDE_DIR=/opt/psi/Programming/gcc/4.9.2/include
+GCC_LIBRARY_DIR=/opt/psi/Programming/gcc/4.9.2/lib
+-----
+
+After clearing the list of loaded modules the environment variables set by the GCC module are still set
+
+-----
+$ module clear
+$ module list
+No Modulefiles Currently Loaded.
+$ env | grep ^GCC
+GCC_HOME=/opt/psi/Programming/gcc/4.9.2
+GCC_DIR=/opt/psi/Programming/gcc/4.9.2
+GCC_PREFIX=/opt/psi/Programming/gcc/4.9.2
+GCC_VERSION=4.9.2
+GCC_INCLUDE_DIR=/opt/psi/Programming/gcc/4.9.2/include
+GCC_LIBRARY_DIR=/opt/psi/Programming/gcc/4.9.2/lib
+-----
+
+== SEE ALSO
+
+<<module-purge>>, <<module-load>>
+
+:secnums:

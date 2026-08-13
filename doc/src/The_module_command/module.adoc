@@ -1,0 +1,60 @@
+[id="module-cmd",reftext="`module`"]
+= `module` - using Pmodules
+
+:sectnums!:
+== NAME
+
+`module` - command line interface to the Pmodules package
+
+== SYNOPSIS
+`module [ switches ] [ sub-command ] [ sub-command-args ]`
+
+== DESCRIPTION
+Environment Modules provide a convenient way to dynamically change the
+users' environment through modulefiles. This includes easily adding or
+removing directories to the `PATH` environment variable.
+A modulefile contains the necessary information to allow a user to run
+a particular application or provide access to a particular
+library. All of this can be done dynamically without logging out and
+back in. Modulefiles for applications modify the user’s shell
+environment to make access easy. Modulefiles for Library packages
+provide environment variables that specify where the library and
+header files can be found.
+Packages can be loaded and unloaded cleanly through the `module` command.
+
+Available sub-commands are:
+
+List available modules: <<module-avail>>
+
+Clear list of loaded modules: <<module-clear>>
+
+Display information about chances in environment when loaded: <<module-display>>
+
+Print sub-command or module-specific help: <<module-help>>
+
+Add or remove modules from shell’s initialization file: <<module-initcmds>>
+
+Search for keywords in 'whatis': <<module-keyword>>
+
+List loaded modules: <<module-list>>
+
+Load and unload modules: <<module-load>>
+
+Purge all loaded modules: <<module-purge>>
+
+Refresh loaded modules: <<module-refresh>>
+
+Search installed modules: <<module-search>>
+
+Replace a loaded module by another: <<module-swap>>
+
+Manipulate module path, used releases, groups and overlays: <<module-use>>
+
+Search for keywords in 'whatis': <<module-whatis>>
+
+[NOTE]
+=====================================================================
+For the time being Pmodules supports bash, tcsh and zsh only.
+=====================================================================
+
+:sectnums:

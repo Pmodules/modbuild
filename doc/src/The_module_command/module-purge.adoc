@@ -1,0 +1,32 @@
+[id="module-purge",reftext="`module purge`"]
+= Purge all loaded modules
+== NAME
+
+`module purge` - purge all loaded modules
+
+== SYNOPSIS
+
+`module purge`
+
+== DESCRIPTION
+
+Unload all loaded module and reset everything to original state.
+
+== EXAMPLES
+
+List loaded modules:
+-----
+$ module list 
+Currently Loaded Modulefiles:
+  1) gcc/4.8.3       2) openmpi/1.8.2   3) gnuplot/4.6.3
+-----
+Now we purge everything and list the loaded modules again:
+-----
+$ module purge
+$ module list 
+No Modulefiles Currently Loaded.
+-----
+
+== SEE ALSO
+
+<<module-load>>, <<module-load>>, <<module-clear>>

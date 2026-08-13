@@ -1,0 +1,10 @@
+[id="pb_use_cmake", reftext="`pbuild::use_cmake`"]
+= Force use of CMake: `pbuild::use_cmake`
+== Synopsis
+[source,sh]
+----
+pbuild::use_cmake
+----
+
+== Description
+Force the use of CMake.

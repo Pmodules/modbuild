@@ -1,0 +1,30 @@
+[id="pb_install", reftext="`pbuild::install`"]
+= Install software: `pbuild::install`
+
+== Synopsis
+[source,sh]
+----
+pbuild::pre_install
+pbuild::install
+pbuild::post_install
+----
+
+== Description
+
+Compile the software.
+
+Before these functions are called, the build-system changes to the 
+build directory (`${BUILD_DIR}`).
+
+In the many uses cases the default function `pbuild::install` provided by
+the build-system can be used and nothing must be implemented in the
+build-script. A typical use case for the post-install hook is to install required libraries from other modules or the system to reduce or eliminate run-time dependencies
+
+If the default function cannot be used, the `pbuild::install`
+function must be implemented in the build-script.
+
+== Example
+[source,sh]
+----
+TBW
+----

@@ -1,0 +1,38 @@
+[id="pb_set_download_url", reftext="`pbuild::set_download_url`"]
+= Set download URL: `pbuild::set_download_url`
+
+[NOTE]
+====
+This function is deprecated in Pmodules 1.1 and newer!
+
+The download URL's should be set in the YAML configuration file.
+====
+
+== Synopsis
+[source,sh]
+----
+pbuild::set_download_url URL [fname]
+----
+
+== Description
+
+Tell the build system where to download the required (source-)files. If `fname` is passed, it will be used as the output file-name of the download.
+
+In some cases software must be downloaded from a Git repository on Github, Bitbucket or Gitlab. 
+
+To download a certain tag/version from Github, Bitbucket or Gitlab use:
+----
+https://github.com/OWNER/PROJECT/archive/${V_PKG}/$P-${V_PKG}.tar.gz
+https://bitbucket.org/OWNER/PROJECT/get/${V_PKG}.tar.gz#/$P-%{V_PKG}.tar.gz
+https://gitlab.com/OWNER/PROJECT/-/archive/${V_PKG}/$P-${V_PKG}.tar.gz
+----
+
+== Examples
+
+Excerpt from Trilinos build-script:
+[source,sh]
+----
+pbuild::set_download_url \
+        "https://github.com/$P/$P/tarball/$P-release-${V//./-}" \
+        "$P-$V.tar.gz"
+----

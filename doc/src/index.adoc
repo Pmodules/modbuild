@@ -1,0 +1,28 @@
+= Pmodules - an improved environment modules system
+ifdef::backend-docbook5,backend-html5[]
+:docinfo: shared
+:toc: left
+:numbered:
+:toclevels: 2
+:description: Pmodules
+:keywords: Pmodules, Environment Modules, Lmod
+:adoc: adoc
+endif::[]
+
+:TOC:
+
+include::Introduction.adoc[leveloffset=+1]
+
+include::Nutshell.adoc[leveloffset=+1]
+
+include::The_module_command.adoc[leveloffset=+1]
+
+include::modulefiles.adoc[leveloffset=+1]
+
+:sectnumlevels: 4
+include::Building_Pmodules.adoc[leveloffset=+1]
+
+:sectnumlevels: 2
+include::Tutorials.adoc[leveloffset=+1]
+
+include::links.adoc[leveloffset=+1]

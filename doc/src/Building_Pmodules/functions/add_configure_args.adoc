@@ -1,0 +1,32 @@
+[id="pb_add_configure_args", reftext="`pbuild::add_configure_args`"]
+= Set configuration options: `pbuild::add_configure_args`
+
+== Synopsis
+[source,sh]
+----
+pbuild::add_configure_args arg...
+----
+
+== Description
+
+Add arguments/options to the call of `configure` or `cmake`.
+
+== Example
+
+autotools:
+[source,sh]
+----
+pbuild::pre_configure(){
+        pbuild::add_configure_args "--disable-shared"
+        pbuild::add_configure_args "CFLAGS=-fPIC"
+}
+----
+
+CMake:
+[source,sh]
+----
+pbuild::pre_configure(){
+        pbuild::add_configure_args "-DMETIS_PATH=${SRC_DIR}/metis"
+        pbuild::add_configure_args "-DGKLIB_PATH=${SRC_DIR}/metis/GKlib"
+}
+----
