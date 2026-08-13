@@ -28,6 +28,8 @@ modbuild:
 bash:
   type: sub_package
   defaults:
+  shasums:
+    bash-5.3.tar.gz: 0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba 
   versions:
     5.3.9:
       config:
@@ -46,6 +48,7 @@ bash:
           - --bindir=${PREFIX}/libexec
 yq:
   type: sub_package
+  shasums:
   versions:
     4.53.2:
       variants:
@@ -58,6 +61,8 @@ yq:
 sevenz:
   type: sub_package
   defaults:
+  shasums:
+    7zip-26.01.tar.gz: f4212b508641b3584f7089ab67bc0aba028c631f049b4dd603ff07853e72e749
   versions:
     26.01:
       config:

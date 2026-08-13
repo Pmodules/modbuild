@@ -18,7 +18,7 @@ declare -r __MODULEFILES_DIR__='modulefiles'
 declare -g PMODULES_DISTFILESDIR PMODULES_TMPDIR
 
 declare -a Overlays=()
-declare -A OverlayInfo
+declare -A OverlayInfo=()
 
 # An overlay has a type defining the way modules in this overlay
 # make modules in the other overlays unavailable.
@@ -53,10 +53,6 @@ declare -A OverlayInfo
 #	This type can be used to make hole groups unavailable.
 #
 # 
-declare -r OL_NORMAL='n'
-declare -r OL_HIDING='h'
-declare -r OL_REPLACING='r'
-
 declare -A DefaultPmodulesConfig=(
 	['defaultgroups']='Tools:Programming'
 	['default_groups']='Tools:Programming'
@@ -89,32 +85,139 @@ declare -A OverlayPathConfigKeys=(
 
 )
 
-pm::die_invalid_key(){
+rtcfg::die_invalid_key(){
 	std::die 3 "Invalid key in configuration -- $1\n$2"
 }
 
-pm::die_invalid_ol_install_root(){
+rtcfg::die_invalid_ol_install_root(){
 	std::die 3 "Invalid installation root directory for overlay '$1' -- $2"
 }
 
 
-pm::die_invalid_ol_modulefiles_root(){
+rtcfg::die_invalid_ol_modulefiles_root(){
 	std::die 3 "Invalid modulefiles root directory for overlay '$1' -- $2"
 }
 
-pm::die_invalid_ol_type(){
+rtcfg::die_invalid_ol_type(){
 	std::die 3 "Invalid type for overlay '$1' -- $2"
 }
 
-pm::die_invalid_ol_layout(){
+rtcfg::die_invalid_ol_layout(){
 	std::die 3 "Invalid layout for overlay '$1' -- $2\nAllowed values are 'Pmodules', 'Spack' and 'flat'."
 }
 
-pm::die_invalid_ol_relstage(){
+rtcfg::die_invalid_ol_relstage(){
 	std::die 3 "Invalid default release stage for overlay '$1' -- $2"
 }
 
-pm::parse_path_config(){
+##
+## rtcfg::_get_config_of_overlay - read configuration of an overlay
+##
+## Arguments:
+##   $1 - YAML formatted overlay configuration
+##   $2 - name of overlay
+##
+rtcfg::_get_config_of_overlay(){
+	local -r yaml_input="$1"	# YAML formatted string
+	local -r ol_name="$2"		# name of overlay
+
+	Overlays+=( "${ol_name}" )
+	# init overlay with defaults
+	local -- key=''
+	for key in "${!OverlayConfigKeys[@]}"; do
+		OverlayInfo[${ol_name}:${key}]="${OverlayConfigKeys[${key}]}"
+	done
+	for key in "${!OverlayPathConfigKeys[@]}"; do
+		OverlayInfo[${ol_name}:${key}]="${OverlayPathConfigKeys[${key}]}"
+	done
+	# get keys in YAML input
+	local -- node=".\"${ol_name}\""
+	local -a keys=()
+	yml::get_keys keys yaml_input "${node}"
+	local -- value=''
+	for key in "${keys[@]}"; do
+		case ${key,,} in
+			install_root )
+				yml::get_value value yaml_input "${node}.${key}" '!!str'
+				OverlayInfo[${ol_name}:install_root]=$(envsubst <<< "${value}")
+				mkdir -p "${OverlayInfo[${ol_name}:install_root]}" 2>/dev/null
+				[[ -d ${OverlayInfo[${ol_name}:install_root]} ]] || \
+					rtcfg::die_invalid_ol_install_root "${ol_name}" "${value}"
+				;;
+			modulefiles_root )
+				yml::get_value value yaml_input "${node}.${key}" '!!str'
+				OverlayInfo[${ol_name}:modulefiles_root]=$(envsubst <<< "${value}")
+				mkdir -p "${OverlayInfo[${ol_name}:modulefiles_root]}" 2>/dev/null
+				[[ -d ${OverlayInfo[${ol_name}:modulefiles_root]} ]] || \
+					rtcfg::die_invalid_ol_modulefiles_root "${ol_name}" "${value}"
+				;;
+			type )
+				yml::get_value value yaml_input "${node}.${key}" '!!str'
+				case ${value} in
+					'n' | 'h' | 'r' )
+						:
+						;;
+					* )
+						rtcfg::die_invalid_ol_type "${ol_name}" "${value}"
+						;;
+				esac
+				OverlayInfo[${ol_name}:type]="${value}"
+				;;
+			layout )
+				yml::get_value value yaml_input "${node}.${key}" '!!str'
+				case ${value} in
+					'Pmodules' | 'Spack' | 'flat' )
+						:
+						;;
+					* )
+						rtcfg::die_invalid_ol_layout "${ol_name}" "${value}"
+						;;
+				esac
+				OverlayInfo[${ol_name}:${key,,}]="${value}"
+				;;
+			default_relstage )
+				yml::get_value value yaml_input "${node}.${key}" '!!str'
+				case ${value} in
+					'unstable' | 'stable' | 'deprecated' )
+						:
+						;;
+					*)
+						rtcfg::die_invalid_ol_relstage "${ol_name}" "${value}"
+						;;
+				esac
+				OverlayInfo[${ol_name}:${key}]="${value}"
+				;;
+			conflicts | excludes | groups)
+				yml::get_seq value yaml_input "${node}.${key}"
+				local -a tmp_array=()
+				readarray -t tmp_array <<<${value}
+				local -- tmp_str=''
+				printf -v tmp_str "%s:" "${tmp_array[@]}"
+				OverlayInfo[${ol_name}:${key}]=$(envsubst <<<"${tmp_str%:}" )
+				;;
+			path_config )
+				yml::get_value value yaml_input "${node}.${key}" '!!seq'
+				rtcfg::_parse_path_config value "${ol_name}"
+				;;
+			* )
+				rtcfg::die_invalid_key "${key}" "${yaml_input}"
+				;;
+		esac
+	done
+	OverlayInfo[${ol_name}:used]='no'
+	if [[ -z "${OverlayInfo[${ol_name}:modulefiles_root]}" ]]; then
+		OverlayInfo[${ol_name}:modulefiles_root]=${OverlayInfo[${ol_name}:install_root]}
+	fi
+}
+
+##
+## rtcfg::_parse_path_config - parse path configuration
+##
+## Arguments:
+##   $1 - YAML text
+##   $2 - name of overlay
+##
+rtcfg::_parse_path_config(){
 	local -n yaml="$1"
 	local -- ol_name="$2"
 
@@ -171,115 +274,20 @@ pm::parse_path_config(){
 	done
 }
 
-pm::read_config(){
-	local -r __doc__='
-	Read modules configuration.
-
-	In case of Pmodules read 'PMODULES_ROOT/config/Pmodules.yaml'
-	and '${HOME}/.Pmodules/Pmodules.yaml'.
-
-	In case of Tcl Environemnt Modules get the config from running
-	module use
-	'
+##
+## rtcfg::read_config -
+##
+## Read modules configuration.
+##
+## In case of Pmodules read 'PMODULES_ROOT/config/Pmodules.yaml'
+## a nd '${HOME}/.Pmodules/Pmodules.yaml'.
+##
+## In case of Tcl Environemnt Modules get the config from running
+## module use
+##
+rtcfg::read_config(){
 	local -- tmp_dir="${DefaultPmodulesConfig['tmp_dir']}"
 	local -- download_dir="${DefaultPmodulesConfig['download_dir']}"
-
-	get_config_of_overlay(){
-		: "
-		Get configuration of an overlay.
-		"
-		local -r yaml_input="$1"	# YAML formatted string
-		local -r ol_name="$2"		# name of overlay
-
-		Overlays+=( "${ol_name}" )
-		# init overlay with defaults
-		local -- key=''
-		for key in "${!OverlayConfigKeys[@]}"; do
-			OverlayInfo[${ol_name}:${key}]="${OverlayConfigKeys[${key}]}"
-		done
-		for key in "${!OverlayPathConfigKeys[@]}"; do
-			OverlayInfo[${ol_name}:${key}]="${OverlayPathConfigKeys[${key}]}"
-		done
-		# get keys in YAML input
-		local -- node=".\"${ol_name}\""
-		local -a keys=()
-		yml::get_keys keys yaml_input "${node}"
-		local -- value=''
-		for key in "${keys[@]}"; do
-			case ${key,,} in
-				install_root )
-					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					OverlayInfo[${ol_name}:install_root]=$(envsubst <<< "${value}")
-					mkdir -p "${OverlayInfo[${ol_name}:install_root]}" 2>/dev/null
-					[[ -d ${OverlayInfo[${ol_name}:install_root]} ]] || \
-						pm::die_invalid_ol_install_root "${ol_name}" "${value}"
-					;;
-				modulefiles_root )
-					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					OverlayInfo[${ol_name}:modulefiles_root]=$(envsubst <<< "${value}")
-					mkdir -p "${OverlayInfo[${ol_name}:modulefiles_root]}" 2>/dev/null
-					[[ -d ${OverlayInfo[${ol_name}:modulefiles_root]} ]] || \
-						pm::die_invalid_ol_modulefiles_root "${ol_name}" "${value}"
-					;;
-				type )
-					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					case ${value} in
-						"${OL_NORMAL}" | "${OL_REPLACING}" | "${OL_HIDING}" )
-							:
-							;;
-						* )
-							pm::die_invalid_ol_type "${ol_name}" "${value}"
-							;;
-					esac
-					OverlayInfo[${ol_name}:type]="${value}"
-					;;
-				layout )
-					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					case ${value} in
-						'Pmodules' | 'Spack' | 'flat' )
-							:
-							;;
-						* )
-							pm::die_invalid_ol_layout "${ol_name}" "${value}"
-							;;
-					esac
-					OverlayInfo[${ol_name}:${key,,}]="${value}"
-					;;
-				default_relstage )
-					yml::get_value value yaml_input "${node}.${key}" '!!str'
-					case ${value} in
-						'unstable' | 'stable' | 'deprecated' )
-							:
-							;;
-						*)
-							pm::die_invalid_ol_relstage "${ol_name}" "${value}"
-							;;
-					esac
-					OverlayInfo[${ol_name}:${key}]="${value}"
-					;;
-				conflicts | excludes | groups)
-					yml::get_seq value yaml_input "${node}.${key}"
-					local -a tmp_array=()
-					readarray -t tmp_array <<<${value}
-					local -- tmp_str=''
-					printf -v tmp_str "%s:" "${tmp_array[@]}"
-					OverlayInfo[${ol_name}:${key}]=$(envsubst <<<"${tmp_str%:}" )
-					;;
-				path_config )
-					yml::get_value value yaml_input "${node}.${key}" '!!seq'
-					pm::parse_path_config value "${ol_name}"
-					;;
-				* )
-					pm::die_invalid_key "${key}" "${yaml_input}"
-					;;
-
-			esac
-		done
-		OverlayInfo[${ol_name}:used]='no'
-		if [[ -z "${OverlayInfo[${ol_name}:modulefiles_root]}" ]]; then
-			OverlayInfo[${ol_name}:modulefiles_root]=${OverlayInfo[${ol_name}:install_root]}
-		fi
-	}
 
 	get_config(){
 		: "
@@ -316,11 +324,12 @@ pm::read_config(){
 					yml::get_value ol_configs yaml_input ".${key}" "!!map"
 					yml::get_keys overlays ol_configs "."
 					for overlay in "${overlays[@]}"; do
-						get_config_of_overlay "${yaml_input}" "${overlay}"
+						rtcfg::_get_config_of_overlay \
+							"${ol_configs}" "${overlay}"
 					done
 					;;
 				* )
-					pm::die_invalid_key "${key}" "${yaml_input}"
+					rtcfg::die_invalid_key "${key}" "${yaml_input}"
 					;;
 			esac
 		done
@@ -367,7 +376,7 @@ pm::read_config(){
 		yaml_input="$(yq -e '.*' <<<"${yaml_input}")"
 		local -a overlays=( $(yq -e 'keys|.[]' <<<"${yaml_input}") )
 		for overlay in "${overlays[@]}"; do
-			get_config_of_overlay "${yaml_input}" "${overlay}"
+			rtcfg::_get_config_of_overlay "${yaml_input}" "${overlay}"
 		done
 	fi
 	OverlayInfo[none:type]='n'

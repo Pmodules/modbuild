@@ -8,3 +8,6 @@ module-maintainer	"Achim Gsell <achim.gsell@psi.ch>"
 module-help	"
 Pmodules build-system
 "
+
+puts stdout {unset -f modbuild}
+

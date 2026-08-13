@@ -128,35 +128,6 @@ readonly -f pbuild::use_flag
 #
 # functions to prepare the sources
 
-pbuild.set_urls(){
-	local -n src="$1"
-	local -i _i=${#SOURCE_URLS[@]}
-	SOURCE_URLS[_i]="${src['url']}"
-	SOURCE_NAMES[_i]="${src['name']}"
-	SOURCE_STRIP_DIRS[_i]="${src['strip_dirs']}"
-	SOURCE_UNPACKER[_i]="${src['unpacker']}"
-	SOURCE_UNPACK_DIRS[_i]="${src['unpack_dir']}"
-	SOURCE_PATCH_FILES[_i]="${src['patch_file']}"
-	SOURCE_PATCH_STRIPS[_i]="${src['patch_strip']}"
-}
-
-#..............................................................................
-#
-pbuild.add_patch_files(){
-	local -- arg=''
-	for arg in "$@"; do
-		[[ -z "${arg}" ]] && continue
- 		if [[ ${arg} == *:* ]]; then
-			PATCH_FILES+=( "${arg%%:*}" )
-			PATCH_STRIPS+=( "${arg##*:}" )
-		else
-			PATCH_FILES+=( "${arg}" )
-			PATCH_STRIPS+=( "${PATCH_STRIP_DEFAULT}" )
-		fi
-	done
-}
-readonly -f pbuild.add_patch_files
-
 #..............................................................................
 #
 pbuild::unpack(){
@@ -278,10 +249,10 @@ pbuild::prep() {
 		local -r  src_dir="$1"
 		local -ri idx="$2"
 		local -r fname="${SOURCE_NAMES[idx]}"
-		if [[ -v SHASUMS[${fname}] ]]; then
+		if [[ -v ModuleConfig[shasum:${fname}] ]]; then
 			local -- hash_sum=''
 			hash_sum=$(sha256sum "${src_dir}/${fname}" | awk '{print $1}')
-			test "${hash_sum}" == "${SHASUMS[${fname}]}" || \
+			test "${hash_sum}" == "${ModuleConfig[shasum:${fname}]}" || \
 				std::die 42 \
 					 "%s " \
 					 "${module_name}/${module_version}:" \
@@ -327,13 +298,11 @@ pbuild::prep() {
 		local -- src_dir=''
 		local -i ec=0
 
-		SOURCE_URLS[i]="$(envsubst <<<"${SOURCE_URLS[i]}")"
 		# if file name is not specified, use last component of URL as file name
 		# check whether file exist
 		# try to download if not and URL is specified
 		[[ -z "${SOURCE_NAMES[i]}" ]] && SOURCE_NAMES[i]="${SOURCE_URLS[i]##*/}"
 		if [[ -n "${SOURCE_NAMES[i]}" ]]; then
-			SOURCE_NAMES[i]="$(envsubst <<<"${SOURCE_NAMES[i]}")"
 			if ! search_source_file src_dir "${SOURCE_NAMES[i]}"; then
 				if [[ -n "${SOURCE_URLS[i]}" ]]; then
 					src_dir="${PMODULES_DISTFILESDIR}"
@@ -346,7 +315,6 @@ pbuild::prep() {
 			unpack "${src_dir}" "$i"
 		fi
 		if [[ -n "${SOURCE_PATCH_FILES[i]}" ]]; then
-			SOURCE_PATCH_FILES[i]="$(envsubst <<<"${SOURCE_PATCH_FILES[i]}")"
 			search_source_file src_dir "${SOURCE_PATCH_FILES[i]}" || \
 				std::die 42 \
 					 "%s " \
@@ -356,7 +324,7 @@ pbuild::prep() {
 			if [[ -z "${SOURCE_UNPACK_DIRS[i]}" ]]; then
 				target_dir="${SRC_DIR}"
 			else
-				target_dir="$(envsubst <<<"${SOURCE_UNPACK_DIRS[i]}")"
+				target_dir="${SOURCE_UNPACK_DIRS[i]}"
 			fi
 			mkdir -p "${target_dir}"
 
@@ -381,11 +349,6 @@ pbuild::prep_pip3(){
 
 #..............................................................................
 #
-pbuild.set_configure_args(){
-	CONFIGURE_ARGS=( "$@" )
-}
-readonly -f pbuild.set_configure_args
-
 pbuild::add_configure_args(){
 	CONFIGURE_ARGS+=( "$@" )
 }
@@ -645,6 +608,50 @@ pbuild::_module_yaml(){
 	if [[ -n "${ModuleConfig['use_overlays']}" ]]; then
 		readarray -t UseOverlays <<< "${ModuleConfig['use_overlays']}"
 	fi
+	if [[ -n "${ModuleConfig['configure_args']}" ]]; then
+		readarray -t CONFIGURE_ARGS <<< "${ModuleConfig['configure_args']}"
+	fi
+	if [[ -n "${ModuleConfig['patch_files']}" ]]; then
+		local -a items=()
+		readarray -t items <<< "${ModuleConfig['patch_files']}"
+		local -- item=''
+		for item in "${items[@]}"; do
+			[[ -z "${item}" ]] && continue
+ 			if [[ ${item} == *:* ]]; then
+				PATCH_FILES+=( "${item%%:*}" )
+				PATCH_STRIPS+=( "${item##*:}" )
+			else
+				PATCH_FILES+=( "${item}" )
+				PATCH_STRIPS+=( "${PATCH_STRIP_DEFAULT}" )
+			fi
+		done
+	fi
+	local -i i=0 num_sources="${ModuleConfig['num_sources']}"
+	for ((i=0; i<num_sources; i++)); do
+		if [[ -n "${ModuleConfig[url:$i]}" ]]; then
+			SOURCE_URLS[i]=$(envsubst <<<"${ModuleConfig[url:$i]}")
+		else
+			SOURCE_URLS[i]=''
+		fi
+		if [[ -n "${ModuleConfig[name:$i]}" ]]; then
+			SOURCE_NAMES[i]=$(envsubst <<<"${ModuleConfig[name:$i]}")
+		else
+			SOURCE_NAMES[i]=''
+		fi
+		SOURCE_STRIP_DIRS[i]="${ModuleConfig[strip_dirs:$i]}"
+		SOURCE_UNPACKER[i]="${ModuleConfig[unpacker:$i]}"
+		if [[ -n "${ModuleConfig[unpack_dir:$i]}" ]]; then
+			SOURCE_UNPACK_DIRS[i]=$(envsubst <<<"${ModuleConfig[unpack_dir:$i]}")
+		else
+			SOURCE_UNPACK_DIRS[i]=''
+		fi
+		if [[ -n "${ModuleConfig[patch_file:$i]}" ]]; then
+			SOURCE_PATCH_FILES[i]=$(envsubst <<<"${ModuleConfig[patch_file:$i]}")
+		else
+			SOURCE_PATCH_FILES[i]=''
+		fi
+		SOURCE_PATCH_STRIPS[i]="${ModuleConfig[patch_strip:$i]}"
+	done
 	_build_module "${module_name}" "${module_version}" "${module_relstage}" "$@"
 }
 readonly -f pbuild::_module_yaml
@@ -920,37 +927,19 @@ _build_module() {
 			std::info \
 				"%s " \
 				"${module_name}/${module_version}:" \
-				"Installing documentation to ${docdir}"
+				"installing documentation to ${docdir}"
 			install -m 0755 -d "${docdir}"
 			install -m 0644 "${BUILD_SCRIPT}" "${docdir}"
 			modulecmd bash list -t 2>&1 1>/dev/null | \
 				grep -v "Currently Loaded" > \
 				      "${docdir}/dependencies" || :
-
-			(( ${#MODULE_DOCFILES[@]} == 0 )) && return 0
+			[[ -n ${module_config['docfiles']} ]] || return 0
+			local -a docfiles=()
+			readarray -t docfiles <<<"${module_config['docfiles']}"
 			install -m0644 \
-				"${MODULE_DOCFILES[@]/#/${SRC_DIR}/}" \
+				"${docfiles[@]/#/${SRC_DIR}/}" \
 				"${docdir}"
 			return 0
-		}
-
-		# :FIXME: here we need a better solution
-		patch_elf64_files(){
-			local -- libdir="${OverlayInfo[${ol_name}:install_root]}/lib64"
-			[[ -d "${libdir}" ]] || return 0
-			local -a bin_objects=()
-			mapfile -t files < <(std::find_elf64_binaries '.')
-			local -- fname=''
-			local -- rpath=''
-			local -i depth=0
-			for fname in "${files[@]}"; do
-				# don't override existing RPATH
-				rpath=$(patchelf --print-rpath "${fname}")
-				[[ -z "${rpath}" ]] || continue
-				(( depth=$(std::get_dir_depth "${fname}") + group_depth + 3 ))
-				rpath='$ORIGIN/'$(printf "../%.0s" $(seq 1 ${depth}))lib64
-				${patchelf} --force-rpath --set-rpath "${rpath}" "${fname}"
-			done
 		}
 
 		#..............................................................
@@ -973,13 +962,8 @@ _build_module() {
 		cd "${BUILD_DIR}"
 		[[ "${KERNEL_NAME}" == "Linux" ]] && post_install_linux
 		install_doc
-		std::info \
-			"%s " \
-			"${module_name}/${module_version}:" \
-			"Done ..."
 		return 0
 	} # bm::post_install
-
 
  	#......................................................................
 	bm::install_module_config(){
@@ -1065,13 +1049,6 @@ _build_module() {
 		      Set/update release stages.
 		      '
 		[[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
-
-		#
-		# update .release-${module_version}
-		#
-		local -r legacy_config_file="${modulefile_dir}/.release-${module_version}"
-		mkdir -p "${modulefile_dir}"
-		echo "${module_release}" > "${legacy_config_file}"
 
 		#
 		# update .config-${module_version}
@@ -1400,8 +1377,7 @@ _build_module() {
 	std::info \
 		"%s " \
 		"${module_name}/${module_version}:" \
-		${with_modules:+with ${with_modules[@]}} \
-		"building ..."
+		${with_modules:+with ${with_modules[@]}}
 
 	bm::load_overlays
 	bm::load_build_dependencies
@@ -1426,11 +1402,6 @@ _build_module() {
 		PREFIX="${Options['prefix']}"
 	fi
 	# ok, finally we can start ...
- 	std::info \
-		"%s " \
-		"${module_name}/${module_version}:" \
-		${with_modules:+build with ${with_modules[@]}}
-
 	if [[ "${module_release}" == 'remove' ]]; then
 		bm::remove_module
 	elif [[ "${module_release}" == 'deprecated' ]]; then
@@ -1482,7 +1453,7 @@ _build_module() {
 		bm::cleanup_modulefiles
 	fi
  	std::info \
-		"\n%s\n%s" \
+		"%s\n%s" \
 		"${module_name}/${module_version}: done" \
 		"* * * * *"
 }

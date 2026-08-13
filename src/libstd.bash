@@ -17,11 +17,11 @@ shopt -s nullglob
 shopt -s expand_aliases
 
 ##
-## std::{log,info,error,debug} - Write a message to stdout/stderr
+## std::{log,info,error,debug} - Write a message to stderr
 ##
 ## Arguments:
-##   $1     - printf format string 
-##   ${@:2} - Message content
+##   $1 - [in] printf format string 
+##   ${@:2} - [in] Message content
 ##
 ## Returns:
 ##   exit code of printf
@@ -60,9 +60,9 @@ readonly -f std::debug
 ## std::die - Write a message to stdout/stderr and exits program
 ##
 ## Arguments:
-##   $1     - exit code
-##   $2     - optional printf format string 
-##   ${@:3} - optional message content
+##   $1 - [in] exit code
+##   $2 - [in] optional printf format string 
+##   ${@:3} [in] optional message content
 ##
 ## Usage:
 ##   std::die 2 "%s" "Invalid option -- foo"
@@ -93,7 +93,7 @@ readonly -f std::die
 ## Exceptions: modulecmd, make
 ##
 ## Arguments:
-##   $1 - system tool
+##   $1 - [in] system tool
 ##
 ## Globals:
 ##   PATH
@@ -188,6 +188,13 @@ esac
 ##
 ## std::is_uint() - check whether argument is an integer
 ##
+## Arguments:
+##   $1 - string to test
+##
+## Returns:
+##   0 - if string is an unsigned int
+##   1 - otherwiaw
+##
 std::is_uint() {
 	[[ $1 =~ ^[0-9]+$ ]]
 }
@@ -197,8 +204,8 @@ readonly -f std::is_uint
 ## std::version_{compare,lt,le,eq,ge,gt} - Compare two version numbers.
 ##
 ## Arguments:
-##   $1 first version number
-##   $2 optional second version number, if not set V_PKG is used
+##   $1 - [in] first version number
+##   $2 - [in] optional second version number, if not set V_PKG is used
 ##    
 ## Returns:
 ##     std::version_compare
@@ -289,7 +296,7 @@ readonly -f std::version_eq
 ## std::get_YN_answer - Get answer to yes/no question.
 ##
 ## Arguments:
-##   $1 - prompt
+##   $1 - [in] prompt
 ##
 ## Returns:
 ##   0 - answer was yes
@@ -317,7 +324,10 @@ readonly -f std::get_YN_answer
 ## The script will be terminated, if the path doesn't exists.
 ##
 ## Arguments:
-##   $1: file- or directory name
+##   $1 - [in] file- or directory name
+##
+## Outputs:
+##   absolute path
 ##
 std::get_abspath() {
 	local -r fname="$1"
@@ -338,9 +348,9 @@ readonly -f std::get_abspath
 ## std::{modify,append,prepend}_path - append or prepend directories to a path
 ##
 ## Arguments:
-##   $1 - name of path like variable
-##   $2  - mode, either append or prepend
-##   $3... - directories to append or prepend
+##   $1 - [in/out] reference to path like variable
+##   $2  - [in] mode, either append or prepend
+##   $3... - [in] directories to append or prepend
 ##
 ## Returns:
 ##   0
@@ -392,8 +402,8 @@ readonly -f std::prepend_path
 ## std::remove_path - remove directories from a path
 ##
 ## Arguments:
-##   $1 - name of path like variable
-##   $2... - directories to append or prepend
+##   $1 - [in/out] reference to path like variable
+##   $2... - [in] directories to remove
 ##
 ## Returns:
 ##   0
@@ -424,11 +434,16 @@ std::remove_path() {
 readonly -f std::remove_path
 
 ##
-## std::get_os_release_linux - get OS release of a linux distribution.
+## std::get_os_release - get OS release of a linux distribution.
+## std::get_os_release_linux
+## std::get_os_release_macos
+##
+## Outputs:
+##   release string (e.g. rhel8)
 ##
 ## Notes:
 ##   For the time being only RHEL and clones, Ubuntu and SUSE distributions
-##   are supported.
+##   are supported (and macOS).
 ##
 std::get_os_release_linux() {
 	local -- ID=''
@@ -467,18 +482,12 @@ std::get_os_release_linux() {
 }
 readonly -f std::get_os_release_linux
 
-##
-## std::get_os_release_macos - Get macOS release
-##
 std::get_os_release_macos() {
 	local -r VERSION_ID=$(sw_vers -productVersion)
 	echo "macOS${VERSION_ID%%.*}"
 }
 readonly -f std::get_os_release_macos
 
-##
-## std::get_os_release - Get release of OS.
-##
 std::get_os_release() {
 	local -A func_map;
 	func_map['Linux']=std::get_os_release_linux
@@ -487,11 +496,23 @@ std::get_os_release() {
 }
 readonly -f std::get_os_release
 
+##
+## std::get_kernel_name - get name of kernel
+##
+## Outputs:
+##   name of kernel
+##
 std::get_kernel_name() {
 	echo "${KERNEL_NAME}"
 }
 readonly -f std::get_kernel_name
 
+##
+## std::get_system_cpu - get the CPU name of the system
+##
+## Outputs:
+##   CPU name
+##
 std::get_system_cpu() {
 	echo "${SYSTEM_CPU}"
 }
@@ -501,8 +522,8 @@ readonly -f std::get_system_cpu
 ## std::array::contains - Check if given array contains given element.
 ##
 ## Arguments:
-##   $1 - element to check
-##   $2... - array
+##   $1 - [in] element to check
+##   $2... - [in] array
 ##
 ## Returns:
 ##   0 - if $1 is in given array
@@ -526,8 +547,8 @@ readonly -f std::array::contains
 ## std::array::is_subset - Check if an array is a subset of another array.
 ##
 ## Arguments:
-##   $1 - reference to array/subset 
-##   $2... - superset
+##   $1 - [in] reference to array/subset 
+##   $2... - [in] superset
 ##
 ## Returns:
 ##   0 - if yes
@@ -537,20 +558,69 @@ readonly -f std::array::contains
 ##   Here we do a linear search. For small arrays this is ok.
 ##
 std::array::is_subset() {
-	local -n _sub=$1
+	local -n _sub="$1"
 	shift 1
 	local -A _seen=()
 	local -- el=''
-	for el in "$@"; do _seen["${el}"]=1; done
-	for el in "${_sub[@]}"; do [[ -v _seen["${el}"] ]] || return 1; done
+	for el in "$@"; do
+		_seen[${el}]=1;
+	done
+	for el in "${_sub[@]}"; do
+		[[ -v _seen[${el}] ]] || return 1
+	done
+	return 0
 }
 readonly -f std::array::is_subset
+
+##
+## std::array::difference - compute difference of two arrays
+##
+## Return the elements which are in the first array but not in the second.
+##
+## Arguments:
+##   $1 - reference variable to return result
+##   $2 - first array A
+##   $3 - second array B
+##
+std::array::difference() {
+	local -n result="$1"
+	local -n arr_A="$2"
+	local -n arr_B="$3"
+
+	local -A in_B=()
+	local -- el=''
+	result=()
+	for el in "${arr_B[@]}"; do
+		in_B[${el}]=1
+	done
+	for el in "${arr_A[@]}"; do
+		[[ -v in_B[${el}] ]] || result+=( "${el}" )
+	done
+}
+readonly -f std::array::difference
+
+##
+## std::dict::copy - create copy from dictionary/associative array
+##
+## Arguments:
+##   $1 - reference variable to the copy
+##   $2 - reference variable to the original
+##
+std::dict::copy() {
+	local -n dst="$1"
+	local -n src="$2"
+	local -- suffix="${3:-}"
+	local -- key=''
+	for key in "${!src[@]}"; do
+		dst[${key}${suffix}]="${src[${key}]}"
+	done
+}
 
 ##
 ## std::find_elf64_binaries - find ELF64 binaries in given directories.
 ##
 ## Arguments:
-##   $1... - directories to search
+##   $@ - [in] directories to search
 ##
 ## Returns:
 ##   exit code of pipe
@@ -571,24 +641,6 @@ std::find_elf64_binaries(){
 		done
 }
 readonly -f std::find_elf64_binaries
-
-#std::find_elf64_binaries(){
-#	local -r elf64_magic=$'\x7fELF\x02'
-#	find "$@" -type f -not -name '*.pyc' -not -name '*.sh' -executable \
-#		-exec sh -c 'for f; do head -c5 "$f" | LC_ALL=C grep -Fq "${magic#}" && echo $f; done' _ {} +
-#}
-
-#std::find_elf64_binaries(){
-#	find "$@" -type f -not -name '*.pyc' -not -name '*.sh' -executable | \
-#		file -f - | \
-#		awk '/ELF 64-bit/ {print substr($1, 1, length($1)-1)}'
-#}
-
-std::get_dir_depth(){
-	local -r tmp="${1//[^\/]/}"
-	echo "${#tmp}"
-}
-readonly -f std::get_dir_depth
 
 ##
 ## std::get_num_cores - Get number of cores.
@@ -612,8 +664,32 @@ std::get_num_cores() {
 readonly -f std::get_num_cores
 
 ##
-## yml::die_type_error
+## std::expand_braces - Bash brace expansion
+##
+## Perform Bash brace expansion on given string.
+##
+## Note:
+##  - This implementation is not perfect but should be save enough
+##    for our use-case.
+##  - This function run in a subshell -> 'set -o noglob' stays local!
+##
+## Arguments:
+##   $1 - text to expand
+##
+## Output:
+##   The expanded text.
+##
+std::expand_braces() (
+	set -o noglob
+	local s
+	s=$(sed 's|[^[:alnum:]_/.:=+@%^,{}-]|\\&|g' <<<"$1")
+	eval "printf '%s\n' $s"
+)
+
+##
 ## yml::die_parsing
+## yml::die_type_error
+## yml::die_undefined(){
 ## 
 ## Exit program on error
 ##
@@ -639,17 +715,17 @@ readonly -f yml::die_parsing
 ## The program terminates on an error.
 ## 
 ## Arguments:
-##   $1 - reference to variable to return content
-##   $2 - name of file to read
+##   $1 - [out] reference to variable to return content
+##   $2 - [in] name of file to read
 ##
 ## Returns:
 ##   0
 ##
 yml::read_file(){
-	local -n yml_string="$1"
+	local -n yml_text="$1"
 	local -- yml_fname="$2"
 
-	yml_string=$(yq -N ".|explode(.)" "${yml_fname}") || \
+	yml_text=$(yq -N ".|explode(.)" "${yml_fname}") || \
 		std::die 3 "Cannot read file. Please check with yamllint -- $1"
 }
 readonly -f yml::read_file
@@ -666,10 +742,10 @@ readonly -f yml::read_file
 ##   1 - otherwise
 ##
 yml::has_key(){
-	local -n yml_string="$1"
+	local -n yml_text="$1"
 	local -- yml_key="$2"
 
-	[[ $(KEY="${yml_key}" yq 'has(strenv(KEY))' <<<"${yml_string}") == 'true' ]]
+	[[ $(KEY="${yml_key}" yq 'has(strenv(KEY))' <<<"${yml_text}") == 'true' ]]
 }
 readonly -f yml::has_key
 
@@ -689,9 +765,9 @@ readonly -f yml::has_key
 ## The program terminates on an error.
 ## 
 ## Arguments:
-##   $1 - reference to variable to return the keys
-##   $2 - YAML stream
-##   $3 - the entry to be searched for keys.
+##   $1 - [out] reference to variable to return the keys
+##   $2 - [in] reference variable with YAML text
+##   $3 - [in] the key of the entry to be searched for keys.
 ##
 ## Returns:
 ##   0
@@ -714,6 +790,14 @@ yml::get_keys(){
 }
 readonly -f yml::get_keys
 
+##
+## yml::get_type - get type of node
+##
+## Arguments:
+##   $1 - [out] reference varibale to return type
+##   $2 - [in] YAML text
+##   $3 - [in] key of entry
+##
 yml::get_type(){
 	local -n yml_type="$1"
 	local -n yml_text="$2"
@@ -723,6 +807,15 @@ yml::get_type(){
 }
 readonly -f yml::get_type
 
+##
+## yml::get_value - get node/value of entry
+##
+## Arguments:
+##   $1 - [out] reference varibale to return node
+##   $2 - [in] YAML text
+##   $3 - [in] key of entry
+##   $4 - [in] expected type of node
+##
 yml::get_value(){
 	local -n yml_val="$1"
 	local -n yml_text="$2"
@@ -776,19 +869,19 @@ readonly -f yml::get_value
 ## Return 0 as length, if the key doesn't exists or the node is not a sequence.
 ##
 ## Arguments:
-##   $1 - reference variable for result
-##   $2 - YAML string
-##   $3 - key of sequence
+##   $1 - [out]reference variable for result
+##   $2 - [in] YAML text
+##   $3 - [in] key of entry
 ##
 yml::get_seq_length(){
 	local -n yml_seq_length="$1"
 	local -n yml_text="$2"
 	local -- yml_key="$3"
 
-	local -i len=0
-	len=$(yq -e "${yml_key} | select(tag == \"!!seq\") | length" <<<"${yml_text}") || \
+	local -i _len=0
+	_len=$(yq -e "${yml_key} | select(tag == \"!!seq\") | length" <<<"${yml_text}") || \
 		yml::die_parsing "${yml_text}"
-	yml_seq_length="${len}"
+	yml_seq_length="${_len}"
 }
 readonly -f yml::get_seq_length
 
@@ -799,9 +892,9 @@ readonly -f yml::get_seq_length
 ## Terminate script if type is not a sequence.
 ##
 ## Arguments:
-##   $1 - refernce variable to return result
-##   $2 - YAML text
-##   $3 - key of sequence
+##   $1 - [out] refernce variable to return result
+##   $2 - [in] YAML text
+##   $3 - [in] key of entry
 ##
 yml::get_seq(){
 	local -n yml_val="$1"
