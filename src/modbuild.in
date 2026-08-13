@@ -1255,11 +1255,16 @@ build::modules_compiler(){
 	local -- compiler=''
 	for compiler in "${with_compiler[@]}"; do
 		# build if opt_with_modules is empty or compiler is in this array
-		(( ${#opt_with_modules[@]} != 0 )) \
-			&& ! std::array::is_subset \
+		if (( ${#opt_with_modules[@]} != 0 )); then
+			if ! std::array::is_subset \
 			     opt_with_modules \
-			     "${compiler}" \
-			&& continue
+			     "${compiler}"; then
+				std::info "%s " \
+					  "Skipping build with" \
+					  "${compiler}"
+				continue
+			fi
+		fi
 		pbuild::_module_yaml \
 			"${module_name}" "${module_version}" \
 			"$3" \
@@ -1292,12 +1297,16 @@ build::modules_hdf5_serial(){
 	for compiler in "${with_compiler[@]}"; do
 		for hdf5 in "${with_hdf5[@]}"; do
 			# build if opt_with_modules is empty or compiler is in this array
-			(( ${#opt_with_modules[@]} != 0 )) \
-				&& ! std::array::is_subset \
+			if (( ${#opt_with_modules[@]} != 0 )); then
+				if ! std::array::is_subset \
 				     opt_with_modules \
-				     "${compiler}" "${hdf5}" \
-				&& continue
-
+				     "${compiler}" "${hdf5}"; then
+					std::info "%s " \
+						  "Skipping build with" \
+						  "'${hdf5}'"
+					continue
+				fi
+			fi
 			pbuild::_module_yaml \
 				"${module_name}" "${module_version}" \
 				"$3" \
@@ -1333,11 +1342,17 @@ build::modules_mpi(){
 	for compiler in "${with_compiler[@]}"; do
 		for mpi in "${with_mpi[@]}"; do
 			# build if opt_with_modules is empty or compiler is in this array
-			(( ${#opt_with_modules[@]} != 0 )) \
-				&& ! std::array::is_subset \
+			if (( ${#opt_with_modules[@]} != 0 )); then
+				if ! std::array::is_subset \
 				     opt_with_modules \
-				     "${compiler}" "${mpi}" \
-				&& continue
+				     "${compiler}" "${mpi}"; then
+				     	std::info "%s " \
+						  "Skipping build with" \
+						  "'${compiler}'," \
+						  "'${mpi}'"
+					continue
+				fi
+			fi
 			pbuild::_module_yaml \
 				"${module_name}" "${module_version}" \
 				"$3" \
@@ -1379,11 +1394,19 @@ build::modules_hdf5(){
 			for hdf5 in "${with_hdf5[@]}"; do
 				# build if opt_with_modules is empty or compiler is
 				# in this array
-				(( ${#opt_with_modules[@]} != 0 )) \
-					&& ! std::array::is_subset \
+				if (( ${#opt_with_modules[@]} != 0 )); then
+					if ! std::array::is_subset \
 					     opt_with_modules \
-					     "${compiler}" "${mpi}" "${hdf5}" \
-					&& continue
+					     "${compiler}" "${mpi}" "${hdf5}"; then
+						std::info "%s " \
+							  "Skipping build with" \
+							  "'${compiler}'," \
+							  "'${mpi}'," \
+							  "'${hdf5'"
+
+						continue
+					fi
+				fi
 				pbuild::_module_yaml \
 					"${module_name}" "${module_version}" \
 					"$3" \
@@ -1578,7 +1601,7 @@ build::modules_yaml_v1(){
 		# list of version specifications, for example:
 		# 42.0.0;41.0.{0..9};40.4.2
 		#
-		echo "num_variants: $num_variants" 1>&2
+		std::info "Number of variants for ${name}/${version_pattern}: ${num_variants}"
 		local -a versions=()
 		cfg::expand_version_key versions "${version_key}" "${version_pattern}"
 		local -- version=''
@@ -1602,7 +1625,6 @@ build::modules_yaml_v1(){
 						yaml_module_config \
 						"${node}.variants[$n]" \
 						mod_config
-					typeset -p mod_config 1>&2
 					cfg::is_variant_to_build \
 						"${name}" \
 						"${version}" \
