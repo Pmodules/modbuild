@@ -46,7 +46,7 @@ jobs:
             -a icons=font \
             -a source-highlighter=Pygments \
             -a experimental \
-            -a stylesheet=$GITHUB_WORKSPACE/src/stylesheets/readthedocs-new.css \
+            -a stylesheet=$GITHUB_WORKSPACE/doc/src/stylesheets/readthedocs-new.css \
             -D /tmp \
             -R doc/src '**/*.adoc'
 
