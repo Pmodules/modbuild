@@ -2,16 +2,6 @@
 
 == Step-by-step guide to build a 'Hello, world!' module
 
-[NOTE]
-====
-This is for Pmodules 2.0 or newer!
-====
-
-[NOTE]
-====
-For linting YAML files use the tool https://yamllint.readthedocs.io/en/stable/[`yamlint`] or an on-line linter like https://jsonformatter.org/yaml-validator[yaml-validator].
-====
-
 1. Download a stub for a new build-block
 +
 [source,shell]
@@ -59,6 +49,11 @@ hello_world:                           # <1>
 <7> SHA256 hash sums for each source file. Hash sums are optional but recommended. Therefor you can start without the hash sum and add it later. If the hash sum is missing, you get a warning. If the hash sum is wrong, the build process aborts.
 <8> Configuration for version 1.0.0. 
 <9> Overwrite the default release stage.
+
+[NOTE]
+====
+For linting YAML files use the tool https://yamllint.readthedocs.io/en/stable/[`yamlint`] or an on-line linter like https://jsonformatter.org/yaml-validator[yaml-validator].
+====
 
 1. Edit the build script
 +
@@ -112,7 +107,7 @@ hello_world:
 
 [NOTE]
 ====
-To change the release stage the build-script must be called again: `./build 1.0.0`
+To change the release stage run the build-script again: `./build 1.0.0`
 ====
 
 == Add new version, build with autotools
