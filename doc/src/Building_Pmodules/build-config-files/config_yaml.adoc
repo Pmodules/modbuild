@@ -81,8 +81,8 @@ format: 1
 | `variants`
 | map of config-block
 | Variants can be used to compile the some software with different
-| options. Example: `openmpi`` with and without Slurm support are
-| variants of the same software. 
+  options. Example: `openmpi`` with and without Slurm support are
+  variants of the same software. 
 
 |===
 
