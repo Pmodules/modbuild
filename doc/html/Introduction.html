@@ -18,13 +18,60 @@
 </div>
 <div id="content">
 <div class="paragraph">
-<p>Pmodules is the environment modules system at PSI.</p>
+<p>Pmodules is the environment modules system at PSI. Currently, we have two different implementations of the Pmodules at PSI. The original implementation is based on Tcl Environment Modules 3.x and a wrapper written in Bash, and a new implementation which is based on version 5.6. The new version is written entirely in Tcl.</p>
 </div>
 <div class="paragraph">
-<p>It is available on PSI&#8217;s HPC systems Ra, Merlin7 and Merlin6 (and maybe on other systems too).</p>
+<p>Pmodules is available on PSI&#8217;s HPC systems Ra, Merlin7 and Merlin6 (and maybe on other systems too). On Ra the new version of Pmodules is installed.</p>
 </div>
 <div class="paragraph">
-<p>In this document we explain how to build modules for the Pmodules system.</p>
+<p>In this document we explain how to build modules for the Pmodules system. To simplify the process of building modules, the <code>modbuild</code> tool was developed.</p>
+</div>
+<div class="paragraph">
+<p>Make sure <code>modbuild</code> is in the path! Check with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">command -v modbuild</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">which modbuild</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If it is not already in the path, you can load it as module:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">module load modbuild</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Overall the main cases for building modules are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Building a module from source. Examples: git,
+gnuplot, openmpi, hdf5, &#8230;&#8203;<br>
+In this case it is highly recommended to code each step - usually download, configure, compile and install - in a script, write a modulefile and a configuration file.</p>
+</li>
+<li>
+<p>Building a module with a binary package. Examples: Intel compiler, Matlab,
+ANSYS, Mathematica, &#8230;&#8203;<br>
+In this case either install the package by hand and write a "dummy" build script and the modulefile. If possible script the installation. Usually the software can be installed via a command line tool. If you cannot easily script the installation, document each step in a README file.</p>
+</li>
+<li>
+<p>Building a module from software written in Python. In this case the best practice is to use a tool like <code>miniforge</code> or just <code>pip</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In any case you need a recipe to build the module. This recipe consists at least of a build-script with instruction e.g. how to download, compile and install a dedicated piece of software, a modulefile and a configuration file. The this document we use the term <strong><em>build-block</em></strong> instead of recipe. A build-block includes all required files to (re-)build a module or at least a README.md with a documentation of steps which cannot be automated. (For example: it might not be possible to script the download of licensed software.)</p>
 </div>
 </div>
 <div id="footer">

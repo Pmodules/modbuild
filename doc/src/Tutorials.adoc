@@ -138,6 +138,7 @@ hello_world:
         compile_in_sourcetree: true
         build_functions:
           prep: [pbuild::prep]
+          configure: []
           compile: [pbuild::compile]
           install: [install-1]
     2.0.0:                             # <2>
@@ -195,6 +196,7 @@ hello_world:
         relstage: deprecated
         build_functions:
           prep: [pbuild::prep]
+          configure: []
           compile: [pbuild::compile]
           install: [install-1]
     2.0.0:                             # <2>
