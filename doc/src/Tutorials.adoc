@@ -16,6 +16,20 @@ mkdir hello_world && cd $_
 tar --strip-components 1 -xvf ../stub.tgz
 chmod 0755 build
 ----
++
+After un-taring the following files are in the current directory:
+[source,shell]
+----
+files/config.yaml                   <1>
+build                               <2>
+modulefile                          <3>
+LICENSE                             <4>
+----
+<1> configuration file for the module `hello_world`
+<2> build-script
+<3> modulefile
+<4> license of the module
+
 1. Edit `files/config.yaml`
 +
 [source,yaml]
@@ -70,7 +84,7 @@ pbuild::install() {      # <2>
 	install --mode=0755 "${SRC_DIR}/hello" "${PREFIX}/bin"
 }
 ----
-<1> Don't use the default `pbuild::configure()`` function!
+<1> Don't use the default `pbuild::configure()` function!
     There is nothing to configure. :)
 <2> The Makefile doesn't have an 'install' target. Therefore we have to code it ourself. 
 1. Build the module
@@ -145,11 +159,11 @@ hello_world:
       config:
         relstage: unstable
 ----
-<1> Various changes are necessary in the config section:
+<1> Several changes are required in the config section:
 * With autotools the software can be compiled outside the sources. This is recommended and the default for autotools and CMake.
-* The build function must now be defined:
-** In version 1.x the default configure step must be skipped.
-** The default installation function cannot be used for version 1.x.
+* Define the build function for version 1.x:
+** Nothing to configure for version 1.x.
+** In version 2+ we can use the default installation function. For version 1, we need a separate version. 
 <2> Configuration for version 2.0.0.
 +
 2. Edit `./build`
@@ -162,7 +176,7 @@ pbuild::pre_configure(){
         ./autogen.sh
 }
 
-# we need this function major version 1!
+# we need this function for major version 1!
 install-1() {
         mkdir -p "${PREFIX}/bin"
         install --mode=0755 "${SRC_DIR}/hello" "${PREFIX}/bin"
