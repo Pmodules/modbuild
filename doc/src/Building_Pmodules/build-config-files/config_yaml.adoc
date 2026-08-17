@@ -5,6 +5,7 @@
 [source,yaml,subs="verbatim,quotes"]
 ----
 *_module-name-1_*:
+  type: *module* | *sub_package*
   defaults:                                       # optional
     *_config-block_*
   shasums:                                        # optional
@@ -28,6 +29,9 @@
 
 | `*_module-name-N_*`
 | Configuration for the module `*_module-name-N_*`. Example: `openmpi`
+
+| `type`
+| Type of the configuration block. Valid values are `module` and `sub_package`. Sub-packages are a convenient way to pack multiple software-packages into a single module. The default value is `module`
 
 | `defaults`
 | Default configuration. This block is optional.
@@ -253,6 +257,64 @@ Default URLs can be defined by using the variables `P`, `V`,
 
 === Sub-packages
 
+.*Example: Sub-packages (git and git-lfs)*
+----
+---
+# yamllint disable rule:line-length
+format: 1
+git:
+  defaults:
+    group: Tools
+    overlay: base
+    relstage: stable
+    compile_in_sourcetree: true
+    urls:
+      - url: https://mirrors.edge.kernel.org/pub/software/scm/git/git-${V_PKG}.tar.xz
+  shasums:
+    git-2.54.0.tar.xz: f689162364c10de79ef89aa8dbf48731eb057e34edbbd20aca510ce0154681a3
+  versions:
+    2.54.0:
+      config:
+        relstage: unstable
+        runtime_deps: [TclTk/8.6.16, openssl/3.4.1]
+        build_requires: [gcc/10.4.0, curl/8.20.0, perl/5.40.2, asciidoctor/2.0.23, gettext/0.19.8, xmlto/0.0.28]
+        docfiles: [COPYING, README.md]
+        configure_args:
+          - --with-tcltk
+          - --with-iconv=${GETTEXT_PREFIX}
+          - --with-perl=${PERL_PREFIX}/bin/perl
+        sub_packages:
+          - name: git-lfs
+            version: 3.7.1
+            build_args:
+
+git-lfs:
+  type: sub_package
+  defaults:
+    compile_in_sourcetree: true
+  shasums:
+    git-lfs-linux-amd64-v3.7.1.tar.gz: 1c0b6ee5200ca708c5cebebb18fdeb0e1c98f1af5c1a9cba205a4c0ab5a5ec08
+
+  versions:
+    3.7.1:
+      variants:
+        -
+          kernels: [Linux]
+          target_cpus: [x86_64]
+          urls:
+            - url: https://github.com/git-lfs/git-lfs/releases/download/v${V_PKG}/git-lfs-linux-amd64-v${V_PKG}.tar.gz
+          build_functions:
+            configure: []
+            compile: []
+        -
+          kernels: [Linux]
+          target_cpus: [aarch64]
+          urls:
+            - url: https://github.com/git-lfs/git-lfs/releases/download/v${V_PKG}/git-lfs-linux-arm64-v${V_PKG}.tar.gz
+          build_functions:
+            configure: []
+            compile: []
+----
 
 == Examples
 
