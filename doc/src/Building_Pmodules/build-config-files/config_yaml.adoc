@@ -1,31 +1,9 @@
-= YAML configuration files in Pmodules 1.1 and newer
+= `files/config.yaml`
 
-[NOTE]
-=====================================================================
-Pmodules 1.1 and newer are supporting configuration files in YAML
-format. For backward compatibility the build-systems supports both
-types of configuration files with the YAML configuration file as
-default.
-=====================================================================
-
-The old format of the variants file is simple but very limited and
-almost impossible to extend for new features. To overcome the
-limitations a new format using YAML for variants files has been
-introduced. For the time being both format are supported. But it is
-highly recommended to use the YAML format for new modules and to
-migrate existing variants files in the old format to the new. 
-
-== Path to configuration file
-
-The path to the configuration file is
-
-`*_build-recipe-dir_*/files/config.yaml`
-
-== Format
+== Structure
 
 [source,yaml,subs="verbatim,quotes"]
 ----
-format: 1
 *_module-name-1_*:
   defaults:                                       # optional
     *_config-block_*
@@ -44,42 +22,32 @@ format: 1
   ...
 ----
 
-[cols="1,1,5"]
+[cols="1,5"]
 |===
-| Field-Name | Type | Description
-
-| `format`
-| unsigned int
-| Format version of the YAML configuration file. For now it must be `1`
+| Field-Name | Description
 
 | `*_module-name-N_*`
-| config-block
-| Configuration for the Pmodule `*_module-name-N_*`. Example: `openmpi`
+| Configuration for the module `*_module-name-N_*`. Example: `openmpi`
 
 | `defaults`
-| config-block
 | Default configuration. This block is optional.
 
 | `shasums`
-| MAP of string
 | SHA256 hash sums of source files. Keys are filenames, the value the +
  corresponding SHA256 hash sum. This block is optional. A warning is
  printed if a hash-sum is missing for a required file.
 
 | `versions`
-| MAP of configurations for different version keys
 | A version key is a semicolon separated string of version
   numbers. Version numbers can be specified with shell brace
   expansion. Example: + 
   `5.4.{0,1,2,3,4,5,8,9};5.2.{0,4,6,7,8};5.0.0;4.6.3`
 
 | `config`
-| config-block
 | Optional, version specific configuration block. Configurations
   specified here are overriding the defaults.
 
 | `variants`
-| map of config-block
 | Variants can be used to compile the some software with different
   options. Example: `openmpi`` with and without Slurm support are
   variants of the same software. 
@@ -88,83 +56,63 @@ format: 1
 
 == Configuration blocks
 
-[NOTE]
-=====================================================================
-In configuration blocks everything is optional!
-=====================================================================
-
-.`config-block`
-[source,yaml,subs="verbatim,quotes"]
-----
-build_requires: [*_build-req-1_*, ...]
-compile_in_sourcetree: *_bool_*
-configure_with: auto|autotools|cmake
-default_variant: *_variant_*
-docfiles: [*_file-1_*, ...]
-group: *_group_*
-group_deps:
-  compilers:
-    *_cpmpiler-1_*: [*_version-1_*, ...]
-  mpi:
-    *_mpi-implemation-1_*: [*_version-1_*, ...]
-  hdf5:
-    hdf5: [*_version-1_*, ...]
-  hdf5_serial:
-    hdf5[__serial]: [*_version-1_*, ...]
-overlay: *_overlay_*
-relstage: *_release-stage_*
-runtime_deps: [*_rt-dep-1_*, ...]
-suffix: *_suffix_*
-systems: [*_system-1_*, ...]
-urls:
-  - url: *_link_*
-    name: *_filename_*
-  - ...
-variant: [*_variant-1_*, ...]
-----
-
-[cols="1,1,5"]
+[cols="1,5"]
 |===
-| Field-Name | Type | Description
+| Field-Name | Description
 
 | `build_requires`
-| array of string
-| Modules required to build this module
+| A list of modules required to build this module. The default is an empty list.
+
+| `build_functions`
+| This structure can be used to define a list of functions to be called for each of the for build-steps. The build-functions defaults to the pre-defined build-functions. The schema of the structure is documented in a section below.
+
+| `build_variants`
+| If multiple variants exist for a version, this field can be used to build only the first variant that meets specific criteria. Criteria can be specified via the keys `kernels`, `systems` and `target_cpu`. Valid values are `all`, which is the default and `first_match`.
 
 | `compile_in_sourcetree`
-| boolean
-| Compile in source tree or in a dedicate build directory.
+| Compile in source tree or in a dedicate build directory. Either `true` or `false`. The default value is `true`.
 
-| `configure_with`
-| string 
+| `configure_with`  
 | Choose software configuration system. Allowed values are: +
- `auto`: use autotools if available +
+ `auto`: use autotools if available (this is the default value)+
  `autotools`: use autotools +
- `cmake`: use cmake
+ `cmake`: use cmake+
+
+| `configure_args` +
+  `configure_args+`
+| List of arguments passed to the configuration system. The key `configure_args+` appends arguments to the list of previously defined arguments.
 
 | `default_variant`
-| string
-| (opt) Specifies the default variant to build if no variant is specified
+| Specifies the default variant to build if no variant has been passed on via the command-line. The default is an empty string.
 
-| `docfiles`
-| array of string
-| Array with documentation files to be installed in `share/doc/`
+| `docfiles` +
+  `docfiles+`
+| List of documentation files to be installed in  `$PREFIX/share/doc/`. The key `docfiles+` adds documentation files to the previously defined list. The default is an empty list.
+
+| `download_dir`
+| Directory where files are saved after downloading. See the structure `urls` for more details. The directory defaults to the directory specified with the environment variable `PMODULES_DISTFILES` or if the variable is not defined to `$HOME/.cache/Pmodules/distfiles`.  
 
 | `group`
-| string
-| Group of the module
+| The name of the group in which the module is to be installed. The default group is `Tools`.
 
 | `group_deps`
-| group-deps-object
-| Group/hierarchical dependencies like compiler, MPI, HDF5 modules
+| This block is required if the module is to be installed in a hierarchical group. The schema of the structure is documented below.
+
+| `kernels`
+| List of kernels to which this configuration block applies. Valid values are `Linux`, `Darwin` and `any`. The default value is `any`.
+
+| `modulefile`
+| Name of the modulefile to be installed. The default is `modulefile`.
 
 | `overlay`
-| string
-| Overlay of the module
+| The name of the overlay in which the module is to be installed
+
+| `patch_files` +
+  `patch_files+`
+| List of patches to be applied on the sources. The default is an empty list.
 
 | `relstage`
-| string
-| Release stage of the module. Allowed values are: +
+| The release stage of the module. Valid values are: +
 `unstable`: the module is still under development +
 `stable`: the module is ready to be used +
 `deprecated`: the module is deprecated +
@@ -172,33 +120,139 @@ variant: [*_variant-1_*, ...]
 `removed`: the module has been removed
 
 | `runtime_deps`
-| sequence of strings
-| Module to be loaded at runtime
+| List of run-time dependencies of the module. These modules will be loaded together with the module.
+
+| `sub_packages`
+| A list of sub-package to be built. For details see below.
 
 | `suffix`
-| string
-| This string will be added to the version of the module
+| This string will be added to the version of the module as suffix.
 
 | `systems`
-| sequence of strings
-| A 'system' is either a hostname or OS name like `rhel8`. For +
- hostnames shell glob pattern matching like `merlin-*` can be used.
+| A list of systems to which this block applies. A 'system' is either a hostname or OS name like `rhel8`. For hostnames a regex like `.*.merlin7.psi.ch` can be used.
 
-| `urls`
-| sequence of links and optional file-names
-| Software which must be downloaded to build a specific module. +
-  `url`: Download link +
-  `name`: optional output filename. The filename defaults the last
-  component of the `url`. +
-  Default URLs can be defined by using the variables `P`, `V`,
-  `V_PKG`, `V_MAJOR`, `V_MINOR` and `V_PATCHLVL`. Example: +
-  https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz
+| `target_cpus`
+| A list of CPU to which this block applies. 
+
+| `urls` \| `sources`
+| List of sources from which the required software must be downloaded if not already cached. The details are documented in a following section.
+
+| `use_flags`
+| TBW
+
+| `use_overlays`
+| List of overlays that must be loaded before the module can be built
 
 | `variant`
-| sequence of strings
 | Sequence of synonyms for a variant.
 
 |===
+
+=== Defining build-functions
+
+[cols="1,5"]
+|===
+| Field-Name | Description
+
+| `prep` 
+| List of functions to be called in the 'prep' step. The list defaults to `pbuild::pre_prep`, `pbuild::prep`, `pbuild::post_prep`.
+
+| `configure`
+| List of functions to be called in the 'configure' step. The list defaults to `pbuild::pre_configure`, `pbuild::configure`, `pbuild::post_configure`.
+
+| `compile`
+| List of functions to be called in the 'compile' step. The list defaults to `pbuild::pre_compile`, `pbuild::compile`, `pbuild::post_compile`.
+
+| `install`
+| List of functions to be called in the 'install' step. The list defaults to `pbuild::pre_install`, `pbuild::install`, `pbuild::post_install`.
+
+|===
+
+.*Example:*
+----
+build_functions:
+  prep: [pbuild::prep]
+  configure: []
+  compile: [pbuild::compile]
+  install: [install-1]
+----
+
+=== Group dependencies
+
+[cols="1,5"]
+|===
+| Field-Name | Description
+
+| `compiler`
+| Structure defining compilers and their versions. See example below.
+
+| `mpi`
+| Same for MPI implementations (e.g. openmpi, mpich).
+
+| `hdf5`
+| Same for parallel HDF5.
+
+| `hdf5_serial`
+| Same for serial HDF5.
+
+|===
+
+.*Example: group dependencies for a module in the Compiler hierarchy*
+----
+group_deps:
+  compiler:
+    gcc: [12.4.0, 14.2.0]
+    intel: [2021.1]
+----
+
+.*Example: group dependencies for a module in the MPI hierarchy*
+----
+group_deps:
+  compiler:
+    gcc: [13.4.0, 14.4.0, 15.2.0]
+  mpi:
+    openmpi: [5.0.10]
+----
+
+=== Defining sources
+
+[cols="1,5"]
+|===
+| Field-Name | Description
+
+| `url`
+| Download link.
+
+| `name`
+| optional output filename. The filename defaults the last
+  component of `url`.
+  
+| `strip_dirs`
+| The value of this key is passed to the unpacker and specifies the number of directories to be stripped while unpacking. Stripping directories is supported only by `tar`. If another unpacker is specified, this value is ignored. The default value is `1`.
+
+| `unpacker`
+| The tool to be used to unpack the downloaded software. Supported unpackers are `tar`, `sevenz` and `none`. The default unpacker is `tar`.
+
+| `unpack_dir`
+| The directory into which the files should be extracted. The default directory is `$SRC_DIR`.
+
+| `patch_file`
+| A patch file which will be applied after downloading and unpacking the source package.
+
+| `patch_strip`
+| Number of directories to strip from the specification in the patch file. See the manual page for the tool `patch(1)` for more details.
+
+|===
+
+[NOTE]
+====
+Default URLs can be defined by using the variables `P`, `V`,
+  `V_PKG`, `V_MAJOR`, `V_MINOR` and `V_PATCHLVL`. Example: +
+  https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz
+====
+
+=== Sub-packages
+
 
 == Examples
 

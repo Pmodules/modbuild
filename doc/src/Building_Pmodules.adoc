@@ -1,10 +1,10 @@
-= *BUILDING PMODULES*
+= *BUILDING MODULES*
 
 == Introduction
 
-In the simplest case adding a Pmodule can be done by adding a modulefile to a certain directory. Below is an example of a "do nothing" modulefile in the group `Sandbox`.
+In the simplest case adding a module can be done by adding a modulefile to a certain directory. Below is an example of a "do nothing" modulefile.
 
-.Example: `/opt/psi/Sandbox/modulefiles/null/1.0.0`
+.Example: `null/1.0.0`
 [source,sh]
 ----
 #%Pmodule
@@ -18,69 +18,11 @@ This is a do nothing module.
 "
 ----
 
-In addition to the modulefile a corresponding configuration file - defining for example the release stage - should be installed in the same directory as the modulefile. See next section for a detailed documentation of configuration files. 
+Modulefiles are written in the Tool Command Language (Tcl). 
 
-.Example: configuration file `/opt/psi/Sandbox/modulefiles/null/.release-1.0.0` for the `null/1.0.0` module
-[source,sh]
-----
-stable
-----
-
-Modulefiles are written in the Tool Command Language (Tcl). See section <<modulefiles>> for a detailed documentation. In Pmodules version 1.1.16 and newer modulefiles written in Lua are also supported but with some limitations.
-
-The above example doesn't provide any software. In the following example we show a simple 'HelloWorld' module with a 'Hello, world!' program. 
-
-.Example: modulefile `/opt/psi/Sandbox/modulefiles/HelloWorld/1.0.0`:
-[source,sh]
-----
-#%Pmodule
-
-module-whatis           "'Hello, world!' module"
-module-maintainer       "Achim Gsell <achim.gsell@psi.ch>"
-module-license          "MIT"
-module-url              "http://pmodules.gitpages.psi.ch"
-
-module-help     "
-The module provides a 'Hello, world!' program.
-"
-----
-
-.Example: `/opt/psi/Sandbox/HelloWorld/1.0.0/bin/hello`:
-[source,sh]
-----
-#!/usr/bin/env python3
-
-print("Hello, world!")
-----
-
-In principal, it is possible to install modules 'by hand' by installing the software, module- and configuration files at the right place. For reproducibility, documentation and re-usability it is highly recommended to write build-recipes for each module or - at least - a README and host everything on a PSI Gitlab server.
-
-Overall the main cases for building modules are:
-
-* Building a module from source. This is the most common case. Examples: git,
-  gnuplot, openmpi, hdf5, ... +  
-  In this case it is highly recommended to code each step - usually download, configure, compile and install - in a script, write a modulefile and a configuration file.
-* Building a module with a binary package. Examples: Intel compiler, Matlab,
-  ANSYS, Mathematica, ... +  
-  In this case best practice is to install the package by hand and write a "dummy" build script, a modulefile and a configuration file. If it is possible and simple to script the installation, code this in the build script. If you cannot easily script the installation, document each step in a README file.
-
-[NOTE]
-====
-In any case: keep everything in a Git repository on either https://gitlab.psi.ch[gitlab.psi.ch] or https://git.psi.ch[git.psi.ch].
-The Git repository for the groups `Tool`, `Programming`, `Compiler`, `HDF5`, `HDF_serial` and `System` is https://gitlab.psi.ch/Pmodules/buildblocks[Pmodules/buildblock]. Other groups can be hosted anywhere. But to keep everything together a project in https://gitlab.psi.ch/Pmodules/[Pmodules] might be a good choice.
-====
-
-Many modules for the Pmodules environment have to be build from
-source. The building plan of a module is coded in a so called
-*_build-block_*. A build-block consists at least of a build-script with instruction how to download, compile and install a dedicated piece of 
-software, a modulefile and a configuration file.
-
-
-In the next section we describe how to write build recipes.
+In principal, it is possible to install modules 'by hand' by installing the software and modulefiles at the right place. For reproducibility, documentation and re-usability it is highly recommended to write build-recipes for each module or - at least - a README.md and host everything on a Gitforge (gitea.psi.ch, github.com, gitlab.com ...).
 
 == Predefined variables 
-
-Since we use BASH for our build-scripts and Tcl for modulefiles, we use BASH/Tcl syntax for variables in this documentation. So, if `VARIABLE` is the name of a variable, `$VARIABLE` the value of it.
 
 *In modulefiles and build-scripts the following variables are predefined:*
 
@@ -91,9 +33,7 @@ Since we use BASH for our build-scripts and Tcl for modulefiles, we use BASH/Tcl
 `V_PATCHLVL`:: the patch-level. Example: `3`
 `V_RELEASE`:: the release number. Example: `2`
 `V_PKG`:: version number without release.
-`GROUP`:: group the module is in.
 `PREFIX`:: installation prefix of the module.
-`PMODULES_ROOT`:: root of Pmodules installation. At PSI this is `/opt/psi`.
 
 *In build-scripts the following variables are predefined too:*
 
@@ -102,25 +42,19 @@ Since we use BASH for our build-scripts and Tcl for modulefiles, we use BASH/Tcl
 `BUILD_DIR`:: build directory, set to `$PMODULES_TMPDIR/$P-$V/build`
 `BUILDBLOCK_DIR`:: Directory where the build-script is in.
 `BUILD_SCRIPT`:: Name of the build script.
-`SYSTEM`,`OS`:: Can be set with the `--system` option. The value defaults to the string returned by `uname -s`. The use of `OS` is obsolete.
-
-*In modulefiles the following variables are predefined too:*
-
-`name`:: Same as `P` (obsolete, for historical reasons).
-`version`:: Same as `V` (obsolete, for historical reasons).
-`group`:: The group the module is member of.
+`JOBS`:: Number of parallel `make` jobs.
 
 [id="building-modules", reftext="Building Pmodules"]
-== Building a Pmodule
+== Building a module
 
-Perform the following steps for a new Pmodule:
+Perform the following steps for a new module:
 
 1. Create a directory with the name of the module.
 2. Write the configuration file. See section <<writing-build-configuration-files>>.
 3. Write the modulefile. See section <<sec-modulefiles>>.
 4. Code all required steps to install a software in a script. If it is not possible to script everything, code as much as possible and document additional steps in a README file. See section <<writing-build-scripts>>.
 
-The first - and sometimes also to most challenging - step in building a Pmodule from source is to learn how to download, configure, compile and install a software package and dependencies the package has. The next steps are writing a configuration file, a modulefile and a script to download, configure, compile and install it.  
+The first - and sometimes also to most challenging - step in building a module from source is to learn how to download, configure, compile and install a software package and dependencies the package has. The next steps are writing a configuration file, a modulefile and a script to download, configure, compile and install it.  
 
 In general the following steps needs to be performed:
 
@@ -167,16 +101,6 @@ install::
 
 In many cases you don't have to implement the the functions `pbuild::prep()`, `pbuild::configure()`, `pbuild::compile()` and `pbuild::install()` or at least not all of them. The build-system provides default implementations for these functions. In the simplest case, the build script consists only of the shebang line (only for Pmodules >= 1.1). In this case all further information for building the module is in the configuration file. For software that uses autotools or CMake for configuration and creation of Makefiles, the standard functions can practically always be used. The functions `pbuild::pre_STEP` and `pbuild::post_STEP` can be used to hook into each step before and after the default function has been called. For example `pbuild::pre_configure()` can be used to set arguments for autotools or CMake as in the build-script for Gnuplot:
 
-.Example: build script for Gnuplot
-[source,sh]
-----
-#!/usr/bin/env modbuild
-
-pbuild::pre_configure() {
-        pbuild::add_configure_args '--with-latex=no'
-        pbuild::add_configure_args '--with-qt=no'
-}
-----
 
 === Overloading the default implementations
 
@@ -221,46 +145,6 @@ pbuild::install() {
 }
 ----
 
-=== Calling the build-script
-To call the build-script, cd into the directory of the script and run
-[source,sh]
-----
-./build VERSION_TO_BE_BUILD
-----
-
-.Example with output
-[source,sh]
-----
-pmod7:~/HelloWorld$ ./build 1.0.0
-Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
-HelloWorld/1.0.0: building ... 
-HelloWorld/1.0.0: 
-HelloWorld/1.0.0: start building ... 
-HelloWorld/1.0.0: preparing sources ... 
-HelloWorld/1.0.0: configuring ... 
-HelloWorld/1.0.0: compiling ... 
-HelloWorld/1.0.0: installing ... 
-HelloWorld/1.0.0: running post-installation for Linux ... 
-HelloWorld/1.0.0: Installing documentation to /opt/psi/Sandbox/HelloWorld/1.0.0/share/doc/HelloWorld 
-HelloWorld/1.0.0: adding modulefile to overlay 'base' ... 
-HelloWorld/1.0.0: Cleaning up '/var/tmp/gsell/HelloWorld-1.0.0/build'... 
-HelloWorld/1.0.0: Cleaning up '/var/tmp/gsell/HelloWorld-1.0.0/src'... 
-HelloWorld/1.0.0: Done ... 
-* * * * *
-
-pmod7:~/HelloWorld$
-----
-
-You can run 
-[source,sh]
-----
-./build --help
-----
-to get a list of all option with a description. The most common option are
-
-`-f`:: to force a rebuild
-`--verbose`:: to get a full debug trace.
-
 === Functions to compare versions
 include::Building_Pmodules/functions/cmp_versions.adoc[leveloffset=+3]
 
@@ -273,6 +157,5 @@ include::Building_Pmodules/functions/compile.adoc[leveloffset=+3]
 ---
 include::Building_Pmodules/functions/install.adoc[leveloffset=+3]
 
-== Runtime configuration files
-include::Building_Pmodules/runtime-config-files/module_config.adoc[leveloffset=+1]
+[leveloffset=+1]
 

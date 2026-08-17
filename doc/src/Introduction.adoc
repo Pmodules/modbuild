@@ -2,6 +2,42 @@
 
 Pmodules is the environment modules system at PSI. Currently, we have two different implementations of the Pmodules at PSI. The original implementation is based on Tcl Environment Modules 3.x and a wrapper written in Bash, and a new implementation which is based on version 5.6. The new version is written entirely in Tcl.
 
-It is available on PSI's HPC systems Ra, Merlin7 and Merlin6 (and maybe on other systems too). On Ra the new version of Pmodules is installed. 
+Pmodules is available on PSI's HPC systems Ra, Merlin7 and Merlin6 (and maybe on other systems too). On Ra the new version of Pmodules is installed. 
 
-In this document we explain how to build modules for the Pmodules system.
+In this document we explain how to build modules for the Pmodules system. To simplify the process of building modules, the `modbuild` tool was developed. 
+
+Make sure `modbuild` is in the path! Check with:
+[source,sh]
+----
+command -v modbuild
+----
+or
+[source,sh]
+----
+which modbuild
+----
+
+If it is not already in the path, you can load it as module:
+
+[source,sh]
+----
+module load modbuild
+----
+
+Overall the main cases for building modules are:
+
+* Building a module from source. Examples: git,
+  gnuplot, openmpi, hdf5, ... +  
+  In this case it is highly recommended to code each step - usually download, configure, compile and install - in a script, write a modulefile and a configuration file.
+* Building a module with a binary package. Examples: Intel compiler, Matlab,
+  ANSYS, Mathematica, ... +  
+  In this case either install the package by hand and write a "dummy" build script and the modulefile. If possible script the installation. Usually the software can be installed via a command line tool. If you cannot easily script the installation, document each step in a README file.
+* Building a module from software written in Python. In this case the best practice is to use a tool like `miniforge` or just `pip`.
+
+In any case you need a recipe to build the module. This recipe consists at least of a build-script with instruction e.g. how to download, compile and install a dedicated piece of software, a modulefile and a configuration file. The this document we use the term *_build-block_* instead of recipe. A build-block includes all required files to (re-)build a module or at least a README.md with a documentation of steps which cannot be automated. (For example: it might not be possible to script the download of licensed software.)
+
+
+
+
+
+

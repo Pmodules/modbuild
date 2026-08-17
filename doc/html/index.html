@@ -61,28 +61,28 @@ document.addEventListener('DOMContentLoaded', function () {
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_introduction">1. <strong>INTRODUCTION</strong></a></li>
-<li><a href="#_tutorials">2. <strong>TUTORIALS</strong></a>
+<li><a href="#_modbuild">2. <strong>modbuild</strong></a></li>
+<li><a href="#_tutorials">3. <strong>TUTORIALS</strong></a>
 <ul class="sectlevel2">
-<li><a href="#_step_by_step_guide_to_build_a_hello_world_module">2.1. Step-by-step guide to build a 'Hello, world!' module</a></li>
-<li><a href="#_add_new_version_build_with_autotools">2.2. Add new version, build with autotools</a></li>
-<li><a href="#_deprecate_old_version_make_current_version_stable">2.3. Deprecate old version, make current version stable</a></li>
+<li><a href="#_step_by_step_guide_to_build_a_hello_world_module">3.1. Step-by-step guide to build a 'Hello, world!' module</a></li>
+<li><a href="#_add_new_version_build_with_autotools">3.2. Add new version, build with autotools</a></li>
+<li><a href="#_deprecate_old_version_make_current_version_stable">3.3. Deprecate old version, make current version stable</a></li>
 </ul>
 </li>
-<li><a href="#_building_pmodules">3. <strong>BUILDING PMODULES</strong></a>
+<li><a href="#_building_modules">4. <strong>BUILDING MODULES</strong></a>
 <ul class="sectlevel2">
-<li><a href="#_introduction_2">3.1. Introduction</a></li>
-<li><a href="#_predefined_variables">3.2. Predefined variables</a></li>
-<li><a href="#building-modules">3.3. Building a Pmodule</a></li>
-<li><a href="#writing-build-configuration-files">3.4. Writing build configuration files</a></li>
-<li><a href="#writing-build-scripts">3.5. Writing build scripts</a></li>
-<li><a href="#_runtime_configuration_files">3.6. Runtime configuration files</a></li>
+<li><a href="#_introduction_2">4.1. Introduction</a></li>
+<li><a href="#_predefined_variables">4.2. Predefined variables</a></li>
+<li><a href="#building-modules">4.3. Building a module</a></li>
+<li><a href="#writing-build-configuration-files">4.4. Writing build configuration files</a></li>
+<li><a href="#writing-build-scripts">4.5. Writing build scripts</a></li>
 </ul>
 </li>
-<li><a href="#_links">4. <strong>LINKS</strong></a>
+<li><a href="#_links">5. <strong>LINKS</strong></a>
 <ul class="sectlevel2">
-<li><a href="#_other_implementation_of_environment_module_systems">4.1. Other implementation of environment module systems</a></li>
-<li><a href="#_articles">4.2. Articles</a></li>
-<li><a href="#_talks">4.3. Talks</a></li>
+<li><a href="#_other_implementation_of_environment_module_systems">5.1. Other implementation of environment module systems</a></li>
+<li><a href="#_articles">5.2. Articles</a></li>
+<li><a href="#_talks">5.3. Talks</a></li>
 </ul>
 </li>
 </ul>
@@ -93,21 +93,190 @@ document.addEventListener('DOMContentLoaded', function () {
 <h2 id="_introduction">1. <strong>INTRODUCTION</strong></h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Pmodules is the environment modules system at PSI.</p>
+<p>Pmodules is the environment modules system at PSI. Currently, we have two different implementations of the Pmodules at PSI. The original implementation is based on Tcl Environment Modules 3.x and a wrapper written in Bash, and a new implementation which is based on version 5.6. The new version is written entirely in Tcl.</p>
 </div>
 <div class="paragraph">
-<p>It is available on PSI&#8217;s HPC systems Ra, Merlin7 and Merlin6 (and maybe on other systems too).</p>
+<p>Pmodules is available on PSI&#8217;s HPC systems Ra, Merlin7 and Merlin6 (and maybe on other systems too). On Ra the new version of Pmodules is installed.</p>
 </div>
 <div class="paragraph">
-<p>In this document we explain how to build modules for the Pmodules system.</p>
+<p>In this document we explain how to build modules for the Pmodules system. To simplify the process of building modules, the <code>modbuild</code> tool was developed.</p>
+</div>
+<div class="paragraph">
+<p>Make sure <code>modbuild</code> is in the path! Check with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">command -v modbuild</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">which modbuild</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If it is not already in the path, you can load it as module:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">module load modbuild</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Overall the main cases for building modules are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Building a module from source. Examples: git,
+gnuplot, openmpi, hdf5, &#8230;&#8203;<br>
+In this case it is highly recommended to code each step - usually download, configure, compile and install - in a script, write a modulefile and a configuration file.</p>
+</li>
+<li>
+<p>Building a module with a binary package. Examples: Intel compiler, Matlab,
+ANSYS, Mathematica, &#8230;&#8203;<br>
+In this case either install the package by hand and write a "dummy" build script and the modulefile. If possible script the installation. Usually the software can be installed via a command line tool. If you cannot easily script the installation, document each step in a README file.</p>
+</li>
+<li>
+<p>Building a module from software written in Python. In this case the best practice is to use a tool like <code>miniforge</code> or just <code>pip</code>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In any case you need a recipe to build the module. This recipe consists at least of a build-script with instruction e.g. how to download, compile and install a dedicated piece of software, a modulefile and a configuration file. The this document we use the term <strong><em>build-block</em></strong> instead of recipe. A build-block includes all required files to (re-)build a module or at least a README.md with a documentation of steps which cannot be automated. (For example: it might not be possible to script the download of licensed software.)</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_tutorials">2. <strong>TUTORIALS</strong></h2>
+<h2 id="_modbuild">2. <strong>modbuild</strong></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><code>modbuild</code> can be run in two different ways.</p>
+</div>
+<div class="paragraph">
+<p>The build-script can be called direct:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">./BUILD_SCRIPT [OPTIONS...] VERSION_PATTERN</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case <code>#!/usr/bin/env modbuild</code> must be the first line of the build-script (the so called she-bang) and it must be executable.</p>
+</div>
+<div class="paragraph">
+<p>Another way to call the build-script is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-sh" data-lang="sh">modbuild ./BUILD_SCRIPT [OPTIONS...] VERSION_PATTERN</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>MANDATORY ARGUMENTS:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">VERSION_PATTERN</dt>
+<dd>
+<p>A regex specifying the version(s) to build.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>SELECT VARIANT TO BUILD:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>--with=P/V</code></dt>
+<dd>
+<p>Select compiler, MPI implementation and/or HDF5 version to be
+used to compile the module. Use multiple <code>--with`</code> arguments to disambiguate the selected variant.</p>
+</dd>
+<dt class="hdlist1"><code>--variant=VARIANT</code></dt>
+<dd>
+<p>With this option a specific variant to build can be specified.</p>
+</dd>
+<dt class="hdlist1"><code>--system=SYSTEM</code></dt>
+<dd>
+<p>Specify the system for selecting variants. Defaults to the
+OS version and release like 'rhel6'.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>BUILD-STEPS OPTIONS:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>--clean-install</code></dt>
+<dd>
+<p>Remove module if already exists before building.</p>
+</dd>
+<dt class="hdlist1"><code>--prep</code></dt>
+<dd>
+<p>Prepare sources: unpack sources and apply patches only.</p>
+</dd>
+<dt class="hdlist1"><code>--configure</code></dt>
+<dd>
+<p>Prepare and configure sources.</p>
+</dd>
+<dt class="hdlist1"><code>--compile</code></dt>
+<dd>
+<p>Prepare, configure and compile everything.</p>
+</dd>
+<dt class="hdlist1"><code>--install</code></dt>
+<dd>
+<p>Prepare, configure and compile everything. Finally run install
+step. Do not clean up build and source directory.</p>
+</dd>
+<dt class="hdlist1"><code>--all</code></dt>
+<dd>
+<p>Run through all steps including cleanup. This is the default.</p>
+</dd>
+<dt class="hdlist1"><code>--update-modulefiles</code></dt>
+<dd>
+<p>Update the modulefile if the module already exists.</p>
+</dd>
+<dt class="hdlist1"><code>--update-relstage</code></dt>
+<dd>
+<p>Update the release stage if the module already exists.</p>
+</dd>
+<dt class="hdlist1"><code>--skip-subpkgs</code></dt>
+<dd>
+<p>Don&#8217;t (re-)build sub-packages.</p>
+</dd>
+<dt class="hdlist1"><code>--cleanup-modulefiles</code></dt>
+<dd>
+<p>Remove modulefiles in other overlays.</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p><strong>MISCELLANEOUS OPTIONS:</strong></p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>-? | -h | --help</code></dt>
+<dd>
+<p>Print usage.</p>
+</dd>
+<dt class="hdlist1"><code>-V | --version</code></dt>
+<dd>
+<p>Print version.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tutorials">3. <strong>TUTORIALS</strong></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_step_by_step_guide_to_build_a_hello_world_module">2.1. Step-by-step guide to build a 'Hello, world!' module</h3>
+<h3 id="_step_by_step_guide_to_build_a_hello_world_module">3.1. Step-by-step guide to build a 'Hello, world!' module</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -301,7 +470,7 @@ hello_world:
 </div>
 </div>
 <div class="sect2">
-<h3 id="_add_new_version_build_with_autotools">2.2. Add new version, build with autotools</h3>
+<h3 id="_add_new_version_build_with_autotools">3.2. Add new version, build with autotools</h3>
 <div class="paragraph">
 <p>In version 2.0.0 the author added autotools files. Let&#8217;s add this version to our build-block.</p>
 </div>
@@ -331,6 +500,7 @@ hello_world:
         compile_in_sourcetree: true
         build_functions:
           prep: [pbuild::prep]
+          configure: []
           compile: [pbuild::compile]
           install: [install-1]
     2.0.0:                             <i class="conum" data-value="2"></i><b>(2)</b>
@@ -393,7 +563,7 @@ install-1() {
 </div>
 </div>
 <div class="sect2">
-<h3 id="_deprecate_old_version_make_current_version_stable">2.3. Deprecate old version, make current version stable</h3>
+<h3 id="_deprecate_old_version_make_current_version_stable">3.3. Deprecate old version, make current version stable</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -421,6 +591,7 @@ hello_world:
         relstage: deprecated
         build_functions:
           prep: [pbuild::prep]
+          configure: []
           compile: [pbuild::compile]
           install: [install-1]
     2.0.0:                             <i class="conum" data-value="2"></i><b>(2)</b></code></pre>
@@ -433,15 +604,15 @@ hello_world:
 </div>
 </div>
 <div class="sect1">
-<h2 id="_building_pmodules">3. <strong>BUILDING PMODULES</strong></h2>
+<h2 id="_building_modules">4. <strong>BUILDING MODULES</strong></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_introduction_2">3.1. Introduction</h3>
+<h3 id="_introduction_2">4.1. Introduction</h3>
 <div class="paragraph">
-<p>In the simplest case adding a Pmodule can be done by adding a modulefile to a certain directory. Below is an example of a "do nothing" modulefile in the group <code>Sandbox</code>.</p>
+<p>In the simplest case adding a module can be done by adding a modulefile to a certain directory. Below is an example of a "do nothing" modulefile.</p>
 </div>
 <div class="listingblock">
-<div class="title">Example: <code>/opt/psi/Sandbox/modulefiles/null/1.0.0</code></div>
+<div class="title">Example: <code>null/1.0.0</code></div>
 <div class="content">
 <pre class="highlight"><code class="language-sh" data-lang="sh">#%Pmodule
 
@@ -455,93 +626,14 @@ This is a do nothing module.
 </div>
 </div>
 <div class="paragraph">
-<p>In addition to the modulefile a corresponding configuration file - defining for example the release stage - should be installed in the same directory as the modulefile. See next section for a detailed documentation of configuration files.</p>
-</div>
-<div class="listingblock">
-<div class="title">Example: configuration file <code>/opt/psi/Sandbox/modulefiles/null/.release-1.0.0</code> for the <code>null/1.0.0</code> module</div>
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">stable</code></pre>
-</div>
+<p>Modulefiles are written in the Tool Command Language (Tcl).</p>
 </div>
 <div class="paragraph">
-<p>Modulefiles are written in the Tool Command Language (Tcl). See section <a href="#modulefiles">[modulefiles]</a> for a detailed documentation. In Pmodules version 1.1.16 and newer modulefiles written in Lua are also supported but with some limitations.</p>
-</div>
-<div class="paragraph">
-<p>The above example doesn&#8217;t provide any software. In the following example we show a simple 'HelloWorld' module with a 'Hello, world!' program.</p>
-</div>
-<div class="listingblock">
-<div class="title">Example: modulefile <code>/opt/psi/Sandbox/modulefiles/HelloWorld/1.0.0</code>:</div>
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">#%Pmodule
-
-module-whatis           "'Hello, world!' module"
-module-maintainer       "Achim Gsell &lt;achim.gsell@psi.ch&gt;"
-module-license          "MIT"
-module-url              "http://pmodules.gitpages.psi.ch"
-
-module-help     "
-The module provides a 'Hello, world!' program.
-"</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="title">Example: <code>/opt/psi/Sandbox/HelloWorld/1.0.0/bin/hello</code>:</div>
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">#!/usr/bin/env python3
-
-print("Hello, world!")</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>In principal, it is possible to install modules 'by hand' by installing the software, module- and configuration files at the right place. For reproducibility, documentation and re-usability it is highly recommended to write build-recipes for each module or - at least - a README and host everything on a PSI Gitlab server.</p>
-</div>
-<div class="paragraph">
-<p>Overall the main cases for building modules are:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Building a module from source. This is the most common case. Examples: git,
-gnuplot, openmpi, hdf5, &#8230;&#8203;<br>
-In this case it is highly recommended to code each step - usually download, configure, compile and install - in a script, write a modulefile and a configuration file.</p>
-</li>
-<li>
-<p>Building a module with a binary package. Examples: Intel compiler, Matlab,
-ANSYS, Mathematica, &#8230;&#8203;<br>
-In this case best practice is to install the package by hand and write a "dummy" build script, a modulefile and a configuration file. If it is possible and simple to script the installation, code this in the build script. If you cannot easily script the installation, document each step in a README file.</p>
-</li>
-</ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>In any case: keep everything in a Git repository on either <a href="https://gitlab.psi.ch">gitlab.psi.ch</a> or <a href="https://git.psi.ch">git.psi.ch</a>.
-The Git repository for the groups <code>Tool</code>, <code>Programming</code>, <code>Compiler</code>, <code>HDF5</code>, <code>HDF_serial</code> and <code>System</code> is <a href="https://gitlab.psi.ch/Pmodules/buildblocks">Pmodules/buildblock</a>. Other groups can be hosted anywhere. But to keep everything together a project in <a href="https://gitlab.psi.ch/Pmodules/">Pmodules</a> might be a good choice.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Many modules for the Pmodules environment have to be build from
-source. The building plan of a module is coded in a so called
-<strong><em>build-block</em></strong>. A build-block consists at least of a build-script with instruction how to download, compile and install a dedicated piece of
-software, a modulefile and a configuration file.</p>
-</div>
-<div class="paragraph">
-<p>In the next section we describe how to write build recipes.</p>
+<p>In principal, it is possible to install modules 'by hand' by installing the software and modulefiles at the right place. For reproducibility, documentation and re-usability it is highly recommended to write build-recipes for each module or - at least - a README.md and host everything on a Gitforge (gitea.psi.ch, github.com, gitlab.com &#8230;&#8203;).</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_predefined_variables">3.2. Predefined variables</h3>
-<div class="paragraph">
-<p>Since we use BASH for our build-scripts and Tcl for modulefiles, we use BASH/Tcl syntax for variables in this documentation. So, if <code>VARIABLE</code> is the name of a variable, <code>$VARIABLE</code> the value of it.</p>
-</div>
+<h3 id="_predefined_variables">4.2. Predefined variables</h3>
 <div class="paragraph">
 <p><strong>In modulefiles and build-scripts the following variables are predefined:</strong></p>
 </div>
@@ -575,17 +667,9 @@ software, a modulefile and a configuration file.</p>
 <dd>
 <p>version number without release.</p>
 </dd>
-<dt class="hdlist1"><code>GROUP</code></dt>
-<dd>
-<p>group the module is in.</p>
-</dd>
 <dt class="hdlist1"><code>PREFIX</code></dt>
 <dd>
 <p>installation prefix of the module.</p>
-</dd>
-<dt class="hdlist1"><code>PMODULES_ROOT</code></dt>
-<dd>
-<p>root of Pmodules installation. At PSI this is <code>/opt/psi</code>.</p>
 </dd>
 </dl>
 </div>
@@ -614,36 +698,17 @@ software, a modulefile and a configuration file.</p>
 <dd>
 <p>Name of the build script.</p>
 </dd>
-<dt class="hdlist1"><code>SYSTEM</code>,<code>OS</code></dt>
+<dt class="hdlist1"><code>JOBS</code></dt>
 <dd>
-<p>Can be set with the <code>--system</code> option. The value defaults to the string returned by <code>uname -s</code>. The use of <code>OS</code> is obsolete.</p>
-</dd>
-</dl>
-</div>
-<div class="paragraph">
-<p><strong>In modulefiles the following variables are predefined too:</strong></p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>name</code></dt>
-<dd>
-<p>Same as <code>P</code> (obsolete, for historical reasons).</p>
-</dd>
-<dt class="hdlist1"><code>version</code></dt>
-<dd>
-<p>Same as <code>V</code> (obsolete, for historical reasons).</p>
-</dd>
-<dt class="hdlist1"><code>group</code></dt>
-<dd>
-<p>The group the module is member of.</p>
+<p>Number of parallel <code>make</code> jobs.</p>
 </dd>
 </dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="building-modules">3.3. Building a Pmodule</h3>
+<h3 id="building-modules">4.3. Building a module</h3>
 <div class="paragraph">
-<p>Perform the following steps for a new Pmodule:</p>
+<p>Perform the following steps for a new module:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -662,7 +727,7 @@ software, a modulefile and a configuration file.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>The first - and sometimes also to most challenging - step in building a Pmodule from source is to learn how to download, configure, compile and install a software package and dependencies the package has. The next steps are writing a configuration file, a modulefile and a script to download, configure, compile and install it.</p>
+<p>The first - and sometimes also to most challenging - step in building a module from source is to learn how to download, configure, compile and install a software package and dependencies the package has. The next steps are writing a configuration file, a modulefile and a script to download, configure, compile and install it.</p>
 </div>
 <div class="paragraph">
 <p>In general the following steps needs to be performed:</p>
@@ -689,49 +754,14 @@ software, a modulefile and a configuration file.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="writing-build-configuration-files">3.4. Writing build configuration files</h3>
+<h3 id="writing-build-configuration-files">4.4. Writing build configuration files</h3>
 <div class="sect3">
-<h4 id="_yaml_configuration_files_in_pmodules_1_1_and_newer">3.4.1. YAML configuration files in Pmodules 1.1 and newer</h4>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>Pmodules 1.1 and newer are supporting configuration files in YAML
-format. For backward compatibility the build-systems supports both
-types of configuration files with the YAML configuration file as
-default.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>The old format of the variants file is simple but very limited and
-almost impossible to extend for new features. To overcome the
-limitations a new format using YAML for variants files has been
-introduced. For the time being both format are supported. But it is
-highly recommended to use the YAML format for new modules and to
-migrate existing variants files in the old format to the new.</p>
-</div>
+<h4 id="_filesconfig_yaml">4.4.1. <code>files/config.yaml</code></h4>
 <div class="sect4">
-<h5 id="_path_to_configuration_file">3.4.1.1. Path to configuration file</h5>
-<div class="paragraph">
-<p>The path to the configuration file is</p>
-</div>
-<div class="paragraph">
-<p><code><strong><em>build-recipe-dir</em></strong>/files/config.yaml</code></p>
-</div>
-</div>
-<div class="sect4">
-<h5 id="_format">3.4.1.2. Format</h5>
+<h5 id="_structure">4.4.1.1. Structure</h5>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">format: 1
-<strong><em>module-name-1</em></strong>:
+<pre class="highlight"><code class="language-yaml" data-lang="yaml"><strong><em>module-name-1</em></strong>:
   defaults:                                       # optional
     <strong><em>config-block</em></strong>
   shasums:                                        # optional
@@ -751,43 +781,32 @@ migrate existing variants files in the old format to the new.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 14.2857%;">
-<col style="width: 14.2857%;">
-<col style="width: 71.4286%;">
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
 </colgroup>
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Field-Name</th>
-<th class="tableblock halign-left valign-top">Type</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>format</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">unsigned int</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Format version of the YAML configuration file. For now it must be <code>1</code></p></td>
-</tr>
-<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code><strong><em>module-name-N</em></strong></code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">config-block</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration for the Pmodule <code><strong><em>module-name-N</em></strong></code>. Example: <code>openmpi</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration for the module <code><strong><em>module-name-N</em></strong></code>. Example: <code>openmpi</code></p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>defaults</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">config-block</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Default configuration. This block is optional.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>shasums</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">MAP of string</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SHA256 hash sums of source files. Keys are filenames, the value the<br>
  corresponding SHA256 hash sum. This block is optional. A warning is
  printed if a hash-sum is missing for a required file.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>versions</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">MAP of configurations for different version keys</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A version key is a semicolon separated string of version
   numbers. Version numbers can be specified with shell brace
   expansion. Example:<br>
@@ -795,13 +814,11 @@ migrate existing variants files in the old format to the new.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>config</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">config-block</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Optional, version specific configuration block. Configurations
   specified here are overriding the defaults.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>variants</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">map of config-block</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Variants can be used to compile the some software with different
   options. Example: <code>openmpi`</code> with and without Slurm support are
   variants of the same software.</p></td>
@@ -810,112 +827,88 @@ migrate existing variants files in the old format to the new.</p>
 </table>
 </div>
 <div class="sect4">
-<h5 id="_configuration_blocks">3.4.1.3. Configuration blocks</h5>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>In configuration blocks everything is optional!</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="listingblock">
-<div class="title"><code>config-block</code></div>
-<div class="content">
-<pre class="highlight"><code class="language-yaml" data-lang="yaml">build_requires: [<strong><em>build-req-1</em></strong>, ...]
-compile_in_sourcetree: <strong><em>bool</em></strong>
-configure_with: auto|autotools|cmake
-default_variant: <strong><em>variant</em></strong>
-docfiles: [<strong><em>file-1</em></strong>, ...]
-group: <strong><em>group</em></strong>
-group_deps:
-  compilers:
-    <strong><em>cpmpiler-1</em></strong>: [<strong><em>version-1</em></strong>, ...]
-  mpi:
-    <strong><em>mpi-implemation-1</em></strong>: [<strong><em>version-1</em></strong>, ...]
-  hdf5:
-    hdf5: [<strong><em>version-1</em></strong>, ...]
-  hdf5_serial:
-    hdf5[<em>_serial]: [<strong>_version-1</em></strong>, ...]
-overlay: <strong><em>overlay</em></strong>
-relstage: <strong><em>release-stage</em></strong>
-runtime_deps: [<strong><em>rt-dep-1</em></strong>, ...]
-suffix: <strong><em>suffix</em></strong>
-systems: [<strong><em>system-1</em></strong>, ...]
-urls:
-  - url: <strong><em>link</em></strong>
-    name: <strong><em>filename</em></strong>
-  - ...
-variant: [<strong><em>variant-1</em></strong>, ...]</code></pre>
-</div>
-</div>
+<h5 id="_configuration_blocks">4.4.1.2. Configuration blocks</h5>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 14.2857%;">
-<col style="width: 14.2857%;">
-<col style="width: 71.4286%;">
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
 </colgroup>
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Field-Name</th>
-<th class="tableblock halign-left valign-top">Type</th>
 <th class="tableblock halign-left valign-top">Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>build_requires</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">array of string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Modules required to build this module</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A list of modules required to build this module. The default is an empty list.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>build_functions</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This structure can be used to define a list of functions to be called for each of the for build-steps. The build-functions defaults to the pre-defined build-functions. The schema of the structure is documented in a section below.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>build_variants</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If multiple variants exist for a version, this field can be used to build only the first variant that meets specific criteria. Criteria can be specified via the keys <code>kernels</code>, <code>systems</code> and <code>target_cpu</code>. Valid values are <code>all</code>, which is the default and <code>first_match</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>compile_in_sourcetree</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">boolean</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Compile in source tree or in a dedicate build directory.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Compile in source tree or in a dedicate build directory. Either <code>true</code> or <code>false</code>. The default value is <code>true</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>configure_with</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Choose software configuration system. Allowed values are:<br>
- <code>auto</code>: use autotools if available<br>
+ <code>auto</code>: use autotools if available (this is the default value)+
  <code>autotools</code>: use autotools<br>
- <code>cmake</code>: use cmake</p></td>
+ <code>cmake</code>: use cmake+</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>configure_args</code><br>
+  <code>configure_args+</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of arguments passed to the configuration system. The key <code>configure_args+</code> appends arguments to the list of previously defined arguments.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>default_variant</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(opt) Specifies the default variant to build if no variant is specified</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies the default variant to build if no variant has been passed on via the command-line. The default is an empty string.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>docfiles</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">array of string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Array with documentation files to be installed in <code>share/doc/</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>docfiles</code><br>
+  <code>docfiles+</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of documentation files to be installed in  <code>$PREFIX/share/doc/</code>. The key <code>docfiles+</code> adds documentation files to the previously defined list. The default is an empty list.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>download_dir</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Directory where files are saved after downloading. See the structure <code>urls</code> for more details. The directory defaults to the directory specified with the environment variable <code>PMODULES_DISTFILES</code> or if the variable is not defined to <code>$HOME/.cache/Pmodules/distfiles</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>group</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Group of the module</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The name of the group in which the module is to be installed. The default group is <code>Tools</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>group_deps</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">group-deps-object</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Group/hierarchical dependencies like compiler, MPI, HDF5 modules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This block is required if the module is to be installed in a hierarchical group. The schema of the structure is documented below.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>kernels</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of kernels to which this configuration block applies. Valid values are <code>Linux</code>, <code>Darwin</code> and <code>any</code>. The default value is <code>any</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>modulefile</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Name of the modulefile to be installed. The default is <code>modulefile</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>overlay</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Overlay of the module</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The name of the overlay in which the module is to be installed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>patch_files</code><br>
+  <code>patch_files+</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of patches to be applied on the sources. The default is an empty list.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>relstage</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Release stage of the module. Allowed values are:<br>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The release stage of the module. Valid values are:<br>
 <code>unstable</code>: the module is still under development<br>
 <code>stable</code>: the module is ready to be used<br>
 <code>deprecated</code>: the module is deprecated<br>
@@ -924,41 +917,206 @@ variant: [<strong><em>variant-1</em></strong>, ...]</code></pre>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>runtime_deps</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of strings</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Module to be loaded at runtime</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of run-time dependencies of the module. These modules will be loaded together with the module.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sub_packages</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A list of sub-package to be built. For details see below.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>suffix</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">string</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">This string will be added to the version of the module</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">This string will be added to the version of the module as suffix.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>systems</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of strings</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A 'system' is either a hostname or OS name like <code>rhel8</code>. For<br>
- hostnames shell glob pattern matching like <code>merlin-*</code> can be used.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A list of systems to which this block applies. A 'system' is either a hostname or OS name like <code>rhel8</code>. For hostnames a regex like <code>.*.merlin7.psi.ch</code> can be used.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>urls</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of links and optional file-names</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Software which must be downloaded to build a specific module.<br>
-  <code>url</code>: Download link<br>
-  <code>name</code>: optional output filename. The filename defaults the last
-  component of the <code>url</code>.<br>
-  Default URLs can be defined by using the variables <code>P</code>, <code>V</code>,
-  <code>V_PKG</code>, <code>V_MAJOR</code>, <code>V_MINOR</code> and <code>V_PATCHLVL</code>. Example:<br>
-  <a href="https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz" class="bare">https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>target_cpus</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A list of CPU to which this block applies.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>urls</code> | <code>sources</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of sources from which the required software must be downloaded if not already cached. The details are documented in a following section.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>use_flags</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TBW</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>use_overlays</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of overlays that must be loaded before the module can be built</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>variant</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">sequence of strings</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Sequence of synonyms for a variant.</p></td>
 </tr>
 </tbody>
 </table>
+<div class="sect5">
+<h6 id="_defining_build_functions">Defining build-functions</h6>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field-Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>prep</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of functions to be called in the 'prep' step. The list defaults to <code>pbuild::pre_prep</code>, <code>pbuild::prep</code>, <code>pbuild::post_prep</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>configure</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of functions to be called in the 'configure' step. The list defaults to <code>pbuild::pre_configure</code>, <code>pbuild::configure</code>, <code>pbuild::post_configure</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>compile</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of functions to be called in the 'compile' step. The list defaults to <code>pbuild::pre_compile</code>, <code>pbuild::compile</code>, <code>pbuild::post_compile</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>install</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of functions to be called in the 'install' step. The list defaults to <code>pbuild::pre_install</code>, <code>pbuild::install</code>, <code>pbuild::post_install</code>.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="title"><strong>Example:</strong></div>
+<div class="content">
+<pre>build_functions:
+  prep: [pbuild::prep]
+  configure: []
+  compile: [pbuild::compile]
+  install: [install-1]</pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_group_dependencies">Group dependencies</h6>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field-Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>compiler</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Structure defining compilers and their versions. See example below.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>mpi</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same for MPI implementations (e.g. openmpi, mpich).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>hdf5</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same for parallel HDF5.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>hdf5_serial</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Same for serial HDF5.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="title"><strong>Example: group dependencies for a module in the Compiler hierarchy</strong></div>
+<div class="content">
+<pre>group_deps:
+  compiler:
+    gcc: [12.4.0, 14.2.0]
+    intel: [2021.1]</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title"><strong>Example: group dependencies for a module in the MPI hierarchy</strong></div>
+<div class="content">
+<pre>group_deps:
+  compiler:
+    gcc: [13.4.0, 14.4.0, 15.2.0]
+  mpi:
+    openmpi: [5.0.10]</pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_defining_sources">Defining sources</h6>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 83.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field-Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>url</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Download link.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>name</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">optional output filename. The filename defaults the last
+  component of <code>url</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>strip_dirs</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The value of this key is passed to the unpacker and specifies the number of directories to be stripped while unpacking. Stripping directories is supported only by <code>tar</code>. If another unpacker is specified, this value is ignored. The default value is <code>1</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unpacker</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The tool to be used to unpack the downloaded software. Supported unpackers are <code>tar</code>, <code>sevenz</code> and <code>none</code>. The default unpacker is <code>tar</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>unpack_dir</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The directory into which the files should be extracted. The default directory is <code>$SRC_DIR</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>patch_file</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A patch file which will be applied after downloading and unpacking the source package.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>patch_strip</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number of directories to strip from the specification in the patch file. See the manual page for the tool <code>patch(1)</code> for more details.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Default URLs can be defined by using the variables <code>P</code>, <code>V</code>,
+  <code>V_PKG</code>, <code>V_MAJOR</code>, <code>V_MINOR</code> and <code>V_PATCHLVL</code>. Example:<br>
+  <a href="https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz" class="bare">https://sourceforge.net/projects/gnuplot/files/$P/$V/$P-${V_PKG}.tar.gz</a></p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_sub_packages">Sub-packages</h6>
+
+</div>
 </div>
 <div class="sect4">
-<h5 id="_examples">3.4.1.4. Examples</h5>
+<h5 id="_examples">4.4.1.3. Examples</h5>
 <div class="listingblock">
 <div class="title"><strong>Example: Gnuplot</strong></div>
 <div class="content">
@@ -1168,7 +1326,7 @@ hdf5:                                           <i class="conum" data-value="2">
 </div>
 </div>
 <div class="sect2">
-<h3 id="writing-build-scripts">3.5. Writing build scripts</h3>
+<h3 id="writing-build-scripts">4.5. Writing build scripts</h3>
 <div class="paragraph">
 <p>Pmodules has it&#8217;s own 'interpreter' to run build-scripts written in Bash. The name of the interpreter is <code>modbuild</code>. Thus the first line (the so called 'shebang') of a build-script must be</p>
 </div>
@@ -1211,19 +1369,8 @@ hdf5:                                           <i class="conum" data-value="2">
 <div class="paragraph">
 <p>In many cases you don&#8217;t have to implement the the functions <code>pbuild::prep()</code>, <code>pbuild::configure()</code>, <code>pbuild::compile()</code> and <code>pbuild::install()</code> or at least not all of them. The build-system provides default implementations for these functions. In the simplest case, the build script consists only of the shebang line (only for Pmodules &gt;= 1.1). In this case all further information for building the module is in the configuration file. For software that uses autotools or CMake for configuration and creation of Makefiles, the standard functions can practically always be used. The functions <code>pbuild::pre_STEP</code> and <code>pbuild::post_STEP</code> can be used to hook into each step before and after the default function has been called. For example <code>pbuild::pre_configure()</code> can be used to set arguments for autotools or CMake as in the build-script for Gnuplot:</p>
 </div>
-<div class="listingblock">
-<div class="title">Example: build script for Gnuplot</div>
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">#!/usr/bin/env modbuild
-
-pbuild::pre_configure() {
-        pbuild::add_configure_args '--with-latex=no'
-        pbuild::add_configure_args '--with-qt=no'
-}</code></pre>
-</div>
-</div>
 <div class="sect3">
-<h4 id="_overloading_the_default_implementations">3.5.1. Overloading the default implementations</h4>
+<h4 id="_overloading_the_default_implementations">4.5.1. Overloading the default implementations</h4>
 <div class="paragraph">
 <p>If the build-system of the software package isn&#8217;t autotools or CMake you have to overload the default implementation of <code>pbuild::configure</code>.</p>
 </div>
@@ -1249,7 +1396,7 @@ pbuild::pre_configure() {
 </div>
 </div>
 <div class="sect3">
-<h4 id="_modules_from_binary_packages">3.5.2. Modules from binary packages</h4>
+<h4 id="_modules_from_binary_packages">4.5.2. Modules from binary packages</h4>
 <div class="paragraph">
 <p>If you have a binary package like Matlab, Mathematica, ANSYS, it might not be possible to script the installation. In this case you should use a dummy build-script like below and document the installation in a <code>README.md</code>:</p>
 </div>
@@ -1280,66 +1427,9 @@ pbuild::install() {
 </div>
 </div>
 <div class="sect3">
-<h4 id="_calling_the_build_script">3.5.3. Calling the build-script</h4>
-<div class="paragraph">
-<p>To call the build-script, cd into the directory of the script and run</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">./build VERSION_TO_BE_BUILD</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="title">Example with output</div>
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">pmod7:~/HelloWorld$ ./build 1.0.0
-Using YAML configuration file - /afs/psi.ch/user/g/gsell/HelloWorld/files/config.yaml
-HelloWorld/1.0.0: building ...
-HelloWorld/1.0.0:
-HelloWorld/1.0.0: start building ...
-HelloWorld/1.0.0: preparing sources ...
-HelloWorld/1.0.0: configuring ...
-HelloWorld/1.0.0: compiling ...
-HelloWorld/1.0.0: installing ...
-HelloWorld/1.0.0: running post-installation for Linux ...
-HelloWorld/1.0.0: Installing documentation to /opt/psi/Sandbox/HelloWorld/1.0.0/share/doc/HelloWorld
-HelloWorld/1.0.0: adding modulefile to overlay 'base' ...
-HelloWorld/1.0.0: Cleaning up '/var/tmp/gsell/HelloWorld-1.0.0/build'...
-HelloWorld/1.0.0: Cleaning up '/var/tmp/gsell/HelloWorld-1.0.0/src'...
-HelloWorld/1.0.0: Done ...
-* * * * *
-
-pmod7:~/HelloWorld$</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>You can run</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code class="language-sh" data-lang="sh">./build --help</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>to get a list of all option with a description. The most common option are</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>-f</code></dt>
-<dd>
-<p>to force a rebuild</p>
-</dd>
-<dt class="hdlist1"><code>--verbose</code></dt>
-<dd>
-<p>to get a full debug trace.</p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_functions_to_compare_versions">3.5.4. Functions to compare versions</h4>
+<h4 id="_functions_to_compare_versions">4.5.3. Functions to compare versions</h4>
 <div class="sect4">
-<h5 id="pb_cmp_versions">3.5.4.1. Compare two versions: <code>pbuild::version_compare</code></h5>
+<h5 id="pb_cmp_versions">4.5.3.1. Compare two versions: <code>pbuild::version_compare</code></h5>
 <div class="sect5">
 <h6 id="_synopsis">Synopsis</h6>
 <div class="listingblock">
@@ -1397,9 +1487,9 @@ pbuild::version_ge '9.1.2' '10.0.0' # result is greater zero</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_build_functions">3.5.5. Build functions</h4>
+<h4 id="_build_functions">4.5.4. Build functions</h4>
 <div class="sect4">
-<h5 id="pb_prep">3.5.5.1. Download and unpack: <code>pbuild::prep</code></h5>
+<h5 id="pb_prep">4.5.4.1. Download and unpack: <code>pbuild::prep</code></h5>
 <div class="sect5">
 <h6 id="_synopsis_2">Synopsis</h6>
 <div class="listingblock">
@@ -1463,7 +1553,7 @@ nothing.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="pb_configure">3.5.5.2. Configure software: <code>pbuild::configure</code></h5>
+<h5 id="pb_configure">4.5.4.2. Configure software: <code>pbuild::configure</code></h5>
 <div class="sect5">
 <h6 id="_synopsis_3">Synopsis</h6>
 <div class="listingblock">
@@ -1604,7 +1694,7 @@ EOF
 </div>
 </div>
 <div class="sect4">
-<h5 id="pb_compile">3.5.5.3. Compile software: <code>pbuild::compile</code></h5>
+<h5 id="pb_compile">4.5.4.3. Compile software: <code>pbuild::compile</code></h5>
 <div class="sect5">
 <h6 id="_synopsis_4">Synopsis</h6>
 <div class="listingblock">
@@ -1663,7 +1753,7 @@ function must be implemented in the build-script.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="pb_install">3.5.5.4. Install software: <code>pbuild::install</code></h5>
+<h5 id="pb_install">4.5.4.4. Install software: <code>pbuild::install</code></h5>
 <div class="sect5">
 <h6 id="_synopsis_5">Synopsis</h6>
 <div class="listingblock">
@@ -1704,132 +1794,13 @@ function must be implemented in the build-script.</p>
 </div>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_runtime_configuration_files">3.6. Runtime configuration files</h3>
-<div class="paragraph">
-<p><strong>Table of Contents</strong><br>
-Pmodules 1.0 configuration file <a href="#release-file"><code>.release-<strong><em>version</em></strong></code></a><br>
-Pmodules 1.1 and newer configuration file <a href="#config-file"><code>.config-<strong><em>version</em></strong></code></a><br></p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>The runtime configuration files are evaluated only for modules inside
-the Pmodules hierarchy. If you use <code>modbuild</code> these files are created
-automatically. Otherwise you have to create them by hand.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-<div class="sect3">
-<h4 id="release-file">3.6.1. Pmodules 1.0: <code>.release-<strong><em>version</em></strong></code></h4>
-<div class="paragraph">
-<p>In <code>.release-<strong><em>version</em></strong></code> the release stage of a module is
-defined. The file must be in the same directory as the modulefile. The
-content is a single line defining the release stage. Allowed text is</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>unstable</code></p>
-</li>
-<li>
-<p><code>stable</code></p>
-</li>
-<li>
-<p><code>deprecated</code></p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>If the file doesn&#8217;t exist and the module is inside the Pmodule
-hierarchy <code>unstable</code>. All modules outside the Pmodules hierarchy are
-considered as <code>stable</code>.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>This configuration file is deprecated in version 1.1 and newer. Please
-see next section.</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="config-file">3.6.2. Pmodules 1.1 and newer: <code>.config-<strong><em>version</em></strong></code></h4>
-<div class="paragraph">
-<p>In <code>.config-<strong><em>version</em></strong></code> the following properties of a module can be
-configured:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>the release stage</p>
-</li>
-<li>
-<p>the systems on which a module is available</p>
-</li>
-<li>
-<p>the systems on which a module is unavailable</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The format of the file is YAML.</p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1"><code>relstage</code></dt>
-<dd>
-<p>The release stage of the module. Allowed values are
-<code>unstable</code>, <code>stable</code> and <code>deprecated</code>.</p>
-</dd>
-<dt class="hdlist1"><code>systems</code></dt>
-<dd>
-<p>Sequence of systems on which the module is available. Systems
-can be hostnames with shell style glob pattern or OS names like
-(<code>rhel7</code>, <code>rhel8</code>).</p>
-</dd>
-<dt class="hdlist1"><code>blocklist</code></dt>
-<dd>
-<p>Sequence of systems on which the module is no
-available. Systems can be hostnames with shell style glob patterns or
-OS names.</p>
-</dd>
-</dl>
-</div>
-<div class="paragraph">
-<p>Example:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>relstage: unstable
-systems: [merlin-*, ra-*]
-blocklist: []</pre>
-</div>
-</div>
-</div>
-</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_links">4. <strong>LINKS</strong></h2>
+<h2 id="_links">5. <strong>LINKS</strong></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_other_implementation_of_environment_module_systems">4.1. Other implementation of environment module systems</h3>
+<h3 id="_other_implementation_of_environment_module_systems">5.1. Other implementation of environment module systems</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -1842,7 +1813,7 @@ blocklist: []</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_articles">4.2. Articles</h3>
+<h3 id="_articles">5.2. Articles</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -1856,7 +1827,7 @@ blocklist: []</pre>
 <hr>
 </div>
 <div class="sect2">
-<h3 id="_talks">4.3. Talks</h3>
+<h3 id="_talks">5.3. Talks</h3>
 <div class="ulist">
 <ul>
 <li>

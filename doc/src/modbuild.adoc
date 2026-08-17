@@ -1,0 +1,74 @@
+= *modbuild*
+
+`modbuild` can be run in two different ways.
+
+The build-script can be called direct:
+[source,sh]
+----
+./BUILD_SCRIPT [OPTIONS...] VERSION_PATTERN
+----
+In this case `#!/usr/bin/env modbuild` must be the first line of the build-script (the so called she-bang) and it must be executable.
+
+Another way to call the build-script is:
+[source,sh]
+----
+modbuild ./BUILD_SCRIPT [OPTIONS...] VERSION_PATTERN
+----
+
+*MANDATORY ARGUMENTS:*
+
+VERSION_PATTERN:: A regex specifying the version(s) to build.
+
+*SELECT VARIANT TO BUILD:*
+
+`--with=P/V`:: 
+        Select compiler, MPI implementation and/or HDF5 version to be
+        used to compile the module. Use multiple `--with`` arguments to disambiguate the selected variant.
+
+`--variant=VARIANT`:: 
+        With this option a specific variant to build can be specified.
+
+`--system=SYSTEM`::
+        Specify the system for selecting variants. Defaults to the
+        OS version and release like 'rhel6'.
+
+*BUILD-STEPS OPTIONS:*
+
+`--clean-install`::
+        Remove module if already exists before building.
+
+`--prep`::
+        Prepare sources: unpack sources and apply patches only.
+
+`--configure`::
+        Prepare and configure sources.
+
+`--compile`::
+        Prepare, configure and compile everything.
+
+`--install`::
+        Prepare, configure and compile everything. Finally run install
+        step. Do not clean up build and source directory.
+
+`--all`::
+        Run through all steps including cleanup. This is the default.
+
+`--update-modulefiles`::
+        Update the modulefile if the module already exists.
+
+`--update-relstage`::
+        Update the release stage if the module already exists.
+
+`--skip-subpkgs`::
+        Don't (re-)build sub-packages.
+
+`--cleanup-modulefiles`::
+        Remove modulefiles in other overlays.
+
+*MISCELLANEOUS OPTIONS:*
+
+`-? | -h | --help`::
+        Print usage.
+
+`-V | --version`::
+        Print version.  

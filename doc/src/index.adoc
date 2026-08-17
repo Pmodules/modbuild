@@ -13,6 +13,8 @@ endif::[]
 
 include::Introduction.adoc[leveloffset=+1]
 
+include::modbuild.adoc[leveloffset=+1]
+
 :sectnumlevels: 2
 include::Tutorials.adoc[leveloffset=+1]
 
