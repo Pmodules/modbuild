@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 (( BASH_VERSINFO[0] >= 5 )) || \
-	{
-		printf "%s\n" "Bash 5.0+ is required" 1>&2
-		exit 255
-	}
+        {
+                printf "%s\n" "Bash 5.0+ is required" 1>&2
+                exit 255
+        }
 
 [[ -v __LIBSTD_BASH__ ]] && return 0
 
@@ -20,7 +20,7 @@ shopt -s expand_aliases
 ## std::{log,info,error,debug} - Write a message to stderr
 ##
 ## Arguments:
-##   $1 - [in] printf format string 
+##   $1 - [in] printf format string
 ##   ${@:2} - [in] Message content
 ##
 ## Returns:
@@ -30,29 +30,29 @@ shopt -s expand_aliases
 ##   std::info "%s" "This is a message"
 ##
 std::log() {
-	(( $# < 2 )) && \
-		std::die 255 "Wrong number of arguments in call to std::log!"
-	local -ri fd="$1"
-	local -r fmt="$2"
-	shift 2
-	printf -- "${fmt}" "$@" 1>&$fd
-	printf -- '\n' 1>&$fd
+        (( $# < 2 )) && \
+                std::die 255 "Wrong number of arguments in call to std::log!"
+        local -ri fd="$1"
+        local -r fmt="$2"
+        shift 2
+        printf -- "${fmt}" "$@" 1>&$fd
+        printf -- '\n' 1>&$fd
 }
 readonly -f std::log
 
 std::info() {
-	std::log 2 "$1" "${@:2}"
+        std::log 2 "$1" "${@:2}"
 }
 readonly -f std::info
 
 std::error() {
-	std::log 2 "$1" "${@:2}"
+        std::log 2 "$1" "${@:2}"
 }
 readonly -f std::error
 
 std::debug() {
-	[[ -v PMODULES_DEBUG ]] || return 0
-	std::log 2 "$1" "${@:2}"
+        [[ -v PMODULES_DEBUG ]] || return 0
+        std::log 2 "$1" "${@:2}"
 }
 readonly -f std::debug
 
@@ -61,21 +61,21 @@ readonly -f std::debug
 ##
 ## Arguments:
 ##   $1 - [in] exit code
-##   $2 - [in] optional printf format string 
+##   $2 - [in] optional printf format string
 ##   ${@:3} [in] optional message content
 ##
 ## Usage:
 ##   std::die 2 "%s" "Invalid option -- foo"
 ##
 std::die() {
-	local -ri ec="$1"
-	shift
-	if (( ${#@} > 0 )); then
-		local -r fmt="$1"
-		shift
-		std::log 2 "${fmt}" "$@"
-	fi
-	exit "$ec"
+        local -ri ec="$1"
+        shift
+        if (( $# > 0 )); then
+                local -r fmt="$1"
+                shift
+                std::log 2 "${fmt}" "$@"
+        fi
+        exit "$ec"
 }
 readonly -f std::die
 
@@ -102,24 +102,24 @@ readonly -f std::die
 ##   std::def_cmd2 'ls'
 ##
 std::def_cmd(){
-	local -r name="$1"
-	[[ ${name} =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || \
-		std::die 255 "Invalid function name: '${name}'"
-	local -- bin=''
-	bin=$(command -v "$1") || std::die 255 "'${name}' not found!"
+        local -r name="$1"
+        [[ ${name} =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || \
+                std::die 255 "Invalid function name: '${name}'"
+        local -- bin=''
+        bin=$(command -v "$1") || std::die 255 "'${name}' not found!"
 
-	alias "${name}"="${bin}"
+        alias "${name}"="${bin}"
 }
 readonly -f std::def_cmd
 
 std::def_cmd2(){
-	local -r name="$1"
-	[[ ${name} =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || \
-		std::die 255 "Invalid function name: '${name}'"
-	local -- bin=''
-	bin=$(command -v "$1") || std::die 255 "'${name}' not found!"
+        local -r name="$1"
+        [[ ${name} =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]] || \
+                std::die 255 "Invalid function name: '${name}'"
+        local -- bin=''
+        bin=$(command -v "$1") || std::die 255 "'${name}' not found!"
 
-	alias "${name}"="LD_PRELOAD= ${bin}"
+        alias "${name}"="LD_PRELOAD= ${bin}"
 }
 readonly -f std::def_cmd2
 
@@ -129,6 +129,7 @@ readonly -f std::def_cmd2
 ##
 std::def_cmd2 'awk'
 std::def_cmd2 'base64'
+std::def_cmd2 'basename'
 std::def_cmd2 'bash'
 std::def_cmd2 'cat'
 std::def_cmd2 'cp'
@@ -141,12 +142,15 @@ std::def_cmd2 'find'
 std::def_cmd2 'getopt'
 std::def_cmd2 'grep'
 std::def_cmd2 'hostname'
+std::def_cmd2 'id'
 std::def_cmd2 'install'
+std::def_cmd2 'ln'
 std::def_cmd2 'logger'
 std::def_cmd2 'make'
 std::def_cmd2 'md5sum'
 std::def_cmd2 'mkdir'
 std::def_cmd2 'mktemp'
+std::def_cmd2 'mv'
 std::def_cmd2 'patch'
 std::def_cmd2 'readlink'
 std::def_cmd2 'rm'
@@ -166,23 +170,23 @@ declare -rg KERNEL_NAME="$(uname -s)"
 declare -rg SYSTEM_CPU="$(uname -m)"
 
 case ${KERNEL_NAME} in
-	Linux )
-		std::def_cmd2 'ldd'
-		std::def_cmd2 'patchelf'
-		std::def_cmd2 'sha256sum'
-		;;
-	Darwin )
-		PATH+=':/opt/local/bin'
-		std::def_cmd2 'otool'
-		std::def_cmd2 'shasum'
-		std::def_cmd2 'sysctl'
-		sha256sum(){
-			shasum -a 256 "$@"
-		}
-		;;
-	* )
-		std::die 255 "Unsupported kernel - ${KERNEL_NAME}"
-		;;
+        Linux )
+                std::def_cmd2 'ldd'
+                std::def_cmd2 'patchelf'
+                std::def_cmd2 'sha256sum'
+                ;;
+        Darwin )
+                PATH+=':/opt/local/bin'
+                std::def_cmd2 'otool'
+                std::def_cmd2 'shasum'
+                std::def_cmd2 'sysctl'
+                sha256sum(){
+                        shasum -a 256 "$@"
+                }
+                ;;
+        * )
+                std::die 255 "Unsupported kernel - ${KERNEL_NAME}"
+                ;;
 esac
 
 ##
@@ -193,10 +197,10 @@ esac
 ##
 ## Returns:
 ##   0 - if string is an unsigned int
-##   1 - otherwiaw
+##   1 - otherwise
 ##
 std::is_uint() {
-	[[ $1 =~ ^[0-9]+$ ]]
+        [[ $1 =~ ^[0-9]+$ ]]
 }
 readonly -f std::is_uint
 
@@ -206,7 +210,7 @@ readonly -f std::is_uint
 ## Arguments:
 ##   $1 - [in] first version number
 ##   $2 - [in] optional second version number, if not set V_PKG is used
-##    
+##
 ## Returns:
 ##     std::version_compare
 ##         0 if the version numbers are equal
@@ -225,70 +229,70 @@ readonly -f std::is_uint
 ## Globals:
 ##    V_PKG (used if second version number is missing)
 ## Note:
-#	Original implementation found on stackoverflow:
+#       Original implementation found on stackoverflow:
 # https://stackoverflow.com/questions/4023830/how-to-compare-two-strings-in-dot-separated-version-format-in-bash
 #
 std::version_compare () {
-	[[  $# -eq 2 && "$1" == "$2" ]] && return 0
+        [[  $# -eq 2 && "$1" == "$2" ]] && return 0
 
-	local -a ver1 ver2
-	if (( $# == 2 )); then
-		IFS='.' read -r -a ver1 <<<"$1"
-		IFS='.' read -r -a ver2 <<<"$2"
-	elif [[ $# == 1 && -v V_PKG ]]; then
-		IFS='.' read -r -a ver1 <<<"$1"
-		IFS='.' read -r -a ver2 <<<"${V_PKG}"
-	else
-		std::die 3 "Oops: '${FUNCNAME}' called with wrong number of args!"
-	fi
+        local -a ver1 ver2
+        if (( $# == 2 )); then
+                IFS='.' read -r -a ver1 <<<"$1"
+                IFS='.' read -r -a ver2 <<<"$2"
+        elif [[ $# == 1 && -v V_PKG ]]; then
+                IFS='.' read -r -a ver1 <<<"$1"
+                IFS='.' read -r -a ver2 <<<"${V_PKG}"
+        else
+                std::die 3 "Oops: '${FUNCNAME[0]}' called with wrong number of args!"
+        fi
 
-	# fill empty fields in ver1 with zeros
-	local -i i=0
-	for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
-		ver1[i]=0
-	done
-	for ((i=0; i<${#ver1[@]}; i++)); do
-		[[ -z ${ver2[i]} ]] && ver2[i]=0
-		if std::is_uint "${ver1[i]}" && std::is_uint "${ver2[i]}"; then
-			((10#${ver1[i]} > 10#${ver2[i]})) && return 1
-			((10#${ver1[i]} < 10#${ver2[i]})) && return 2
-		else
-			[[ ${ver1[i]} > ${ver2[i]} ]] && return 1
-			[[ ${ver1[i]} < ${ver2[i]} ]] && return 2
-		fi
-	done
-	return 0
+        # fill empty fields in ver1 with zeros
+        local -i i=0
+        for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do
+                ver1[i]=0
+        done
+        for ((i=0; i<${#ver1[@]}; i++)); do
+                [[ -v ver2[i] ]] || ver2[i]=0
+                if std::is_uint "${ver1[i]}" && std::is_uint "${ver2[i]}"; then
+                        ((10#${ver1[i]} > 10#${ver2[i]})) && return 1
+                        ((10#${ver1[i]} < 10#${ver2[i]})) && return 2
+                else
+                        [[ ${ver1[i]} > ${ver2[i]} ]] && return 1
+                        [[ ${ver1[i]} < ${ver2[i]} ]] && return 2
+                fi
+        done
+        return 0
 }
 readonly -f std::version_compare
 
 std::version_lt() {
-	std::version_compare "$@"
-	(( $? == 2 ))
+        std::version_compare "$@"
+        (( $? == 2 ))
 }
 readonly -f std::version_lt
 
 std::version_le() {
-	std::version_compare "$@"
-	local -i exit_code=$?
-	(( exit_code == 0 || exit_code == 2 ))
+        std::version_compare "$@"
+        local -i exit_code=$?
+        (( exit_code == 0 || exit_code == 2 ))
 }
 readonly -f std::version_le
 
 std::version_gt() {
-	std::version_compare "$@"
-	(( $? == 1 ))
+        std::version_compare "$@"
+        (( $? == 1 ))
 }
 readonly -f std::version_gt
 
 std::version_ge() {
-	std::version_compare "$@"
-	local -i exit_code=$?
-	(( exit_code == 0 || exit_code == 1 ))
+        std::version_compare "$@"
+        local -i exit_code=$?
+        (( exit_code == 0 || exit_code == 1 ))
 }
 readonly -f std::version_ge
 
 std::version_eq() {
-	std::version_compare "$@"
+        std::version_compare "$@"
 }
 readonly -f std::version_eq
 
@@ -303,15 +307,15 @@ readonly -f std::version_eq
 ##   1 - otherwise
 ##
 std::get_YN_answer() {
-	local -r prompt="$1"
-	local -- ans
-	read -r -p "${prompt}" ans
-	case ${ans} in
-		y|Y ) 
-			return 0;;
-		* )
-			return 1;;
-	esac
+        local -r prompt="$1"
+        local -- ans
+        read -r -p "${prompt}" ans
+        case ${ans} in
+                y|Y )
+                        return 0;;
+                * )
+                        return 1;;
+        esac
 }
 readonly -f std::get_YN_answer
 
@@ -330,17 +334,19 @@ readonly -f std::get_YN_answer
 ##   absolute path
 ##
 std::get_abspath() {
-	local -r fname="$1"
-	local -- abspath=''
-	[[ -e "${fname}" ]] || \
-		std::die 3 "'${FUNCNAME}' called with a non-existing file-/directory name -- $1"
-	if [[ -d "${fname}" ]]; then
-		abspath=$(cd "${fname}" && pwd -L)
-	else
-		local -r dname=$(dirname "${fname}")
-		abspath=$(cd "${dname}" && pwd -L)/$(basename "${fname}")
-	fi
-	echo "${abspath}"
+        local -r fname="$1"
+        local -- abspath=''
+        [[ -e "${fname}" ]] || \
+                std::die 3 "'${FUNCNAME[0]}' called with a non-existing file-/directory name -- $1"
+        if [[ -d "${fname}" ]]; then
+                abspath=$(cd "${fname}" && pwd -L)
+        else
+                local -- dname bname
+                dname=$(dirname "${fname}")
+                bname=$(basename "${fname}")
+                abspath="$(cd "${dname}" && pwd -L)/${bname}"
+        fi
+        echo "${abspath}"
 }
 readonly -f std::get_abspath
 
@@ -357,39 +363,39 @@ readonly -f std::get_abspath
 ##
 ## Notes:
 ##   :FIXME:
-##   What happens if first argument is the name of a non-existing variable?  
+##   What happens if first argument is the name of a non-existing variable?
 ##
 std::modify_path() {
-	local -n path="$1"
-	local -r mode="$2"
-	shift 2
-	local -a dirs=("$@")
+        local -n __mp_path="$1"
+        local -r __mp_mode="$2"
+        shift 2
+        local -a __mp_dirs=("$@")
 
-	# Ignore directories that are already in ${path}
-	local -- new_dirs='' dir=''
-	for dir in "${dirs[@]}"; do
-		[[ ":${path}:" == *":${dir}:"* ]] && continue
-		new_dirs+="${dir}:"
-	done
-	[[ -n "${new_dirs}" ]] || return 0
+        # Ignore directories that are already in ${__mp_path}
+        local -- __new_dirs='' __mp_dir=''
+        for __mp_dir in "${__mp_dirs[@]}"; do
+                [[ ":${__mp_path}:" == *":${__mp_dir}:"* ]] && continue
+                __new_dirs+="${__mp_dir}:"
+        done
+        [[ -n "${__new_dirs}" ]] || return 0
 
-	# Assemble new path, removing trailing ':' first
-	new_dirs="${new_dirs%:}"
-	if [[ -z "${path}" ]]; then
-		path="${new_dirs}"
-	else
-		case "$mode" in
-			append)
-				path="${path}:${new_dirs}"
-				;;
-			prepend)
-				path="${new_dirs}:${path}"
-				;;
-			*)
-				std::die 1 "Invalid mode: $mode"
-				;;
-		esac
-	fi
+        # Assemble new __mp_path, removing trailing ':' first
+        __new_dirs="${__new_dirs%:}"
+        if [[ -z "${__mp_path}" ]]; then
+                __mp_path="${__new_dirs}"
+        else
+                case "$__mp_mode" in
+                        append)
+                                __mp_path="${__mp_path}:${__new_dirs}"
+                                ;;
+                        prepend)
+                                __mp_path="${__new_dirs}:${__mp_path}"
+                                ;;
+                        *)
+                                std::die 1 "Invalid mode: $__mp_mode"
+                                ;;
+                esac
+        fi
 }
 readonly -f std::modify_path
 
@@ -409,27 +415,27 @@ readonly -f std::prepend_path
 ##   0
 ##
 std::remove_path() {
-	local -n path="$1"
-	shift 1
-	local -ar remove_dirs=("$@")
+        local -n rp_path="$1"
+        shift 1
+        local -ar rp_dirs=("$@")
 
-	local -a _path=()
-	IFS=':' read -r -a _path <<<"${path}"
-	local -- dir=''
-	for dir in "${remove_dirs[@]}"; do
-		# loop over all entries in path and mark
-		# the to be deleted directories.
-		local -i i=0
-		for ((i=0; i<${#_path[@]}; i++)); do
-			[[ "${_path[i]}" == "${dir}" ]] && _path[i]=''
-		done
-	done
-	# assemble new path
-	path=''
-	for dir in "${_path[@]}"; do
-		[[ -n "${dir}" ]] && path+="${dir}:"
-	done
-	path="${path%:}"		# remove trailing ':'
+        local -a rp_paths=()
+        IFS=':' read -r -a rp_paths <<<"${rp_path}"
+        local -- rp_dir=''
+        for rp_dir in "${rp_dirs[@]}"; do
+                # loop over all entries in path and mark
+                # the to be deleted directories.
+                local -i i=0
+                for ((i=0; i<${#rp_paths[@]}; i++)); do
+                        [[ "${rp_paths[i]}" == "${rp_dir}" ]] && rp_paths[i]=''
+                done
+        done
+        # assemble new path
+        rp_path=''
+        for rp_dir in "${rp_paths[@]}"; do
+                [[ -n "${rp_dir}" ]] && rp_path+="${rp_dir}:"
+        done
+        rp_path="${rp_path%:}"          # remove trailing ':'
 }
 readonly -f std::remove_path
 
@@ -446,53 +452,55 @@ readonly -f std::remove_path
 ##   are supported (and macOS).
 ##
 std::get_os_release_linux() {
-	local -- ID=''
-	local -- VERSION_ID=''
+        local -- ID=''
+        local -- VERSION_ID=''
 
-	if command -v 'lsb_release' >/dev/null 2>&1; then
-		ID=$(lsb_release -is)
-		VERSION_ID=$(lsb_release -rs)
-	elif [[ -r '/etc/os-release' ]]; then
-		while IFS='=' read -r key value; do
-			value="${value//\"/}"
-			case "${key}" in
-				ID) ID="${value}" ;;
-				VERSION_ID) VERSION_ID="${value}" ;;
-			esac
-		done < <(grep -E '^(ID|VERSION_ID)=' /etc/os-release)
-	else
-		std::die 4 "Cannot determin OS release!"
-	fi
+        if command -v 'lsb_release' >/dev/null 2>&1; then
+                ID=$(lsb_release -is)
+                VERSION_ID=$(lsb_release -rs)
+        elif [[ -r '/etc/os-release' ]]; then
+                local key value
+                while IFS='=' read -r key value; do
+                        value="${value//\"/}"
+                        case "${key}" in
+                                ID) ID="${value}" ;;
+                                VERSION_ID) VERSION_ID="${value}" ;;
+                        esac
+                done < <(grep -E '^(ID|VERSION_ID)=' /etc/os-release)
+        else
+                std::die 4 "Cannot determine OS release!"
+        fi
 
-	case "${ID,,}" in
-		redhatenterpriseserver | redhatenterprise | scientific | springdale \
-			| rhel | centos | fedora )
-			echo "rhel${VERSION_ID%%.*}"
-			;;
-		ubuntu )
-			echo "Ubuntu${VERSION_ID%%.*}"
-			;;
-		suse )
-			echo "sles${VERSION_ID%%.*}"
-			;;
-		* )
-			std::die 4 "Unknown OS ID: ${ID}"
-			;;
-	esac
+        case "${ID,,}" in
+                redhatenterpriseserver | redhatenterprise | scientific | springdale \
+                        | rhel | centos | fedora )
+                        echo "rhel${VERSION_ID%%.*}"
+                        ;;
+                ubuntu )
+                        echo "Ubuntu${VERSION_ID%%.*}"
+                        ;;
+                suse )
+                        echo "sles${VERSION_ID%%.*}"
+                        ;;
+                * )
+                        std::die 4 "Unknown OS ID: ${ID}"
+                        ;;
+        esac
 }
 readonly -f std::get_os_release_linux
 
 std::get_os_release_macos() {
-	local -r VERSION_ID=$(sw_vers -productVersion)
-	echo "macOS${VERSION_ID%%.*}"
+        local -- VERSION_ID
+        VERSION_ID=$(sw_vers -productVersion)
+        echo "macOS${VERSION_ID%%.*}"
 }
 readonly -f std::get_os_release_macos
 
 std::get_os_release() {
-	local -A func_map;
-	func_map['Linux']=std::get_os_release_linux
-	func_map['Darwin']=std::get_os_release_macos
-	${func_map[${KERNEL_NAME}]}
+        local -A func_map
+        func_map['Linux']=std::get_os_release_linux
+        func_map['Darwin']=std::get_os_release_macos
+        ${func_map[${KERNEL_NAME}]}
 }
 readonly -f std::get_os_release
 
@@ -503,7 +511,7 @@ readonly -f std::get_os_release
 ##   name of kernel
 ##
 std::get_kernel_name() {
-	echo "${KERNEL_NAME}"
+        echo "${KERNEL_NAME}"
 }
 readonly -f std::get_kernel_name
 
@@ -514,7 +522,7 @@ readonly -f std::get_kernel_name
 ##   CPU name
 ##
 std::get_system_cpu() {
-	echo "${SYSTEM_CPU}"
+        echo "${SYSTEM_CPU}"
 }
 readonly -f std::get_system_cpu
 
@@ -533,13 +541,13 @@ readonly -f std::get_system_cpu
 ##   Here we do a linear search. For small arrays this is ok.
 ##
 std::array::contains(){
-	local -- item="$1"
-	shift 1
-	local -- el=''
-	for el in "$@"; do
-		[[ "${item}" == "${el}" ]] && return 0
-	done
-	return 1
+        local -- item="$1"
+        shift 1
+        local -- el=''
+        for el in "$@"; do
+                [[ "${item}" == "${el}" ]] && return 0
+        done
+        return 1
 }
 readonly -f std::array::contains
 
@@ -547,7 +555,7 @@ readonly -f std::array::contains
 ## std::array::is_subset - Check if an array is a subset of another array.
 ##
 ## Arguments:
-##   $1 - [in] reference to array/subset 
+##   $1 - [in] reference to array/subset
 ##   $2... - [in] superset
 ##
 ## Returns:
@@ -558,17 +566,17 @@ readonly -f std::array::contains
 ##   Here we do a linear search. For small arrays this is ok.
 ##
 std::array::is_subset() {
-	local -n _sub="$1"
-	shift 1
-	local -A _seen=()
-	local -- el=''
-	for el in "$@"; do
-		_seen[${el}]=1;
-	done
-	for el in "${_sub[@]}"; do
-		[[ -v _seen[${el}] ]] || return 1
-	done
-	return 0
+        local -n _sub="$1"
+        shift 1
+        local -A _seen=()
+        local -- el=''
+        for el in "$@"; do
+                _seen[${el}]=1;
+        done
+        for el in "${_sub[@]}"; do
+                [[ -v _seen[${el}] ]] || return 1
+        done
+        return 0
 }
 readonly -f std::array::is_subset
 
@@ -583,19 +591,19 @@ readonly -f std::array::is_subset
 ##   $3 - second array B
 ##
 std::array::difference() {
-	local -n result="$1"
-	local -n arr_A="$2"
-	local -n arr_B="$3"
+        local -n ad_result="$1"
+        local -n ad_arrA="$2"
+        local -n ad_arrB="$3"
 
-	local -A in_B=()
-	local -- el=''
-	result=()
-	for el in "${arr_B[@]}"; do
-		in_B[${el}]=1
-	done
-	for el in "${arr_A[@]}"; do
-		[[ -v in_B[${el}] ]] || result+=( "${el}" )
-	done
+        local -A ad_inB=()
+        local -- ad_el=''
+        ad_result=()
+        for ad_el in "${ad_arrB[@]}"; do
+                ad_inB[${ad_el}]=1
+        done
+        for ad_el in "${ad_arrA[@]}"; do
+                [[ -v ad_inB[${ad_el}] ]] || ad_result+=( "${ad_el}" )
+        done
 }
 readonly -f std::array::difference
 
@@ -607,14 +615,34 @@ readonly -f std::array::difference
 ##   $2 - reference variable to the original
 ##
 std::dict::copy() {
-	local -n dst="$1"
-	local -n src="$2"
-	local -- suffix="${3:-}"
-	local -- key=''
-	for key in "${!src[@]}"; do
-		dst[${key}${suffix}]="${src[${key}]}"
-	done
+        local -n dc_dst="$1"
+        local -n dc_src="$2"
+        local -- dc_suffix="${3:-}"
+        local -- dc_key=''
+        dc_dst=()
+        for dc_key in "${!dc_src[@]}"; do
+                dc_dst[${dc_key}${dc_suffix}]="${dc_src[${dc_key}]}"
+        done
 }
+readonly -f std::dict::copy
+
+##
+## std::dict::merge - merge two dictionaries
+##
+## Arguments:
+##   $1 - reference variable to the copy
+##   $2 - reference variable to the original
+##
+std::dict::merge() {
+        local -n dm_dst="$1"
+        local -n dm_src="$2"
+        local -- dm_suffix="${3:-}"
+        local -- dm_key=''
+        for dm_key in "${!dm_src[@]}"; do
+                dm_dst[${dm_key}${dm_suffix}]="${dm_src[${dm_key}]}"
+        done
+}
+readonly -f std::dict::merge
 
 ##
 ## std::find_elf64_binaries - find ELF64 binaries in given directories.
@@ -633,12 +661,12 @@ std::dict::copy() {
 ##   less than 5 bytes. But then the comparison to the ELF64 magic fails anyway.
 ##
 std::find_elf64_binaries(){
-	local -r elf64_magic=$'\x7fELF\x02'
-	find "$@" -type f -perm -u+x -not -name '*.pyc' -not -name '*.sh' | \
-		while IFS= read -r f; do
-			read -r -N 5 magic < "$f"
-			[[ "${magic}" == "${elf64_magic}" ]] && echo "$f"
-		done
+        local -r elf64_magic=$'\x7fELF\x02'
+        find "$@" -type f -perm -u+x -not -name '*.pyc' -not -name '*.sh' | \
+                while IFS= read -r f; do
+                        read -r -N 5 magic < "$f"
+                        [[ "${magic}" == "${elf64_magic}" ]] && echo "$f"
+                done
 }
 readonly -f std::find_elf64_binaries
 
@@ -652,14 +680,14 @@ readonly -f std::find_elf64_binaries
 ##  Number of cores
 ##
 std::get_num_cores() {
-	case "${KERNEL_NAME}" in
-	Linux )
-		nproc || grep -c '^processor[[:space:]]*:' /proc/cpuinfo
-		;;
-	Darwin )
-		sysctl -n hw.ncpu
-		;;
-	esac
+        case "${KERNEL_NAME}" in
+        Linux )
+                nproc || grep -c '^processor[[:space:]]*:' /proc/cpuinfo
+                ;;
+        Darwin )
+                sysctl -n hw.ncpu
+                ;;
+        esac
 }
 readonly -f std::get_num_cores
 
@@ -679,32 +707,36 @@ readonly -f std::get_num_cores
 ## Output:
 ##   The expanded text.
 ##
-std::expand_braces() (
-	set -o noglob
-	local s
-	s=$(sed 's|[^[:alnum:]_/.:=+@%^,{}-]|\\&|g' <<<"$1")
-	eval "printf '%s\n' $s"
-)
+std::expand_braces() {
+	local saved=$(shopt -po noglob)
+        set -o noglob
+        local s
+        [[ "$1" =~ [[:cntrl:]] ]] && \
+                std::die 2 "%s" "Control characters in version keys are forbidden"
+        s=$(sed 's|[^[:alnum:]_/.:=+@%^,{}-]|\\&|g' <<<"$1")
+        eval "printf '%s\n' $s"
+	eval "${saved}"
+}
 
 ##
 ## yml::die_parsing
 ## yml::die_type_error
 ## yml::die_undefined(){
-## 
+##
 ## Exit program on error
 ##
 yml::die_type_error(){
-	std::die 3 "Type error for key '$1': must be '$2', but is -- $3"
+        std::die 3 "Type error for key '$1': must be '$2', but is -- $3"
 }
 readonly -f yml::die_type_error
 
 yml::die_undefined(){
-	std::die 3 "Key not defined in YAML document - $1"
+        std::die 3 "Key not defined in YAML document - $1"
 }
 readonly -f yml::die_undefined
 
 yml::die_parsing(){
-	std::die 3 "error parsing YAML:\n----\n%s\n----" "$1"
+        std::die 3 "error parsing YAML:\n----\n%s\n----" "$1"
 }
 readonly -f yml::die_parsing
 
@@ -713,7 +745,7 @@ readonly -f yml::die_parsing
 ##
 ## Read a YAML formatted file.
 ## The program terminates on an error.
-## 
+##
 ## Arguments:
 ##   $1 - [out] reference to variable to return content
 ##   $2 - [in] name of file to read
@@ -722,11 +754,11 @@ readonly -f yml::die_parsing
 ##   0
 ##
 yml::read_file(){
-	local -n yml_text="$1"
-	local -- yml_fname="$2"
+        local -n yml_text="$1"
+        local -- yml_fname="$2"
 
-	yml_text=$(yq -N ".|explode(.)" "${yml_fname}") || \
-		std::die 3 "Cannot read file. Please check with yamllint -- $1"
+        yml_text=$(yq -N ".|explode(.)" "${yml_fname}") || \
+                std::die 3 "Cannot read file. Please check with yamllint -- $2"
 }
 readonly -f yml::read_file
 
@@ -742,10 +774,10 @@ readonly -f yml::read_file
 ##   1 - otherwise
 ##
 yml::has_key(){
-	local -n yml_text="$1"
-	local -- yml_key="$2"
+        local -n yml_text="$1"
+        local -- yml_key="$2"
 
-	[[ $(KEY="${yml_key}" yq 'has(strenv(KEY))' <<<"${yml_text}") == 'true' ]]
+        [[ $(KEY="${yml_key}" yq 'has(strenv(KEY))' <<<"${yml_text}") == 'true' ]]
 }
 readonly -f yml::has_key
 
@@ -763,7 +795,7 @@ readonly -f yml::has_key
 ## If the entry doesn't have any keys, return an empty array.
 ##
 ## The program terminates on an error.
-## 
+##
 ## Arguments:
 ##   $1 - [out] reference to variable to return the keys
 ##   $2 - [in] reference variable with YAML text
@@ -773,20 +805,20 @@ readonly -f yml::has_key
 ##   0
 ##
 yml::get_keys(){
-	local -n yml_keys="$1"
-	local -n yml_text="$2"
-	local -- yml_key="$3"
+        local -n yml_keys="$1"
+        local -n yml_text="$2"
+        local -- yml_key="$3"
 
-	local -- str
-	str="$(yq -N "${yml_key}" <<<"${yml_text}")" || \
-		yml::die_parsing "${yml_text}"
- 	if [[ -z "${str}" || "${str}" == 'null' || "${str}" == 'false' ]]; then
-		yml_keys=()
-		return 0
-	fi
-	str="$(yq -N ".|keys[]" <<<"${str}")" || \
-		yml::die_parsing  "${yml_text}"
-	readarray -t yml_keys <<<"${str}"
+        local -- str
+        str="$(yq -N "${yml_key}" <<<"${yml_text}")" || \
+                yml::die_parsing "${yml_text}"
+        if [[ -z "${str}" || "${str}" == 'null' || "${str}" == 'false' ]]; then
+                yml_keys=()
+                return 0
+        fi
+        str="$(yq -N ".|keys[]" <<<"${str}")" || \
+                yml::die_parsing  "${yml_text}"
+        readarray -t yml_keys <<<"${str}"
 }
 readonly -f yml::get_keys
 
@@ -794,16 +826,16 @@ readonly -f yml::get_keys
 ## yml::get_type - get type of node
 ##
 ## Arguments:
-##   $1 - [out] reference varibale to return type
+##   $1 - [out] reference variable to return type
 ##   $2 - [in] YAML text
 ##   $3 - [in] key of entry
 ##
 yml::get_type(){
-	local -n yml_type="$1"
-	local -n yml_text="$2"
-	local -- yml_key="$3"
-	yml_type="$(yq -N "${yml_key}|type" <<<"${yml_text}")" || \
-		yml::die_parsing "${yml_text}"
+        local -n yml_type="$1"
+        local -n yml_text="$2"
+        local -- yml_key="$3"
+        yml_type="$(yq -N "${yml_key}|type" <<<"${yml_text}")" || \
+                yml::die_parsing "${yml_text}"
 }
 readonly -f yml::get_type
 
@@ -811,56 +843,90 @@ readonly -f yml::get_type
 ## yml::get_value - get node/value of entry
 ##
 ## Arguments:
-##   $1 - [out] reference varibale to return node
+##   $1 - [out] reference variable to return node
 ##   $2 - [in] YAML text
 ##   $3 - [in] key of entry
 ##   $4 - [in] expected type of node
 ##
 yml::get_value(){
-	local -n yml_val="$1"
-	local -n yml_text="$2"
-	local -- yml_key="$3"
-	local -- yml_type="$4"
-	yml_val=$( yml_type="${yml_type}" yq -Ne \
-		       'strenv(yml_type) as $yml_type
-		           | '"${yml_key}"'
-			   | (select(tag == $yml_type) 
-			       // ("Error in line: " + (.|line)
-			           + ", path: " + (.|path | join("."))
-				   + " expected type: " + $yml_type + ", got: " + (.|tag)))' \
-					   <<<"${yml_text}" )
-	if [[ "${yml_val}" != "Error in line: "* ]]; then
-		return 0 
-	elif [[ "${yml_val}" == "Error in line: 0,"* ]]; then
-		yml::die_undefined "${yml_key}"
-	elif [[ "${yml_val}" == *"got: !!null" ]]; then
-		# key has no node/value
-		yml_val=''
-		return 0
-	else
-		local -- got_type=''
-		local -- lineno
-		got_type=$(awk '{print $NF}' <<<"${yml_val}")
-		lineno=$(awk '{print $4}' <<<"${yml_val}")
-		lineno="${lineno/,}"
-		## (( lineno+=1))
-		echo -en "Error in configuration file:\n---\n" 1>&2
-		sed -n "${lineno}p" <<<"${yml_text}" 1>&2
-		echo -en "---\n" 1>&2
-		yml::die_type_error "${yml_key}" "${yml_type}" "${got_type}"
-	fi
+        local -n yml_val="$1"
+        local -n yml_text="$2"
+        local -- yml_key="$3"
+        local -- yml_type="$4"
+
+        # Step 1: metadata only — line number and actual tag.
+        # NOTE: no '-e' here! yq exits 1 for a value of 'false' or 'null',
+        #       which would be indistinguishable from a parse error.
+        local -- info=''
+        info=$(yq -N "${yml_key} | [(. | line), (. | tag)] | join(\" \")" \
+                  <<<"${yml_text}") || yml::die_parsing "${yml_text}"
+
+        local -i lineno=0
+        local -- got_type=''
+        read -r lineno got_type <<<"${info}"
+
+        # Step 2: decide in bash.
+        if (( lineno == 0 )); then
+                yml::die_undefined "${yml_key}"          # node not in the document
+        elif [[ "${got_type}" == '!!null' ]]; then
+                yml_val=''                                # key exists, has no value
+                return 0
+        elif [[ "${got_type}" != "${yml_type}" ]]; then
+                echo -en "Error in configuration file:\n---\n" 1>&2
+                sed -n "${lineno}p" <<<"${yml_text}" 1>&2
+                echo -en "---\n" 1>&2
+                yml::die_type_error "${yml_key}" "${yml_type}" "${got_type}"
+        fi
+
+        # Step 3: only now fetch the value.
+        yml_val=$(yq -N "${yml_key}" <<<"${yml_text}") || yml::die_parsing "${yml_text}"
+        return 0
+}
+yml::get_value_old(){
+        local -n yml_val="$1"
+        local -n yml_text="$2"
+        local -- yml_key="$3"
+        local -- yml_type="$4"
+        yml_val=$( yml_type="${yml_type}" yq -Ne \
+                       'strenv(yml_type) as $yml_type
+                           | '"${yml_key}"'
+                           | (select(tag == $yml_type)
+                               // ("Error in line: " + (.|line)
+                                   + ", path: " + (.|path | join("."))
+                                   + " expected type: " + $yml_type + ", got: " + (.|tag)))' \
+                                           <<<"${yml_text}" )
+        if [[ "${yml_val}" != "Error in line: "* ]]; then
+                return 0
+        elif [[ "${yml_val}" == "Error in line: 0,"* ]]; then
+                yml::die_undefined "${yml_key}"
+        elif [[ "${yml_val}" == *"got: !!null" ]]; then
+                # key has no node/value
+                yml_val=''
+                return 0
+        else
+                local -- got_type=''
+                local -- lineno
+                got_type=$(awk '{print $NF}' <<<"${yml_val}")
+                lineno=$(awk '{print $4}' <<<"${yml_val}")
+                lineno="${lineno/,}"
+                ## (( lineno+=1))
+                echo -en "Error in configuration file:\n---\n" 1>&2
+                sed -n "${lineno}p" <<<"${yml_text}" 1>&2
+                echo -en "---\n" 1>&2
+                yml::die_type_error "${yml_key}" "${yml_type}" "${got_type}"
+        fi
 }
 readonly -f yml::get_value
 
 #yml::get_value(){
-#	local -n yml_val="$1"
-#	local -n yml_text="$2"
-#	local -- yml_key="$3"
-#	local -- yml_expected_type="$4"
-#	
-#	yml_val=$( yq -N "${yml_key} | select(tag == \"${yml_expected_type}\")" \
-#			   <<<"${yml_text}" ) || \
-#		yml::die_type_error "${yml_key}" "${yml_expected_type}" "${type}"
+#       local -n yml_val="$1"
+#       local -n yml_text="$2"
+#       local -- yml_key="$3"
+#       local -- yml_expected_type="$4"
+#
+#       yml_val=$( yq -N "${yml_key} | select(tag == \"${yml_expected_type}\")" \
+#                          <<<"${yml_text}" ) || \
+#               yml::die_type_error "${yml_key}" "${yml_expected_type}" "${type}"
 #}
 
 ##
@@ -873,17 +939,67 @@ readonly -f yml::get_value
 ##   $2 - [in] YAML text
 ##   $3 - [in] key of entry
 ##
+##
+## yml::get_seq_length - get the length of a sequence
+##
+## Return 0 if the key does not exist or the node is empty (!!null).
+## Terminate the script if the node exists but is not a sequence, or if the
+## YAML text cannot be parsed.
+##
+## Arguments:
+##   $1 - [out] reference variable for the result
+##   $2 - [in]  reference variable holding the YAML text
+##   $3 - [in]  key of entry
+##
 yml::get_seq_length(){
-	local -n yml_seq_length="$1"
-	local -n yml_text="$2"
-	local -- yml_key="$3"
+        local -n __gsl_result="$1"
+        local -n __gsl_text="$2"
+        local -r __gsl_key="$3"
 
-	local -i _len=0
-	_len=$(yq -e "${yml_key} | select(tag == \"!!seq\") | length" <<<"${yml_text}") || \
-		yml::die_parsing "${yml_text}"
-	yml_seq_length="${_len}"
+        # A single query returns "<line> <tag> [<length>]"; the length is only
+        # emitted for sequences.  Do not use 'yq -e' here: it signals failure
+        # for a result of 'null' or 'false', which cannot be distinguished
+        # from a real parsing error.
+        local -- __gsl_out=''
+        __gsl_out=$(yq -N "${__gsl_key} |
+                           [(. | line | tostring),
+                            tag,
+                            (select(tag == \"!!seq\") | length | tostring)]
+                           | join(\" \")" <<<"${__gsl_text}") \
+                || yml::die_parsing "${__gsl_text}"
+
+        local -i __gsl_line=0
+        local -- __gsl_tag='' __gsl_len=''
+        read -r __gsl_line __gsl_tag __gsl_len <<<"${__gsl_out}"
+
+        # the key is not in the document, or it has no value
+        if (( __gsl_line == 0 )) || [[ "${__gsl_tag}" == '!!null' ]]; then
+                __gsl_result=0
+                return 0
+        fi
+
+        if [[ "${__gsl_tag}" != '!!seq' ]]; then
+                echo -en "Error in configuration file:\n---\n" 1>&2
+                sed -n "${__gsl_line}p" <<<"${__gsl_text}" 1>&2
+                echo -en "---\n" 1>&2
+                yml::die_type_error "${__gsl_key}" '!!seq' "${__gsl_tag}"
+        fi
+
+        __gsl_result="${__gsl_len}"
+        return 0
 }
 readonly -f yml::get_seq_length
+yml::get_seq_length2(){
+        local -n yml_seq_length="$1"
+        local -n yml_text="$2"
+        local -- yml_key="$3"
+
+        local -i _len=0
+        _len=$(yq -e "${yml_key} | select(tag == \"!!seq\") | length" <<<"${yml_text}") || \
+                yml::die_parsing "${yml_text}"
+        yml_seq_length="${_len}"
+}
+readonly -f yml::get_seq_length2
 
 ##
 ## yml::get_seq - get sequence
@@ -892,31 +1008,31 @@ readonly -f yml::get_seq_length
 ## Terminate script if type is not a sequence.
 ##
 ## Arguments:
-##   $1 - [out] refernce variable to return result
+##   $1 - [out] reference variable to return result
 ##   $2 - [in] YAML text
 ##   $3 - [in] key of entry
 ##
 yml::get_seq(){
-	local -n yml_val="$1"
-	local -n yml_text="$2"
-	local -- yml_key="$3"
+        local -n yml_val="$1"
+        local -n yml_text="$2"
+        local -- yml_key="$3"
 
-	local -- type=''
-	type=$( yq "${yml_key}|type" <<<"${yml_text}")
-	if [[ "${type}" == '!!null' ]]; then
-		yml_val=''
-		return 0
-	fi
-	[[ "${type}" == '!!seq' ]] || \
-		yml::die_type_error "${yml_key}" '!!seq' "${type}"
-	local -i length=0
-	length=$(yq "${yml_key}|length" <<<"${yml_text}")
-	if (( length == 0 )); then
-		yml_val=''
-		return 0
-	fi
-	yml_val=$( yq "${yml_key}[]" <<<"${yml_text}" ) || \
-		yml::die_parsing "${yml_text}"
+        local -- type=''
+        type=$( yq "${yml_key}|type" <<<"${yml_text}")
+        if [[ "${type}" == '!!null' ]]; then
+                yml_val=''
+                return 0
+        fi
+        [[ "${type}" == '!!seq' ]] || \
+                yml::die_type_error "${yml_key}" '!!seq' "${type}"
+        local -i length=0
+        length=$(yq "${yml_key}|length" <<<"${yml_text}")
+        if (( length == 0 )); then
+                yml_val=''
+                return 0
+        fi
+        yml_val=$( yq "${yml_key}[]" <<<"${yml_text}" ) || \
+                yml::die_parsing "${yml_text}"
 }
 readonly -f yml::get_seq
 
