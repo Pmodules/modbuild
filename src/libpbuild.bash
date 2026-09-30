@@ -14,7 +14,114 @@ declare -r  _DOCDIR='share/doc'
 # default value for patch -pN
 declare -r PATCH_STRIP_DEFAULT='1'
 
-#.............................................................................
+#******************************************************************************
+# info & error messages
+#
+
+pbcore::info(){
+	std::info "%s " "${ModuleConfig['namevers']}:" "$@"
+}
+
+pbcore::err(){
+	std::die "$1" "%s " "${ModuleConfig['namevers']}:" "${@:1}"
+}
+
+pbcore::err_invalid_unpacker(){
+	pbcore::err ${__PB_EC['CONFIG']} "Unsupported tool for unpacking -- '${$1}'"
+}
+
+pbcore::err_autotools_config_nexists(){
+	pbcore::err ${__PB_EC['CONFIG']} "autotools configuration not available, aborting..."
+}
+
+pbcore::err_cmake_config_nexists(){
+	pbcore::err ${__PB_EC['CONFIG']} "CMake configuration not available, aborting..."
+}
+
+pbcore::err_setting_relstage(){
+	pbcore::err ${__PB_EC['CONFIG']} \
+                    "release cannot be set to '${1}'" \
+                    "since the dependency '${2}' is '${3}!"
+}
+
+pbcore::err_func_not_defined(){
+	pbcore::err ${__PB_EC['CONFIG']} "function '${1}' is not defined!"
+}
+
+pbcore::err_sub_package_name_missing(){
+        pbcore::err ${__PB_EC['CONFIG']} "Name of sub-package missing in \n===\n$1\n===\n"
+}
+pbcore::err_sub_package_version_missing(){
+         pbcore::err ${__PB_EC['CONFIG']} "Version of sub-package not specified in \n===\n$1\n===\n"
+}
+
+pbcore::err_patch_not_found(){
+	pbcore::err ${__PB_EC['NEXISTS']} "patch file '${1}' not found!"
+}
+
+pbcore::err_binary_nexists(){
+	pbcore::err ${__PB_EC['NEXISTS']} "binary '${1}' does not exist or is not executable!"
+}
+
+pbcore::err_modulefile_nexists(){
+	pbcore::err ${__PB_EC['NEXISTS']} "modulefile '${1}' does not exist!"
+}
+
+pbcore::err_module_nexists(){
+	pbcore::err ${__PB_EC['NEXISTS']} "module '${1}' does not exist!"
+}
+
+pbcore::err_configure_failed(){
+	pbcore::err ${__PB_EC['CMD']} "configure failed"
+}
+
+pbcore::err_cmake_failed(){
+	pbcore::err ${__PB_EC['CMD']} "CMake failed"
+}
+
+pbcore::err_compilation_failed(){
+	pbcore::err ${__PB_EC['CMD']} "compilation failed"
+}
+
+pbcore::err_installation_failed(){
+	pbcore::err ${__PB_EC['CMD']} "compilation failed"
+}
+
+pbcore::err_download(){
+	pbcore::err ${__PB_EC['CMD']} "downloading source file '${1}' failed!"
+}
+
+pbcore::err_unpack(){
+	pbcore::err ${__PB_EC['CMD']} "unpacking file '${1} failed!"
+}
+
+pbcore::err_hashsum(){
+	pbcore::err ${__PB_EC['CMD']} "SHA256 hash mismatch for file '${1}'!"
+}
+
+pbcore::err_patching(){
+	pbcore::err ${__PB_EC['CMD']} "applying patch '${1}' failed!"
+}
+
+pbcore::err_loading_module(){
+	pbcore::err ${__PB_EC['CMD']} "loading module '${1}' failed!"
+}
+
+pbcore::err_chdir(){
+	pbcore::err ${__PB_EC['CMD']} "Changing to directory '${1}' failed!"
+}
+
+pbcore::err_aborting(){
+	pbcore::err ${__PB_EC['CMD']} "function '${1}' return with error. Aborting!"
+}
+
+pbcore::err_building_subpkg(){
+	pbcore::err ${__PB_EC['CMD']} "Building sub-package '${1}' failed!"
+}
+
+pbcore::err_internal(){
+	pbcore::err ${__PB_EC['INTERNAL']} "oops: internal error!"
+}
 
 #******************************************************************************
 #
@@ -127,7 +234,7 @@ pbuild::unpack(){
                         cp "${fname}" "${dir}"
                         ;;
                 * )
-                        std::die 1 "Unsupported tool for unpacking -- '${unpacker}'"
+                        pbcore::err_invalid_unpacker "${unpacker}"
                         ;;
         esac
 }
@@ -143,8 +250,6 @@ pbuild::post_prep(){
         :
 }
 pbuild::prep() {
-        local -r mod_namevers="${ModuleConfig['name']}/${ModuleConfig['version']}"
-
         local -i i=0 num_sources="${ModuleConfig['num_sources']}"
         for ((i=0; i<num_sources; i++)); do
                 local -- url=''
@@ -196,10 +301,7 @@ pbuild::prep() {
 
                         local -- src_dir=''
                         src_dir="$(pbcore::search_source_file "${patch_file}")" || \
-                                std::die 42 \
-                                         "%s " \
-                                         "${mod_namevers}:" \
-                                         "patch file '${patch_file}' not found!"
+                                pbcore::err_patch_not_found "${patch_file}"
                         local -- unpack_dir="${SRC_DIR}"
                         if [[ -n "${ModuleConfig[unpack_dir:$i]}" ]]; then
                                 unpack_dir=$(envsubst <<<"${ModuleConfig[unpack_dir:$i]}")
@@ -251,24 +353,15 @@ pbuild::post_configure() {
         :
 }
 pbuild::configure() {
-        local -r mod_namevers="${ModuleConfig['name']}/${ModuleConfig['version']}"
         local -r configure_with="${ModuleConfig['configure_with']}"
         case "${configure_with}" in
                 autotools )
-                        if [[ ! -r "${SRC_DIR}/configure" ]]; then
-                                std::die 3 \
-                                         "%s " "${mod_namevers}:" \
-                                         "${FUNCNAME[0]}:" \
-                                         "autotools configuration not available, aborting..."
-                        fi
+                        [[ -r "${SRC_DIR}/configure" ]] || \
+                                pbcore::err_autotools_config_nexists
                         ;;
                 cmake )
-                        if [[ ! -r "${SRC_DIR}/CMakeLists.txt" ]]; then
-                                std::die 3 \
-                                         "%s " "${mod_namevers}:" \
-                                         "${FUNCNAME[0]}:" \
-                                         "CMake script not available, aborting..."
-                        fi
+                        [[ -r "${SRC_DIR}/CMakeLists.txt" ]] || \
+                                pbcore::err_autotools_config_nexists
                         ;;
         esac
         local -a config_args=()
@@ -284,13 +377,11 @@ pbuild::configure() {
         if [[ -r "${SRC_DIR}/configure" ]] && \
                    [[ "${configure_with}" == 'auto' ]] || \
                            [[ "${configure_with}" == 'autotools' ]]; then
-                std::info "%s " "${SRC_DIR}/configure --prefix=${PREFIX} ${config_args[*]}"
+                pbcore::info "${SRC_DIR}/configure --prefix=${PREFIX} ${config_args[*]}"
                 "${SRC_DIR}/configure" \
                           --prefix="${PREFIX}" \
                           "${config_args[@]}" || \
-                        std::die 3 \
-                                 "%s " "${mod_namevers}:" \
-                                 "configure failed"
+                        pbcore::err_configure_failed
         elif [[ -r "${SRC_DIR}/CMakeLists.txt" ]] && \
                      [[ "${configure_with}" == 'auto' ]] || \
                              [[ "${configure_with}" == "cmake" ]]; then
@@ -299,14 +390,9 @@ pbuild::configure() {
                         -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
                         "${config_args[@]}" \
                         "${SRC_DIR}" || \
-                        std::die 3 \
-                                 "%s " "${mod_namevers}:" \
-                                 "cmake failed"
+                        pbcore::err_cmake_failed
         else
-                std::info \
-                        "%s " \
-                        "${mod_namevers}:" \
-                        "${FUNCNAME[0]}: skipping..."
+                pbcore::info "${FUNCNAME[0]}: skipping..."
         fi
 }
 
@@ -333,8 +419,6 @@ pbuild::post_compile() {
         :
 }
 pbuild::compile() {
-        local -r mod_namevers="${ModuleConfig['name']}/${ModuleConfig['version']}"
-
         local -- tmp_v="$V"
         local -- restore='no'
         local -- tmp_verbose=''
@@ -350,10 +434,7 @@ pbuild::compile() {
         fi
         # number of parallel make jobs
         local -i num_jobs="${Options['num_jobs']}"
-        make -j${num_jobs} -e || \
-                std::die 3 \
-                         "%s " "${mod_namevers}:" \
-                         "compilation failed!"
+        make -j${num_jobs} -e || pbcore::err_compilation_failed
         declare -gx V="${tmp_v}"
         if [[ "${restore}" == 'yes' ]]; then
                 VERBOSE="${tmp_verbose}"
@@ -400,12 +481,7 @@ pbuild::post_install_pip3(){
 }
 
 pbuild::install() {
-        local -r mod_namevers="${ModuleConfig['name']}/${ModuleConfig['version']}"
-
-        make install || \
-                std::die 3 \
-                         "%s " "${mod_namevers}:" \
-                         "compilation failed!"
+        make install || pbcore::err_installation_failed
 }
 
 #..............................................................................
@@ -414,8 +490,6 @@ pbuild::install_shared_libs() {
         local -r binary="$1"
         local -r dstdir="$2"
         local -r pattern="${3//\//\\/}" # escape slash
-
-        local -r mod_namevers="${ModuleConfig['name']}/${ModuleConfig['version']}"
 
         install_shared_libs_Linux() {
                 local -a libs=()
@@ -438,10 +512,7 @@ pbuild::install_shared_libs() {
                 return 0
         }
 
-        test -e "${binary}" || \
-                std::die 3 \
-                         "%s " "${mod_namevers}:" \
-                         "${binary}: does not exist or is not executable!"
+        test -e "${binary}" || pbcore::err_binary_nexists "${binary}"
         mkdir -p "${dstdir}"
         case "${KERNEL_NAME}" in
                 Linux )
@@ -509,11 +580,7 @@ pbcore::download_source_file() {
                 --location \
                 --fail \
                 --output "${target_dir}/${fname}" \
-                "${url}" || \
-                std::die 42 \
-                         "%s " \
-                         "${ModuleConfig['namevers']}:" \
-                         "downloading source file '${fname}' failed!"
+                "${url}" || pbcore::err_download "${fname}"
 
         # :FIXME: How to handle insecure downloads?
         #if (( $? != 0 )); then
@@ -549,11 +616,7 @@ pbcore::unpack() {
                 if [[ -n "${src_dir}" && "${src_dir}" != "${BUILDBLOCK_DIR}" ]]; then
                         rm -f "${fname}"
                 fi
-                std::die 4 \
-                         "%s " \
-                         "${ModuleConfig['namevers']}:" \
-                         "cannot unpack file" \
-                         "${fname}!"
+		pbcore::err_unpack "${fname}"
         fi
 }
 
@@ -574,13 +637,10 @@ pbcore::check_hash_sum() {
                 local -- hash_sum=''
                 hash_sum=$(sha256sum "${src_dir}/${fname}" | awk '{print $1}')
                 test "${hash_sum}" == "${ModuleConfig[shasum:${fname}]}" || \
-                        std::die 42 \
-                                 "%s " \
-                                 "${ModuleConfig['namevers']}:" \
-                                 "SHA256 hash mismatch for file '${fname}'!"
-                std::info "%s " "${ModuleConfig['namevers']}: SHA256 hash sum is OK ..."
+                        pbcore::err_hashsum "${fname}"
+                pbcore::info "SHA256 hash sum is OK ..."
         else
-                std::info "%s " "${ModuleConfig['namevers']}: SHA256 hash sum missing NOK ..."
+                pbcore::info "SHA256 hash sum missing NOK ..."
         fi
 }
 
@@ -601,17 +661,11 @@ pbcore::apply_patch(){
         local -r strip="$3"
         local -r target_dir="$4"
 
-        std::info \
-                "%s " \
-                "${ModuleConfig['namevers']}:" \
-                "Applying patch '${fname}' ..."
+        pbcore::info "Applying patch '${fname}' ..."
         patch \
                 --strip="${strip}" \
                 --directory="${target_dir}" < "${src_dir}/${fname}" || \
-                std::die 4 \
-                         "%s " \
-                         "${ModuleConfig['namevers']}:" \
-                         "error patching sources!"
+                pbcore::err_patching "${fname}"
 }
 
 ##
@@ -686,8 +740,7 @@ pbcore::load_overlays(){
         local -a use_overlays=()
         readarray -t use_overlays <<< "${config['use_overlays']}"
 
-        std::info "%s " \
-                  "using overlays ${use_overlays[*]}"
+        pbcore::info "using overlays ${use_overlays[*]}"
         eval "$( modulecmd bash use "${use_overlays[@]}" )"
 }
 
@@ -716,32 +769,24 @@ pbcore::load_dependencies() {
                 pbcore::is_loaded "$m" && continue
                 local -- relstage_of_dependency=''
                 pbuild::module_is_avail "$m" relstage_of_dependency || \
-                        std::die 6 "Module is not available - $m"
+                        pbcore::err_module_nexists "$m"
 
                 # for a stable module all dependencies must be stable
                 if [[ "${config['relstage']}" == 'stable' ]] \
                            && [[ "${relstage_of_dependency}" != 'stable' ]]; then
-                        std::die 5 \
-                                 "%s " "${config['name']}/${config['version']}:" \
-                                 "release cannot be set to '${config['relstage']}'" \
-                                 "since the dependency '$m' is ${relstage_of_dependency}"
+			pbcore::err_setting_relstage "${config['relstage']}'" "$m" \
+						     "${relstage_of_dependency}"
                         # for a unstable module no dependency must be deprecated
                 elif [[ "${config['relstage']}" == 'unstable' ]] \
                              && [[ "${relstage_of_dependency}" == 'deprecated' ]]; then
-                        std::die 5 \
-                                 "%s " "${config['name']}/${config['version']}:" \
-                                 "release cannot be set to '${config['relstage']}'" \
-                                 "since the dependency '$m' is ${relstage_of_dependency}"
+			pbcore::err_setting_relstage "${config['relstage']}'" "$m" \
+						     "${relstage_of_dependency}"
                 fi
 
-                std::info "%s" "Loading module: ${m}"
+                pbcore::info "Loading module: ${m}"
                 local output="$(modulecmd bash load "${m}")";
                 eval "${output}"
-                if ! pbcore::is_loaded "$m"; then
-                        std::die 5 \
-                                 "%s " "${m}:" \
-                                 "module cannot be loaded!"
-                fi
+                pbcore::is_loaded "$m" || pbcore::err_loading_module "${m}"
         done
 }
 
@@ -764,45 +809,26 @@ pbcore::set_mod_dir_and_prefix() {
         local -r ol_install_root="${OverlayInfo[${ol_name}:install_root]}"
         local -r ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
 
-        die_no_compiler(){
-                std::die 1 \
-                         "%s: %s" \
-                         "${mod_name}/${mod_version}" \
-                         "module is in group '${group}' but no compiler loaded!"
-        }
-        die_no_mpi(){
-                std::die 1 \
-                         "%s: %s" \
-                         "${mod_name}/${mod_version}" \
-                         "module is in group '${group}' but no MPI module loaded!"
-        }
-        die_no_hdf5(){
-                std::die 1 \
-                         "%s: %s" \
-                         "${mod_name}/${mod_version}" \
-                         "module is in group '${group}' but no HDF5 module loaded!"
-        }
-
         local -- mod_dir="${ol_modulefiles_root}/${group}/${__MODULEFILES_DIR__}/"
         prefix="${ol_install_root}/${group}/${mod_name}/${mod_version}/"
         case "${group,,}" in
                 compiler )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || die_no_compiler
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
                 mpi )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || die_no_compiler
-                        [[ -v MPI && -v MPI_VERSION ]] || die_no_mpi
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
+                        [[ -v MPI && -v MPI_VERSION ]] || pbcore::err_internal
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         mod_dir+="${MPI}/${MPI_VERSION}/"
                         prefix+="${MPI}/${MPI_VERSION}/"
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
                 hdf5 )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || die_no_compiler
-                        [[ -v MPI && -v MPI_VERSION ]] || die_no_mpi
-                        [[ -v HDF5 && -v HDF5_VERSION ]] || die_no_hdf5
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
+                        [[ -v MPI && -v MPI_VERSION ]] || pbcore::err_internal
+                        [[ -v HDF5 && -v HDF5_VERSION ]] || pbcore::err_internal
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         mod_dir+="${MPI}/${MPI_VERSION}/"
                         mod_dir+="hdf5/${HDF5_VERSION}/"
@@ -811,8 +837,8 @@ pbcore::set_mod_dir_and_prefix() {
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
                 hdf5_serial )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || die_no_compiler
-                        [[ -v HDF5_SERIAL && -v HDF5_SERIAL_VERSION ]] || die_no_hdf5
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
+                        [[ -v HDF5_SERIAL && -v HDF5_SERIAL_VERSION ]] || pbcore::err_internal
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         mod_dir+="hdf5_serial/${HDF5_SERIAL_VERSION}/"
                         prefix+="hdf5_serial/${HDF5_SERIAL_VERSION}/"
@@ -848,10 +874,7 @@ pbcore::post_install() {
         #
         install_doc() {
                 local -r docdir="${PREFIX}/${_DOCDIR}/${mod_name}"
-                std::info \
-                        "%s " \
-                        "${mod_name}/${mod_version}:" \
-                        "installing documentation to ${docdir}"
+                pbcore::info "installing documentation to ${docdir}"
                 install -m 0755 -d "${docdir}"
                 install -m 0644 "${BUILD_SCRIPT}" "${docdir}"
                 modulecmd bash list -t 2>&1 1>/dev/null | \
@@ -870,23 +893,17 @@ pbcore::post_install() {
         # post-install: for Linux we need a special post-install to
         # solve the multilib problem with LIBRARY_PATH on 64-bit systems
         post_install_linux() {
-                std::info \
-                        "%s " \
-                        "${mod_name}/${mod_version}:" \
-                        "running post-installation for ${KERNEL_NAME} ..."
-                (
-                        cd "${PREFIX}" || \
-                                std::die 4 "%s " \
-                                         "Changing to directory '${PREFIX}' failed!"
-                        [[ -d "lib" ]] && [[ ! -d "lib64" ]] && ln -s lib lib64
-                );
+                pbcore::info "running post-installation for ${KERNEL_NAME} ..."
+		pushd .
+                cd "${PREFIX}" || pbcore::err_chdir "${PREFIX}"
+                [[ -d "lib" ]] && [[ ! -d "lib64" ]] && ln -s lib lib64
+                popd
                 return 0
         }
 
         #..............................................................
         # post-install
-        cd "${BUILD_DIR}" || std::die 4 "%s " \
-                                      "Changing to directory '${BUILD_DIR}' failed!"
+        cd "${BUILD_DIR}" || pbcore::err_chdir "${BUILD_DIR}"
         [[ "${KERNEL_NAME}" == "Linux" ]] && post_install_linux
         install_doc
         return 0
@@ -900,27 +917,16 @@ pbcore::install_module_config(){
 
         local -- src=''
         if [[ -n "${config['modulefile']}" ]]; then
-                if [[ ! -e "${config['modulefile']}" ]]; then
-                        std::die 3 \
-                                 "%s " \
-                                 "${config['name']}/${config['version']}:" \
-                                 "modulefile '${config['modulefile']}" \
-                                 "does not exist!"
-                fi
+                [[ -e "${config['modulefile']}" ]] || \
+			pbcore::err_modulefile_nexists "${config['modulefile']}"
                 src="${config['modulefile']}"
         elif [[ -e "${BUILDBLOCK_DIR}/modulefile" ]]; then
                 src="${BUILDBLOCK_DIR}/modulefile"
         else
-                std::info \
-                        "%s " \
-                        "${config['name']}/${config['version']}:" \
-                        "skipping modulefile installation ..."
+                pbcore::info "skipping modulefile installation ..."
                 return
         fi
-        std::info \
-                "%s " \
-                "${config['name']}/${config['version']}:" \
-                "adding modulefile to overlay '${config[overlay]}' ..."
+        pbcore::info "adding modulefile to overlay '${config[overlay]}' ..."
         mkdir -p "${config['modulefile_dir']}"
         install -m 0644 "${src}" "${config['modulefile_dir']}/${config['version']}"
 }
@@ -943,10 +949,7 @@ pbcore::install_runtime_dependencies() {
         rm -f "${fname}"
         (( ${#dependencies[@]} == 0 )) && return
 
-        std::info \
-                "%s " \
-                "${config['name']}/${config['version']}:" \
-                "writing run-time dependencies to ${fname} ..."
+        pbcore::info "writing run-time dependencies to ${fname} ..."
         echo -n "" > "${fname}"
         local -- dep=''
         for dep in "$@"; do
@@ -984,16 +987,10 @@ pbcore::set_relstages() {
                 relstage="$(awk '/relstage:/ {print $2}' "${yaml_config_file}")"
         fi
         if [[ "${relstage}" != "${config['relstage']}" ]]; then
-                std::info \
-                        "%s " \
-                        "${config['name']}/${config['version']}:" \
-                        "changing release stage from" \
-                        "'${relstage}' to '${config['relstage']}' ..."
+                pbcore::info "changing release stage from" \
+                             "'${relstage}' to '${config['relstage']}' ..."
         else
-                std::info \
-                        "%s " \
-                        "${config['name']}/${config['version']}:" \
-                        "setting release stage to '${config['relstage']}' ..."
+                pbcore::info "setting release stage to '${config['relstage']}' ..."
         fi
 
         echo "relstage: ${config['relstage']}" > "${yaml_config_file}"
@@ -1053,7 +1050,6 @@ pbcore::cleanup_modulefiles(){
         local -r ol_name="${config['overlay']}"
         local -r ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
         local -r modulefile_dir="${config['modulefile_dir']}"
-        local -r mod_namevers="${config['name']}/${config['version']}"
 
         local -- ol=''
         for ol in "${Overlays[@]}"; do
@@ -1062,18 +1058,10 @@ pbcore::cleanup_modulefiles(){
                 local -- modulefiles_root="${OverlayInfo[${ol}:modulefiles_root]}"
                 local -- dir="${modulefile_dir/#"${ol_modulefiles_root}"/${modulefiles_root}}"
 
-                pbcore::remove_file \
-                        "${dir}/${config['version']}" \
-                        "${mod_namevers}: removing modulefile from overlay '${ol}' ..."
-                pbcore::remove_file \
-                        "${dir}/.release-${config['version']}" \
-                        "${mod_namevers}: removing release file from overlay '${ol}' ..."
-                pbcore::remove_file \
-                        "${dir}/.config-${config['version']}" \
-                        "${mod_namevers}: removing config file from overlay '${ol}' ..."
-                pbcore::remove_file \
-                        "${dir}/.deps-${config['version']}" \
-                        "${mod_namevers}: removing dependencies file from overlay '${ol}' ..."
+                pbcore::remove_file "${dir}/${config['version']}" \
+                pbcore::remove_file "${dir}/.release-${config['version']}"
+                pbcore::remove_file "${dir}/.config-${config['version']}"
+                pbcore::remove_file "${dir}/.deps-${config['version']}"
         done
 }
 
@@ -1084,20 +1072,11 @@ pbcore::cleanup_build() {
         [[ ${Options['cleanup_build']} != 'yes' ]] && return 0
         [[ "${BUILD_DIR}" == "${SRC_DIR}" ]] && return 0
         [[ -d "${BUILD_DIR}/../.." ]] || return 0
-        cd "${BUILD_DIR}/.." || \
-                std::die 4 "%s " \
-                         "Changing to directory '${BUILD_DIR}/..' failed!"
+        cd "${BUILD_DIR}/.." || pbcore::err_chdir "${BUILD_DIR}/.."
 
-        [[ "${PWD}" == '/' ]] && \
-                std::die 255 \
-                         "%s " "${config['name']}/${config['version']}:" \
-                         "Oops: internal error:" \
-                         "BUILD_DIR is set to '/'"
+        [[ "${PWD}" == '/' ]] && pbcore::err_internal
 	[[ "${PWD}" == "${BUILDBLOCK_DIR}" ]] && return 0
-        std::info \
-                "%s " \
-                "${config['name']}/${config['version']}:" \
-                "Cleaning up build directory '${BUILD_DIR}' ..."
+        pbcore::info "Cleaning up build directory '${BUILD_DIR}' ..."
         rm -rf "${BUILD_DIR}" 1>&2
         return 0
 }
@@ -1108,19 +1087,10 @@ pbcore::cleanup_src() {
 
         [[ ${Options['cleanup_src']} != 'yes' ]] && return 0
         [[ -d "/${SRC_DIR}/.." ]] || return 0
-        cd "${SRC_DIR}/.." || \
-                std::die 4 "%s " \
-                         "Changing to directory '${SRC_DIR}/..' failed!"
-        [[ "${PWD}" == '/' ]] && \
-                std::die 1 \
-                         "%s " "${config['name']}/${config['version']}:" \
-                         "Oops: internal error:" \
-                         "SRC_DIR is set to '/'"
+        cd "${SRC_DIR}/.." || pbcore::err_chdir "${SRC_DIR}/.."
+        [[ "${PWD}" == '/' ]] && pbcore::err_internal
 	[[ "${PWD}" == "${BUILDBLOCK_DIR}" ]] && return 0
-        std::info \
-                "%s " \
-                "${config['name']}/${config['version']}:" \
-                "Cleaning up source directory '${SRC_DIR}' ..."
+        pbcore::info "Cleaning up source directory '${SRC_DIR}' ..."
         rm -rf "${SRC_DIR}" 1>&2
         return 0
 }
@@ -1149,10 +1119,7 @@ pbcore::compile_and_install() {
                         [compile]='compiling'
                         [install]='installing'
                 )
-                std::info \
-                        "%s " \
-                        "${config['name']}/${config['version']}:" \
-                        "${target_info[${target}]} ..."
+                pbcore::info "${target_info[${target}]} ..."
                 local -- t=''
                 for t in ${config[target_funcs:${target}]}; do
                         # We cd into the dir before calling the function -
@@ -1162,14 +1129,12 @@ pbcore::compile_and_install() {
                         # work because in some function global variables
                         # might/need to be set.
                         #
-                        cd "${dir}" || \
-                                std::die 4 "%s " \
-                                         "Changing to directory '${dir}' failed!"
+                        cd "${dir}" || pbcore::err_chdir "${dir}"
 
                         if typeset -F "$t" 1>/dev/null; then
-                                "$t" || std::die 10 "Aborting..."
+                                "$t" || pbcore::err_aborting "${t}"
                         else
-                                std::die 10 "Function is not defined -- $t"
+                                pbcore::err_func_not_defined "$t"
                         fi
                 done
                 touch "${BUILD_DIR}/.${target}"
@@ -1195,9 +1160,7 @@ pbcore::remove_file() {
         local -r fname="$1"
         local -r text="$2"
         if [[ -e "${fname}" ]]; then
-                std::info \
-                        "%s " \
-                        "${text} '${fname}' ..."
+                pbcore::info "removing '${fname}' ..."
                 rm -vf "${fname}"
         fi
 }
@@ -1205,37 +1168,19 @@ pbcore::remove_file() {
 #......................................................................
 pbcore::remove_module() {
         local -n rm_cfg="$1"
-        local -r mod_namevers="${rm_cfg['name']}/${rm_cfg['version']}"
 
         if [[ -n "${PREFIX}" && -d "${PREFIX}" && "${PREFIX}" != '/' ]]; then
-                std::info \
-                        "%s " \
-                        "${mod_namevers}:" \
-                        "removing all files in '${PREFIX}' ..."
+                pbcore::info "removing all files in '${PREFIX}' ..."
                 rm -rf "${PREFIX}"
         fi
-        pbcore::remove_file \
-                "${rm_cfg['modulefile_dir']}/${rm_cfg['version']}" \
-                "${mod_namevers}: removing modulefile"
-        pbcore::remove_file \
-                "${rm_cfg['modulefile_dir']}/.release-${rm_cfg['version']}" \
-                "${mod_namevers}: removing release file"
-        pbcore::remove_file \
-                "${rm_cfg['modulefile_dir']}/.config-${rm_cfg['version']}" \
-                "${mod_namevers}: removing config file"
-        pbcore::remove_file \
-                "${rm_cfg['modulefile_dir']}/.deps-${rm_cfg['version']}" \
-                "${mod_namevers}: removing dependencies file"
-        rmdir -p "${config['modulefile_dir']}" 2>/dev/null || :
+        pbcore::remove_file "${rm_cfg['modulefile_dir']}/${rm_cfg['version']}"
+        pbcore::remove_file "${rm_cfg['modulefile_dir']}/.release-${rm_cfg['version']}"
+        pbcore::remove_file "${rm_cfg['modulefile_dir']}/.config-${rm_cfg['version']}"
+        pbcore::remove_file "${rm_cfg['modulefile_dir']}/.deps-${rm_cfg['version']}"
+        rmdir -p "${rm_cfg['modulefile_dir']}" 2>/dev/null || :
 }
 
 #......................................................................
-die_sub_package_name_missing(){
-        std::die 3 "Name of sub-package not specified in \n===\n$1\n===\n"
-}
-die_sub_package_version_missing(){
-        std::die 3 "Version of sub-package not specified in \n===\n$1\n===\n"
-}
 pbcore::build_sub_packages(){
         [[ "${Options['skip_subpkgs']}" == 'yes' ]] && return 0
 
@@ -1249,7 +1194,7 @@ pbcore::build_sub_packages(){
         yml::get_seq_length l sub_packages_yml .
         (( l == 0 )) && return 0
 
-        std::info "\n %d sub-package(s) to build..." "$l"
+        pbcore::info "$l sub-package(s) to build..."
         local -i i=0
         local -- fname=''
         for ((i=0; i<l; i++)); do
@@ -1294,9 +1239,9 @@ pbcore::build_sub_packages(){
                         esac
                 done
                 [[ -n "${pkg_name}" ]] || \
-                        die_sub_package_name_missing "${sub_packages_yml}"
+                        pbcore::err_sub_package_name_missing "${sub_packages_yml}"
                 [[ -n "${pkg_version}" ]] || \
-                        die_sub_package_version_missing "${sub_packages_yml}"
+                        pbcore::err_sub_package_version_missing "${sub_packages_yml}"
 
                 (( Options['verbose'] > 0 )) && \
                         pkg_build_args+=( '--verbose' )
@@ -1308,7 +1253,7 @@ pbcore::build_sub_packages(){
                 PATH="${save_PATH}" "$BUILDBLOCK_DIR/build-${pkg_name}" \
                         "${pkg_name}/${pkg_version}" \
                         "${pkg_build_args[@]}" || \
-                        std::die 255 "Building sub-package failed - ${pkg_name}/${pkg_version}"
+                        pbcore::err_building_subpkg "${pkg_name}/${pkg_version}"
         done
 }
 
@@ -1324,7 +1269,6 @@ pbcore::build(){
         local -a with_modules=( "$@" )
 
 	ModuleConfig['namevers']="${ModuleConfig['name']}/${ModuleConfig['version']}"
-        local -r mod_namevers="${mod_config['name']}/${mod_config['version']}"
 
         eval "$( modulecmd bash purge )"
         if [[ -v __MODULES_OVERLAYS ]]; then
@@ -1342,16 +1286,12 @@ pbcore::build(){
         unset   CC CXX FC F77 F90
 
 	(( ${#with_modules[@]} > 0 )) && \
-		std::info \
-			"%s " \
-			"${mod_namevers}:" \
-			"with" "${with_modules[@]}"
+		pbcore::info "with" "${with_modules[@]}"
 
         pbcore::load_overlays 'mod_config'
         pbcore::load_dependencies 'mod_config' "${with_modules[@]}"
         BUILD_ROOT="${PMODULES_TMPDIR}/${mod_config['name']}-${mod_config['version']}"
         SRC_DIR="${BUILD_ROOT}/src"
-	echo "${mod_config['compile_in_sourcetree']}" 1>&2
         if [[ "${mod_config['compile_in_sourcetree']}" == 'yes' ]]; then
                 BUILD_DIR="${SRC_DIR}"
         else
@@ -1359,9 +1299,6 @@ pbcore::build(){
         fi
 
         source "${BUILD_SCRIPT}"
-
-	echo "BUILD_DIR: $BUILD_DIR" 1>&2
-	echo "SRC_DIR: $SRC_DIR" 1>&2
 
         if [[ "${Options['is_subpkg']}" != 'yes' ]]; then
                 pbcore::set_mod_dir_and_prefix mod_config 'PREFIX'
@@ -1377,10 +1314,7 @@ pbcore::build(){
         elif [[ -d "${PREFIX}" && \
                         "${Options['is_subpkg']}" != 'yes' && \
                         "${Options['force_rebuild']}" == 'no' ]]; then
-                std::info \
-                        "%s " \
-                        "${mod_config['name']}/${mod_config['version']}:" \
-                        "already exists, not rebuilding ..."
+                pbcore::info "already exists, not rebuilding ..."
                 if [[ "${Options['update_modulefiles']}" == 'yes' ]]; then
                         pbcore::install_module_config mod_config
                         pbcore::install_runtime_dependencies 'mod_config' "${with_modules[@]}"
@@ -1388,23 +1322,14 @@ pbcore::build(){
                 elif [[ "${Options['update_relstage']}" == 'yes' ]]; then
                         pbcore::set_relstages mod_config
                 else
-                        std::info \
-                                "%s " \
-                                "${mod_config['name']}/${mod_config['version']}:" \
-                                "modulefile and configuration are not updated."
+                        pbcore::info "modulefile and configuration are not updated."
                 fi
         else
                 if [[ "${Options['clean_install']}" == 'yes' ]]; then
-                        std::info \
-                                "%s " \
-                                "${mod_config['name']}/${mod_config['version']}:" \
-                                "remove module, if already exists ..."
+                        pbcore::info "remove module, if already exists ..."
                         pbcore::remove_module 'mod_config'
                 fi
-                std::info \
-                        "%s " \
-                        "${mod_config['name']}/${mod_config['version']}:" \
-                        "start building ..."
+                pbcore::info "start building ..."
                 pbcore::cleanup_build 'mod_config'
                 pbcore::cleanup_src 'mod_config'
                 pbcore::compile_and_install  'mod_config'
@@ -1420,10 +1345,8 @@ pbcore::build(){
         if [[ "${Options['cleanup_modulefiles']}" == 'yes' ]]; then
                 pbcore::cleanup_modulefiles  'mod_config'
         fi
-        std::info \
-                "%s\n%s" \
-                "${mod_config['name']}/${mod_config['version']}: done" \
-                "* * * * *"
+        pbcore::info "done"
+	pbcore::info "* * * * *"
 }
 readonly -f pbcore::build
 
