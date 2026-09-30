@@ -4,7 +4,8 @@ declare -- in_git_repo='no'
 if [[ -e '../.git' ]]; then
 	pbuild::prep() { :; }
 	in_git_repo='yes'
-	SRC_DIR="${BUILDBLOCK_DIR}/.."
+	SRC_DIR="${BUILDBLOCK_DIR}/src"
+	BUILD_DIR="${BUILDBLOCK_DIR}/src"
 fi
 
 pbuild::configure() {
