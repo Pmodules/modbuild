@@ -75,6 +75,12 @@ unset mydir
 unset prefix
 unset _tmp
 
+declare -A __PB_EC=()
+__PB_EC['ARGS']=1
+__PB_EC['CONFIG']=2
+__PB_EC['NEXISTS']=3
+__PB_EC['CMD']=4
+__PB_EC['INTERNAL']=255
 
 # these variables must be exported for envsubst(1)
 declare -x P=''
