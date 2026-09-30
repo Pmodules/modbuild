@@ -1,2 +1,6 @@
 pbuild.log
 doc/html
+.prep
+.configure
+.compile
+.install
