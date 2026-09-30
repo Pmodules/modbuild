@@ -1011,23 +1011,21 @@ pbcore::cleanup_build() {
         [[ ${Options['cleanup_build']} != 'yes' ]] && return 0
         [[ "${BUILD_DIR}" == "${SRC_DIR}" ]] && return 0
         [[ -d "${BUILD_DIR}/../.." ]] || return 0
-        {
-                cd "/${BUILD_DIR}/.." || \
-                        std::die 4 "%s " \
-                                 "Changing to directory '${BUILD_DIR}/..' failed!"
+        cd "${BUILD_DIR}/.." || \
+                std::die 4 "%s " \
+                         "Changing to directory '${BUILD_DIR}/..' failed!"
 
-                [[ "$(pwd)" == "/" ]] && \
-                        std::die 255 \
-                                 "%s " "${config['name']}/${config['version']}:" \
-                                 "Oops: internal error:" \
-                                 "BUILD_DIR is set to '/'"
-
-                std::info \
-                        "%s " \
-                        "${config['name']}/${config['version']}:" \
-                        "Cleaning up '${BUILD_DIR}'..."
-                rm -rf "${BUILD_DIR##*/}"
-        };
+        [[ "${PWD}" == '/' ]] && \
+                std::die 255 \
+                         "%s " "${config['name']}/${config['version']}:" \
+                         "Oops: internal error:" \
+                         "BUILD_DIR is set to '/'"
+	[[ "${PWD}" == "${BUILDBLOCK_DIR}" ]] && return 0
+        std::info \
+                "%s " \
+                "${config['name']}/${config['version']}:" \
+                "Cleaning up build directory '${BUILD_DIR}' ..."
+        rm -rf "${BUILD_DIR}" 1>&2
         return 0
 }
 
@@ -1037,21 +1035,20 @@ pbcore::cleanup_src() {
 
         [[ ${Options['cleanup_src']} != 'yes' ]] && return 0
         [[ -d "/${SRC_DIR}/.." ]] || return 0
-        {
-                cd "/${SRC_DIR}/.." || \
-                        std::die 4 "%s " \
-                                 "Changing to directory '${SRC_DIR}/..' failed!"
-                [[ $(pwd) == / ]] && \
-                        std::die 1 \
-                                 "%s " "${config['name']}/${config['version']}:" \
-                                 "Oops: internal error:" \
-                                 "SRC_DIR is set to '/'"
-                std::info \
-                        "%s " \
-                        "${config['name']}/${config['version']}:" \
-                        "Cleaning up '${SRC_DIR}'..."
-                rm -rf "${SRC_DIR##*/}"
-        };
+        cd "${SRC_DIR}/.." || \
+                std::die 4 "%s " \
+                         "Changing to directory '${SRC_DIR}/..' failed!"
+        [[ "${PWD}" == '/' ]] && \
+                std::die 1 \
+                         "%s " "${config['name']}/${config['version']}:" \
+                         "Oops: internal error:" \
+                         "SRC_DIR is set to '/'"
+	[[ "${PWD}" == "${BUILDBLOCK_DIR}" ]] && return 0
+        std::info \
+                "%s " \
+                "${config['name']}/${config['version']}:" \
+                "Cleaning up source directory '${SRC_DIR}' ..."
+        rm -rf "${SRC_DIR}" 1>&2
         return 0
 }
 
@@ -1061,7 +1058,7 @@ pbcore::compile_and_install() {
         local -n config="$1"
 
         build_target() {
-                local -- dir="$1"               # src or build directory, depends on target
+                local -- dir="$1"       # src or build directory, depends on target
                 local -- target="$2"    # prep, configure, compile or install
 
                 if [[ -e "${BUILD_DIR}/.${target}" ]] && \
