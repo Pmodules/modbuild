@@ -145,129 +145,6 @@ pbuild::post_prep(){
 pbuild::prep() {
         local -r mod_namevers="${ModuleConfig['name']}/${ModuleConfig['version']}"
 
-        search_source_file(){
-                local -n  ref_dir="$1"
-                local -r fname="$2"
-                local -a dirs=(
-                        "${PMODULES_DISTFILESDIR}"
-                        "${BUILDBLOCK_DIR}"
-                        "${BUILDBLOCK_DIR}/files"
-                )
-                # return if neither a URL nor a file name given
-                [[ -n "${fname}" ]] || return 0
-                local -- dir=''
-                for dir in "${dirs[@]}"; do
-                        if [[ -r "${dir}/${fname}" ]]; then
-                                ref_dir="${dir}"
-                                return 0
-                        fi
-                done
-                ref_dir=''
-                return 1
-        }
-
-        download_source_file() {
-                local -r src_dir="$1"
-                local -r url="$2"
-                local -r fname="$3"
-
-                mkdir -p "${src_dir}"
-                curl \
-                        --location \
-                                --fail \
-                                --output "${src_dir}/${fname}" \
-                                "${url}" || \
-                                std::die 42 \
-                                         "%s " \
-                                         "${mod_namevers}:" \
-                                         "downloading source file '${fname}' failed!"
-
-                        # :FIXME: How to handle insecure downloads?
-                        #if (( $? != 0 )); then
-                        #       curl \
-                        #               --insecure \
-                        #               --output "${fname}" \
-                        #               "${url}"
-                        #fi
-        }
-
-        unpack() {
-                local -r src_dir="$1"
-                local -r fname="${src_dir}/$2"
-                local -r target_dir="$3"
-                local -r strip="$4"
-                local -r unpacker="$5"
-
-                if ! pbuild::unpack "${fname}" "${target_dir}" "${strip}" "${unpacker}"; then
-                        if [[ -n "${src_dir}" && "${src_dir}" != "${BUILDBLOCK_DIR}" ]]; then
-                                rm -f "${fname}"
-                        fi
-                        std::die 4 \
-                                 "%s " \
-                                 "${mod_namevers}:" \
-                                 "cannot unpack file" \
-                                 "${fname}!"
-                fi
-        }
-
-        check_hash_sum() {
-                local -r  src_dir="$1"
-                local -r fname="$2"
-
-                if [[ -v ModuleConfig[shasum:${fname}] ]]; then
-                        local -- hash_sum=''
-                        hash_sum=$(sha256sum "${src_dir}/${fname}" | awk '{print $1}')
-                        test "${hash_sum}" == "${ModuleConfig[shasum:${fname}]}" || \
-                                std::die 42 \
-                                         "%s " \
-                                         "${mod_namevers}:" \
-                                         "SHA256 hash mismatch for file '${fname}'!"
-                        std::info "%s " "${mod_namevers}: SHA256 hash sum is OK ..."
-                else
-                        std::info "%s " "${mod_namevers}: SHA256 hash sum missing NOK ..."
-                fi
-        }
-
-        apply_patch(){
-                local -r src_dir="$1"
-                local -r fname="$2"
-                local -r strip="$3"
-                local -r target_dir="$4"
-
-                std::info \
-                        "%s " \
-                        "${mod_namevers}:" \
-                        "Applying patch '${fname}' ..."
-                patch \
-                        --strip="${strip}" \
-                        --directory="${target_dir}" < "${src_dir}/${fname}" || \
-                        std::die 4 \
-                                 "%s " \
-                                 "${mod_namevers}:" \
-                                 "error patching sources!"
-        }
-
-        patch_sources() {
-                [[ -n "${ModuleConfig['patch_files']}" ]] || return 0
-
-                local -a patch_files=()
-                readarray -t patch_files <<< "${ModuleConfig['patch_files']}"
-                local -- patch_file=''
-                for patch_file in "${patch_files[@]}"; do
-                        [[ -z "${patch_file}" ]] && continue
-                        local -i patch_strip="${PATCH_STRIP_DEFAULT}"
-                        if [[ ${patch_file} == *:* ]]; then
-                                patch_strip="${patch_file##*:}"
-                                patch_file="${patch_file%%:*}"
-                        fi
-                        apply_patch \
-                                "${BUILDBLOCK_DIR}" \
-                                "${patch_file}" \
-                                "${patch_strip}" \
-                                "${SRC_DIR}"
-                done
-        }
-
         local -i i=0 num_sources="${ModuleConfig['num_sources']}"
         for ((i=0; i<num_sources; i++)); do
                 local -- url=''
@@ -292,19 +169,20 @@ pbuild::prep() {
                         fi
 
                         local -- src_dir=''
-                        if ! search_source_file src_dir "${fname}"; then
+                        src_dir=$(pbcore::search_source_file "${fname}")
+			if (( $? != 0 )); then
                                 if [[ -n "${url}" ]]; then
                                         src_dir="${PMODULES_DISTFILESDIR}"
-                                        download_source_file \
+                                        pbcore::download_source_file \
                                                 "${src_dir}" \
                                                 "${url}" \
                                                 "${fname}"
                                 fi
                         fi
-                        check_hash_sum \
+                        pbcore::check_hash_sum \
                                 "${src_dir}" \
                                 "${fname}"
-                        unpack \
+                        pbcore::unpack \
                                 "${src_dir}" \
                                 "${fname}" \
                                 "${unpack_dir}" \
@@ -317,7 +195,7 @@ pbuild::prep() {
                         local -- patch_strip="${ModuleConfig[patch_strip:$i]:-${PATCH_STRIP_DEFAULT}}"
 
                         local -- src_dir=''
-                        search_source_file src_dir "${patch_file}" || \
+                        src_dir="$(pbcore::search_source_file "${patch_file}")" || \
                                 std::die 42 \
                                          "%s " \
                                          "${mod_namevers}:" \
@@ -328,22 +206,25 @@ pbuild::prep() {
                         fi
                         mkdir -p "${unpack_dir}"
 
-                        apply_patch \
+                        pbcore::apply_patch \
                                 "${src_dir}" \
-                                "${patch_file}" \
+				"${patch_file}" \
                                 "${patch_strip}" \
                                 "${unpack_dir}"
                 fi
         done
-        patch_sources
+        pbcore::patch_sources
         # create build directory
         mkdir -p "${BUILD_DIR}"
 }
+
+
 pbuild::prep_pip3(){
         python3 -m venv "${PREFIX}"
         source "${PREFIX}/bin/activate"
 
 }
+
 ###############################################################################
 #
 # functions to configure the sources
@@ -572,10 +453,202 @@ pbuild::install_shared_libs() {
         esac
 }
 
-###############################################################################
-#
-# The following two functions are the entry points called by modbuild!
-#
+##
+## pbcore::search_source_file - search for file in default directories
+##
+## Arguments:
+##   $1 - relative file name
+##
+## Returns:
+##   0 - if found; echo directory to stdout
+##   1 - otherwise; echo empty string to stdout
+##
+## Used global variables:
+##   PMODULES_DISTFILESDIR
+##   BUILDBLOCK_DIR
+##
+pbcore::search_source_file(){
+        local -r fname="$1"
+
+        local -a dirs=(
+                "${PMODULES_DISTFILESDIR}"
+                "${BUILDBLOCK_DIR}"
+                "${BUILDBLOCK_DIR}/files"
+        )
+        # return if neither a URL nor a file name given
+        [[ -n "${fname}" ]] || return 0
+        local -- dir=''
+        for dir in "${dirs[@]}"; do
+                if [[ -r "${dir}/${fname}" ]]; then
+                        echo "${dir}"
+                        return 0
+                fi
+        done
+        echo ''
+        return 1
+}
+
+##
+## pbcore::download_source_file - download file from given URL
+##
+## Arguments:
+##   $1 - target directory
+##   $2 - URL
+##   $3 - file name to be used to save the file
+##
+## Used global variables:
+##   ModuleConfig
+##
+pbcore::download_source_file() {
+        local -r target_dir="$1"
+        local -r url="$2"
+        local -r fname="$3"
+
+        mkdir -p "${target_dir}"
+        curl \
+                --location \
+                --fail \
+                --output "${target_dir}/${fname}" \
+                "${url}" || \
+                std::die 42 \
+                         "%s " \
+                         "${ModuleConfig['namevers']}:" \
+                         "downloading source file '${fname}' failed!"
+
+        # :FIXME: How to handle insecure downloads?
+        #if (( $? != 0 )); then
+        #       curl \
+                #               --insecure \
+                #               --output "${fname}" \
+                #               "${url}"
+        #fi
+}
+
+##
+## pbcore::unpack - unpack given file
+##
+## Arguments:
+##   $1 - source directory file
+##   $2 - relative file name (to source directory)
+##   $3 - target directory (if supported by tool)
+##   $4 - directories to strip while unpacking (if supported by tool)
+##   $5 - the tool to use (tar, zip, ...)
+##
+## Used global variables:
+##   ModuleConfig
+##   BUILDBLOCK_DIR
+##
+pbcore::unpack() {
+        local -r src_dir="$1"
+        local -r fname="${src_dir}/$2"
+        local -r target_dir="$3"
+        local -r strip="$4"
+        local -r unpacker="$5"
+
+        if ! pbuild::unpack "${fname}" "${target_dir}" "${strip}" "${unpacker}"; then
+                if [[ -n "${src_dir}" && "${src_dir}" != "${BUILDBLOCK_DIR}" ]]; then
+                        rm -f "${fname}"
+                fi
+                std::die 4 \
+                         "%s " \
+                         "${ModuleConfig['namevers']}:" \
+                         "cannot unpack file" \
+                         "${fname}!"
+        fi
+}
+
+##
+## pbcore::check_hash_sum - check the SHA256 hash-sum of a file
+##
+## Arguments:
+##   $1 - absolut file name
+##
+## Used global variables:
+##   ModuleConfig
+##
+pbcore::check_hash_sum() {
+        local -r  src_dir="$1"
+        local -r fname="$2"
+
+        if [[ -v ModuleConfig[shasum:${fname}] ]]; then
+                local -- hash_sum=''
+                hash_sum=$(sha256sum "${src_dir}/${fname}" | awk '{print $1}')
+                test "${hash_sum}" == "${ModuleConfig[shasum:${fname}]}" || \
+                        std::die 42 \
+                                 "%s " \
+                                 "${ModuleConfig['namevers']}:" \
+                                 "SHA256 hash mismatch for file '${fname}'!"
+                std::info "%s " "${ModuleConfig['namevers']}: SHA256 hash sum is OK ..."
+        else
+                std::info "%s " "${ModuleConfig['namevers']}: SHA256 hash sum missing NOK ..."
+        fi
+}
+
+##
+## pbcore::apply_patch - apply a single patch
+##
+## Arguments:
+##   $1 - absolut file name
+##   $2 - strip this number of directories
+##   $3 - target directory
+##
+## Used global variables:
+##   ModuleConfig
+##
+pbcore::apply_patch(){
+	local -r src_dir="$1"
+        local -r fname="$2"
+        local -r strip="$3"
+        local -r target_dir="$4"
+
+        std::info \
+                "%s " \
+                "${ModuleConfig['namevers']}:" \
+                "Applying patch '${fname}' ..."
+        patch \
+                --strip="${strip}" \
+                --directory="${target_dir}" < "${src_dir}/${fname}" || \
+                std::die 4 \
+                         "%s " \
+                         "${ModuleConfig['namevers']}:" \
+                         "error patching sources!"
+}
+
+##
+## pbcore::patch_sources - apply patches listed in configuration
+##
+## Each patch-file entry has the form file_name[:strip]
+##
+## Arguments:
+##   none
+##
+## Used global variable:
+##   ModuleConfig
+##   PATCH_STRIP_DEFAULT
+##   BUILDBLOCK_DIR
+##   SRC_DIR
+##
+pbcore::patch_sources() {
+        [[ -n "${ModuleConfig['patch_files']}" ]] || return 0
+
+        local -a patch_files=()
+        readarray -t patch_files <<< "${ModuleConfig['patch_files']}"
+        local -- patch_file=''
+        for patch_file in "${patch_files[@]}"; do
+                [[ -z "${patch_file}" ]] && continue
+                local -i patch_strip="${PATCH_STRIP_DEFAULT}"
+                if [[ ${patch_file} == *:* ]]; then
+                        patch_strip="${patch_file##*:}"
+                        patch_file="${patch_file%%:*}"
+                fi
+                pbcore::apply_patch \
+                        "${BUILDBLOCK_DIR}" \
+			"${patch_file}" \
+                        "${patch_strip}" \
+                        "${SRC_DIR}"
+        done
+}
+
 ##
 ## pbcore::is_loaded - test whether a module is loaded or not
 ##
@@ -1250,6 +1323,7 @@ pbcore::build(){
         shift 2
         local -a with_modules=( "$@" )
 
+	ModuleConfig['namevers']="${ModuleConfig['name']}/${ModuleConfig['version']}"
         local -r mod_namevers="${mod_config['name']}/${mod_config['version']}"
 
         eval "$( modulecmd bash purge )"
@@ -1277,6 +1351,7 @@ pbcore::build(){
         pbcore::load_dependencies 'mod_config' "${with_modules[@]}"
         BUILD_ROOT="${PMODULES_TMPDIR}/${mod_config['name']}-${mod_config['version']}"
         SRC_DIR="${BUILD_ROOT}/src"
+	echo "${mod_config['compile_in_sourcetree']}" 1>&2
         if [[ "${mod_config['compile_in_sourcetree']}" == 'yes' ]]; then
                 BUILD_DIR="${SRC_DIR}"
         else
@@ -1284,6 +1359,9 @@ pbcore::build(){
         fi
 
         source "${BUILD_SCRIPT}"
+
+	echo "BUILD_DIR: $BUILD_DIR" 1>&2
+	echo "SRC_DIR: $SRC_DIR" 1>&2
 
         if [[ "${Options['is_subpkg']}" != 'yes' ]]; then
                 pbcore::set_mod_dir_and_prefix mod_config 'PREFIX'
