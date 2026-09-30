@@ -1232,7 +1232,7 @@ pbcore::build_sub_packages(){
                 [[ "${Options['force_rebuild']}" == 'yes' ]] && \
                         pkg_build_args+=( '-f' )
                 pkg_build_args+=( "--parent-prefix=${PREFIX}" )
-                "$BUILDBLOCK_DIR/build-${pkg_name}" \
+                PATH="${save_PATH}" "$BUILDBLOCK_DIR/build-${pkg_name}" \
                         "${pkg_name}/${pkg_version}" \
                         "${pkg_build_args[@]}" || \
                         std::die 255 "Building sub-package failed - ${pkg_name}/${pkg_version}"

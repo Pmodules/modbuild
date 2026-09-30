@@ -39,9 +39,16 @@ _error_handler() {
 }
 readonly -f _error_handler
 
+# use the same PATH for build sub-packages
+declare save_PATH="${PATH}"
+
 # :FIXME: this is a hack!
 declare -- _tmp=''
-_tmp=$(command -v modulecmd) || std::die 255 "Oops: modulecmd not found!" 1>&2
+_tmp=$(command -v modulecmd)
+if (( $? != 0 )); then
+	echo "Oops: modulecmd not found!" 1>&2
+	exit 255
+fi
 alias 'modulecmd'="LD_PRELOAD='' ${_tmp}"
 
 
