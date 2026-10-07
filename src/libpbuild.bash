@@ -23,11 +23,11 @@ pbcore::info(){
 }
 
 pbcore::err(){
-	std::die "$1" "%s " "${ModuleConfig['namevers']}:" "${@:1}"
+	std::die "$1" "%s " "${ModuleConfig['namevers']}:" "${@:2}"
 }
 
 pbcore::err_invalid_unpacker(){
-	pbcore::err ${__PB_EC['CONFIG']} "Unsupported tool for unpacking -- '${$1}'"
+	pbcore::err ${__PB_EC['CONFIG']} "Unsupported tool for unpacking -- '$1'"
 }
 
 pbcore::err_autotools_config_nexists(){
@@ -55,8 +55,15 @@ pbcore::err_sub_package_version_missing(){
          pbcore::err ${__PB_EC['CONFIG']} "Version of sub-package not specified in \n===\n$1\n===\n"
 }
 
-pbcore::err_patch_not_found(){
-	pbcore::err ${__PB_EC['NEXISTS']} "patch file '${1}' not found!"
+pbcore::err_invalid_value(){
+	pbcore::err ${__PB_EC['CONFIG']} "Invalid value '$1' for '$2'!"
+}
+pbcore::err_group_dependency(){
+	pbcore::err ${__PB_EC['CONFIG']} "Required environemnt variables for '$1' are not set!"
+}
+
+pbcore::err_file_not_found(){
+	pbcore::err ${__PB_EC['NEXISTS']} "file '${1}' not found!"
 }
 
 pbcore::err_binary_nexists(){
@@ -84,7 +91,7 @@ pbcore::err_compilation_failed(){
 }
 
 pbcore::err_installation_failed(){
-	pbcore::err ${__PB_EC['CMD']} "compilation failed"
+	pbcore::err ${__PB_EC['CMD']} "installation failed"
 }
 
 pbcore::err_download(){
@@ -92,7 +99,7 @@ pbcore::err_download(){
 }
 
 pbcore::err_unpack(){
-	pbcore::err ${__PB_EC['CMD']} "unpacking file '${1} failed!"
+	pbcore::err ${__PB_EC['CMD']} "unpacking file '${1}' failed!"
 }
 
 pbcore::err_hashsum(){
@@ -119,6 +126,7 @@ pbcore::err_building_subpkg(){
 	pbcore::err ${__PB_EC['CMD']} "Building sub-package '${1}' failed!"
 }
 
+# :FIXME: maybe we should output file name, function name and line number
 pbcore::err_internal(){
 	pbcore::err ${__PB_EC['INTERNAL']} "oops: internal error!"
 }
@@ -161,7 +169,8 @@ pbuild::module_is_avail() {
                 done <<<"${output}"
                 return 1
         else
-                local -r output=$(modulecmd bash avail --all --output=tag --terse "$1" 2>&1)
+                local output=''
+		output=$(modulecmd bash avail --all --output=tag --terse "$1" 2>&1)
                 while read -r name relstage; do
                         if [[ "${name}" == "$1" || "${name}" == "${1}.lua" ]]; then
                                 case ${relstage} in
@@ -255,8 +264,6 @@ pbuild::prep() {
                 local -- url=''
                 if [[ -n "${ModuleConfig[url:$i]}" ]]; then
                         url=$(envsubst <<<"${ModuleConfig[url:$i]}")
-                else
-                        url=''
                 fi
                 local -- fname=''
                 if [[ -n "${ModuleConfig[name:$i]}" ]]; then
@@ -274,15 +281,15 @@ pbuild::prep() {
                         fi
 
                         local -- src_dir=''
-                        src_dir=$(pbcore::search_source_file "${fname}")
-			if (( $? != 0 )); then
-                                if [[ -n "${url}" ]]; then
-                                        src_dir="${PMODULES_DISTFILESDIR}"
-                                        pbcore::download_source_file \
-                                                "${src_dir}" \
-                                                "${url}" \
-                                                "${fname}"
-                                fi
+                        if ! src_dir=$(pbcore::search_source_file "${fname}"); then
+				# file not found and we don't know how to download it
+				[[ -n "${url}" ]] || pbcore::err_file_not_found "${fname}"
+
+                                src_dir="${PMODULES_DISTFILESDIR}"
+                                pbcore::download_source_file \
+                                        "${src_dir}" \
+                                        "${url}" \
+                                        "${fname}"
                         fi
                         pbcore::check_hash_sum \
                                 "${src_dir}" \
@@ -298,10 +305,11 @@ pbuild::prep() {
                 if [[ -n "${ModuleConfig[patch_file:$i]}" ]]; then
                         local -- patch_file=$(envsubst <<<"${ModuleConfig[patch_file:$i]}")
                         local -- patch_strip="${ModuleConfig[patch_strip:$i]:-${PATCH_STRIP_DEFAULT}}"
-
+			[[ "${patch_strip}" =~ ^[0-9]+$ ]] || \
+				pbcore::err_invalid_value "${patch_strip}" 'patch_strip'
                         local -- src_dir=''
                         src_dir="$(pbcore::search_source_file "${patch_file}")" || \
-                                pbcore::err_patch_not_found "${patch_file}"
+                                pbcore::err_file_not_found "${patch_file}"
                         local -- unpack_dir="${SRC_DIR}"
                         if [[ -n "${ModuleConfig[unpack_dir:$i]}" ]]; then
                                 unpack_dir=$(envsubst <<<"${ModuleConfig[unpack_dir:$i]}")
@@ -361,7 +369,7 @@ pbuild::configure() {
                         ;;
                 cmake )
                         [[ -r "${SRC_DIR}/CMakeLists.txt" ]] || \
-                                pbcore::err_autotools_config_nexists
+                                pbcore::err_cmake_config_nexists
                         ;;
         esac
         local -a config_args=()
@@ -758,11 +766,11 @@ pbcore::load_dependencies() {
         shift 1
 
         local -a build_requires=()
-        if [[ -n ${module_config['build_requires']} ]]; then
+        if [[ -n ${config['build_requires']} ]]; then
                 readarray -t build_requires <<<"${module_config['build_requires']}"
         fi
 
-        local -ar dependencies+=( "$@" "${build_requires[@]}" )
+        local -ar dependencies=( "$@" "${build_requires[@]}" )
 
         local -- m=''
         for m in "${dependencies[@]}"; do
@@ -774,12 +782,12 @@ pbcore::load_dependencies() {
                 # for a stable module all dependencies must be stable
                 if [[ "${config['relstage']}" == 'stable' ]] \
                            && [[ "${relstage_of_dependency}" != 'stable' ]]; then
-			pbcore::err_setting_relstage "${config['relstage']}'" "$m" \
+			pbcore::err_setting_relstage "${config['relstage']}" "$m" \
 						     "${relstage_of_dependency}"
                         # for a unstable module no dependency must be deprecated
                 elif [[ "${config['relstage']}" == 'unstable' ]] \
                              && [[ "${relstage_of_dependency}" == 'deprecated' ]]; then
-			pbcore::err_setting_relstage "${config['relstage']}'" "$m" \
+			pbcore::err_setting_relstage "${config['relstage']}" "$m" \
 						     "${relstage_of_dependency}"
                 fi
 
@@ -811,24 +819,30 @@ pbcore::set_mod_dir_and_prefix() {
 
         local -- mod_dir="${ol_modulefiles_root}/${group}/${__MODULEFILES_DIR__}/"
         prefix="${ol_install_root}/${group}/${mod_name}/${mod_version}/"
-        case "${group,,}" in
-                compiler )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
+        case "${group}" in
+                Compiler )
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || \
+				pbcore::err_group_dependency 'Compiler'
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
-                mpi )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
-                        [[ -v MPI && -v MPI_VERSION ]] || pbcore::err_internal
+                MPI )
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || \
+				pbcore::err_group_dependency 'Compiler'
+			[[ -v MPI && -v MPI_VERSION ]] || \
+				pbcore::err_group_dependency 'MPI'
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         mod_dir+="${MPI}/${MPI_VERSION}/"
                         prefix+="${MPI}/${MPI_VERSION}/"
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
-                hdf5 )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
-                        [[ -v MPI && -v MPI_VERSION ]] || pbcore::err_internal
-                        [[ -v HDF5 && -v HDF5_VERSION ]] || pbcore::err_internal
+                HDF5 )
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || \
+				pbcore::err_group_dependency 'Compiler'
+			[[ -v MPI && -v MPI_VERSION ]] || \
+				pbcore::err_group_dependency 'MPI'
+                        [[ -v HDF5 && -v HDF5_VERSION ]] || \
+				pbcore::err_group_dependency 'HDF5'
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         mod_dir+="${MPI}/${MPI_VERSION}/"
                         mod_dir+="hdf5/${HDF5_VERSION}/"
@@ -836,16 +850,18 @@ pbcore::set_mod_dir_and_prefix() {
                         prefix+="${MPI}/${MPI_VERSION}/"
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
-                hdf5_serial )
-                        [[ -v COMPILER && -v COMPILER_VERSION ]] || pbcore::err_internal
-                        [[ -v HDF5_SERIAL && -v HDF5_SERIAL_VERSION ]] || pbcore::err_internal
+                HDF5_serial )
+                        [[ -v COMPILER && -v COMPILER_VERSION ]] || \
+				pbcore::err_group_dependency 'Compiler'
+                        [[ -v HDF5_SERIAL && -v HDF5_SERIAL_VERSION ]] || \
+				pbcore::err_group_dependency 'HDF5_serial'
                         mod_dir+="${COMPILER}/${COMPILER_VERSION}/"
                         mod_dir+="hdf5_serial/${HDF5_SERIAL_VERSION}/"
                         prefix+="hdf5_serial/${HDF5_SERIAL_VERSION}/"
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
                 * )
-                        :
+			: # nothing to do for non-hierarchical groups
                         ;;
         esac
         mod_dir+="${mod_name}"
@@ -894,10 +910,11 @@ pbcore::post_install() {
         # solve the multilib problem with LIBRARY_PATH on 64-bit systems
         post_install_linux() {
                 pbcore::info "running post-installation for ${KERNEL_NAME} ..."
-		pushd .
+		local -r pwd_saved="${PWD}"
+		pushd . >/dev/null
                 cd "${PREFIX}" || pbcore::err_chdir "${PREFIX}"
                 [[ -d "lib" ]] && [[ ! -d "lib64" ]] && ln -s lib lib64
-                popd
+                popd > /dev/null || pbcore::err_chdir "${pwd_saved}"
                 return 0
         }
 
@@ -938,7 +955,7 @@ pbcore::install_runtime_dependencies() {
 
         local -a runtime_deps=()
         if [[ -n ${module_config['runtime_deps']} ]]; then
-                readarray -t runtime_deps <<<"${module_config['runtime_deps']}"
+                readarray -t runtime_deps <<<"${config['runtime_deps']}"
         fi
         local -a dependencies=( "$@" "${runtime_deps[@]}" )
 
@@ -952,7 +969,7 @@ pbcore::install_runtime_dependencies() {
         pbcore::info "writing run-time dependencies to ${fname} ..."
         echo -n "" > "${fname}"
         local -- dep=''
-        for dep in "$@"; do
+        for dep in "${dependencies[@]}"; do
                 [[ -z $dep ]] && continue
                 if [[ ! $dep == */* ]]; then
                         # no version given: derive the version
@@ -1058,7 +1075,7 @@ pbcore::cleanup_modulefiles(){
                 local -- modulefiles_root="${OverlayInfo[${ol}:modulefiles_root]}"
                 local -- dir="${modulefile_dir/#"${ol_modulefiles_root}"/${modulefiles_root}}"
 
-                pbcore::remove_file "${dir}/${config['version']}" \
+                pbcore::remove_file "${dir}/${config['version']}"
                 pbcore::remove_file "${dir}/.release-${config['version']}"
                 pbcore::remove_file "${dir}/.config-${config['version']}"
                 pbcore::remove_file "${dir}/.deps-${config['version']}"
@@ -1077,7 +1094,7 @@ pbcore::cleanup_build() {
         [[ "${PWD}" == '/' ]] && pbcore::err_internal
 	[[ "${PWD}" == "${BUILDBLOCK_DIR}" ]] && return 0
         pbcore::info "Cleaning up build directory '${BUILD_DIR}' ..."
-        rm -rf "${BUILD_DIR}" 1>&2
+        rm -rf "${BUILD_DIR}"
         return 0
 }
 
@@ -1091,7 +1108,7 @@ pbcore::cleanup_src() {
         [[ "${PWD}" == '/' ]] && pbcore::err_internal
 	[[ "${PWD}" == "${BUILDBLOCK_DIR}" ]] && return 0
         pbcore::info "Cleaning up source directory '${SRC_DIR}' ..."
-        rm -rf "${SRC_DIR}" 1>&2
+        rm -rf "${SRC_DIR}"
         return 0
 }
 
@@ -1158,7 +1175,6 @@ pbcore::compile_and_install() {
 
 pbcore::remove_file() {
         local -r fname="$1"
-        local -r text="$2"
         if [[ -e "${fname}" ]]; then
                 pbcore::info "removing '${fname}' ..."
                 rm -vf "${fname}"

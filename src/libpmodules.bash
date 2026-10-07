@@ -54,11 +54,6 @@ declare -A OverlayInfo=()
 #
 #
 declare -A DefaultPmodulesConfig=(
-        ['defaultgroups']='Tools:Programming'
-        ['default_groups']='Tools:Programming'
-        ['defaultreleasestages']='stable'
-        ['default_relstages']='stable'
-        ['tmpdir']="/var/tmp/${USER:-$(id -un)}"
         ['tmp_dir']="/var/tmp/${USER:-$(id -un)}"
         ['download_dir']="${HOME}/.cache/Pmodules/distfiles"
 )
@@ -66,27 +61,12 @@ declare -A DefaultPmodulesConfig=(
 declare -A OverlayConfigKeys=(
         ['install_root']='/opt/psi'
         ['modulefiles_root']=''
-        ['excludes']=''
         ['type']='n'
-        ['conflicts']=''
-        ['path_config']=''
-        ['default_relstage']='unstable'
         ['layout']='Pmodules'
-        ['has_additional_modulepaths']='false'
-        ['groups']=''
-)
-
-declare -A OverlayPathConfigKeys=(
-        ['target_cpus']=''
-        ['modulepath']=''
-        ['modulepath_unstable']=''
-        ['modulepath_stable']=''
-        ['modulepath_deprecated']=''
-
 )
 
 rtcfg::die_invalid_key(){
-        std::die 3 "%s" "Invalid key in configuration -- $1\n$2"
+        std::die 3 "%b" "Invalid key in configuration -- $1\n$2"
 }
 
 rtcfg::die_invalid_ol_install_root(){
@@ -103,11 +83,7 @@ rtcfg::die_invalid_ol_type(){
 }
 
 rtcfg::die_invalid_ol_layout(){
-        std::die 3 "%s" "Invalid layout for overlay '$1' -- $2\nAllowed values are 'Pmodules', 'Spack' and 'flat'."
-}
-
-rtcfg::die_invalid_ol_relstage(){
-        std::die 3 "%s" "Invalid default release stage for overlay '$1' -- $2"
+        std::die 3 "%b" "Invalid layout for overlay '$1' -- $2\nAllowed values are 'Pmodules', 'Spack' and 'flat'."
 }
 
 ##
@@ -126,9 +102,6 @@ rtcfg::_get_config_of_overlay(){
         local -- key=''
         for key in "${!OverlayConfigKeys[@]}"; do
                 OverlayInfo[${ol_name}:${key}]="${OverlayConfigKeys[${key}]}"
-        done
-        for key in "${!OverlayPathConfigKeys[@]}"; do
-                OverlayInfo[${ol_name}:${key}]="${OverlayPathConfigKeys[${key}]}"
         done
         # get keys in YAML input
         local -- node=".\"${ol_name}\""
@@ -178,31 +151,6 @@ rtcfg::_get_config_of_overlay(){
                                 esac
                                 OverlayInfo[${ol_name}:${key,,}]="${value}"
                                 ;;
-                        default_relstage )
-                                yml::get_value value yaml_input "${node}.${key}" '!!str'
-                                case ${value} in
-                                        'unstable' | 'stable' | 'deprecated' )
-                                                :
-                                                ;;
-                                        *)
-                                                rtcfg::die_invalid_ol_relstage \
-                                                        "${ol_name}" "${value}"
-                                                ;;
-                                esac
-                                OverlayInfo[${ol_name}:${key}]="${value}"
-                                ;;
-                        conflicts | excludes | groups)
-                                yml::get_seq value yaml_input "${node}.${key}"
-                                local -a tmp_array=()
-                                readarray -t tmp_array <<<${value}
-                                local -- tmp_str=''
-                                printf -v tmp_str "%s:" "${tmp_array[@]}"
-                                OverlayInfo[${ol_name}:${key}]=$(envsubst <<<"${tmp_str%:}" )
-                                ;;
-                        path_config )
-                                yml::get_value value yaml_input "${node}.${key}" '!!seq'
-                                rtcfg::_parse_path_config value "${ol_name}"
-                                ;;
                         * )
                                 rtcfg::die_invalid_key "${key}" "${yaml_input}"
                                 ;;
@@ -215,78 +163,7 @@ rtcfg::_get_config_of_overlay(){
 }
 
 ##
-## rtcfg::_parse_path_config - parse path configuration
-##
-## Arguments:
-##   $1 - YAML text
-##   $2 - name of overlay
-##
-rtcfg::_parse_path_config(){
-        local -n yaml="$1"
-        local -- ol_name="$2"
-
-        local -- key=''
-        for key in "${!OverlayPathConfigKeys[@]}"; do
-                OverlayInfo[${ol_name}:${key}]="${OverlayPathConfigKeys[${key}]}"
-        done
-        local -i l=0
-        yml::get_seq_length l yaml .
-        local -i i=0
-        for ((i=0; i<l; i++)); do
-                local -a target_cpus=()
-                local -- node=".[$i]"
-                local -a keys=()
-                yml::get_keys keys yaml "${node}"
-                for key in "${keys[@]}"; do
-                        case ${key} in
-                                target_cpus )
-                                        local -- str=''
-                                        yml::get_seq \
-                                                str \
-                                                yaml \
-                                                "${node}.${key}"
-                                        readarray -t target_cpus <<<${str}
-                                        local -- system_cpu=$(uname -p)
-                                        local -- cpu=''
-                                        local -- found='no'
-                                        for cpu in "${target_cpus[@]}"; do
-                                                if [[ "${cpu}" == "${system_cpu}" ]]; then
-                                                        found='yes'
-                                                        break 1
-                                                fi
-                                        done
-                                        [[ ${found} == 'no' ]] && break 1
-                                        ;;
-                                modulepath | modulepath_unstable |\
-                                        modulepath_stable | modulepath_deprecated)
-                                        local -- str=''
-                                        yml::get_seq str yaml "${node}.${key}"
-                                        local -a tmp_array=()
-                                        readarray -t tmp_array <<<${str}
-                                        local -- modulepath=''
-                                        local -- dir=''
-                                        local -- target_cpu=''
-                                        for dir in "${tmp_array[@]}"; do
-                                                for target_cpu in "${target_cpus[@]}"; do
-                                                        std::append_path modulepath \
-                                                                         $(envsubst <<< "${dir}")
-                                                done
-                                        done
-                                        OverlayInfo[${ol_name}:${key}]="${modulepath}"
-                                        OverlayInfo[${ol_name}:has_additional_modulepaths]='true'
-                                        ;;
-                        esac
-                done
-        done
-}
-
-##
 ## rtcfg::read_config -
-##
-## Read modules configuration.
-##
-## In case of Pmodules read 'PMODULES_ROOT/config/Pmodules.yaml'
-## a nd '${HOME}/.Pmodules/Pmodules.yaml'.
 ##
 ## In case of Tcl Environment Modules get the config from running
 ## module use
@@ -295,91 +172,24 @@ rtcfg::read_config(){
         local -- tmp_dir="${DefaultPmodulesConfig['tmp_dir']}"
         local -- download_dir="${DefaultPmodulesConfig['download_dir']}"
 
-        get_config(){
-                : "
-                Get Pmodules configuration.
-                "
-                local -r config_file="$1"       # Pmodules configuration file
+        # With Tcl Environment Modules retrieving the overlays
+        # is hacky as long as we don't have a solution to query the
+        # overlays via the module command in a well defined format.
+        # For now the output of `module use` is parsed. In the PSI's
+        # extension the overlays and their configuration are printed
+        # first in YAML format. The output that follows is truncated
+        # using sed(1).
 
-                local -- yaml_input=''
-                yml::read_file yaml_input "${config_file}"
+        local -- str="$(modulecmd bash use 2>&1)"
+        local -- yaml_input
+        yaml_input="$(sed -n '/Used release stages/q;p' <<<"${str}")"
+        yaml_input="$(yq -e '.*' <<<"${yaml_input}")"
+        local -a overlays=( $(yq -e 'keys|.[]' <<<"${yaml_input}") )
+        local -- overlay
+        for overlay in "${overlays[@]}"; do
+                rtcfg::_get_config_of_overlay "${yaml_input}" "${overlay}"
+        done
 
-                local -- key=''
-                local -a keys=()
-                yml::get_keys keys yaml_input '.'
-                for key in "${keys[@]}"; do
-                        case ${key,,} in
-                                defaultgroups | default_groups )
-                                        : # ignore
-                                        ;;
-                                defaultreleasestages | default_relstages )
-                                        : # ignore
-                                        ;;
-                                tmpdir | tmp_dir )
-                                        yml::get_value tmp_dir yaml_input ".${key}" '!!str'
-                                        tmp_dir="$(envsubst <<<"${tmp_dir}")"
-                                        ;;
-                                distfilesdir | download_dir )
-                                        yml::get_value download_dir yaml_input ".${key}" '!!str'
-                                        download_dir="$(envsubst <<<"${download_dir}")"
-                                        ;;
-                                overlays )
-                                        local -- overlay=''
-                                        local -a overlays=()
-                                        local -- ol_configs=''
-                                        yml::get_value ol_configs yaml_input ".${key}" "!!map"
-                                        yml::get_keys overlays ol_configs "."
-                                        for overlay in "${overlays[@]}"; do
-                                                rtcfg::_get_config_of_overlay \
-                                                        "${ol_configs}" "${overlay}"
-                                        done
-                                        ;;
-                                * )
-                                        rtcfg::die_invalid_key "${key}" "${yaml_input}"
-                                        ;;
-                        esac
-                done
-        }
-
-        if [[ -v PMODULES_HOME ]]; then
-                # system config file
-                local -- sys_config_file="${PMODULES_HOME%%/Tools*}/config/Pmodules.yaml"
-                if [[ -v PMODULES_CONFIG_FILE && -n "${PMODULES_CONFIG_FILE}" ]]; then
-                        sys_config_file="${PMODULES_HOME%%/Tools*}/config/${PMODULES_CONFIG_FILE}"
-                fi
-                sys_config_file=$(readlink -f "${sys_config_file}")
-                test -r "${sys_config_file}" || \
-                        std::die 3 \
-                                 "%s %s -- %s" \
-                                 "Configuration file " \
-                                 "does not exist or is not readable" \
-                                 "$_"
-
-                get_config "${sys_config_file}"
-
-                local -r usr_config_file="${HOME}/.Pmodules/Pmodules.yaml"
-                if [[ -r "${usr_config_file}" ]]; then
-                        get_config "${usr_config_file}"
-                fi
-        else
-                # If Tcl Environment Modules are used, retrieving the overlays
-                # is hacky as long as we don't have a solution to query the
-                # overlays via the module command in a well defined format.
-                # For now the output of `module use` is parsed. In the PSI's
-                # extension the overlays and their configuration are printed
-                # first in YAML format. The output that follows is truncated
-                # using sed(1).
-
-                local -- str="$(modulecmd bash use 2>&1)"
-                local -- yaml_input
-                yaml_input="$(sed -n '/Used release stages/q;p' <<<"${str}")"
-                yaml_input="$(yq -e '.*' <<<"${yaml_input}")"
-                local -a overlays=( $(yq -e 'keys|.[]' <<<"${yaml_input}") )
-                local -- overlay
-                for overlay in "${overlays[@]}"; do
-                        rtcfg::_get_config_of_overlay "${yaml_input}" "${overlay}"
-                done
-        fi
         OverlayInfo[none:type]='n'
         OverlayInfo[none:layout]='flat'
 

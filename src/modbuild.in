@@ -26,11 +26,39 @@ shopt -s extglob
 shopt -s nullglob
 shopt -s expand_aliases
 
-#.............................................................................
+# use the same PATH for build sub-packages. See libpbuild.bash.
+declare save_PATH="${PATH}"
+
 #
-# Exit script on errror.
+# define modulecmd as alias.
+# modulecmd must be in PATH otherwise modbuild fails.
+# Note: modulecmd can be in any directory not just in /bin, /usr/bin etc.!
 #
-# $1    exit code
+# :FIXME: is there a better solution?
+declare -- _tmp=''
+if ! _tmp=$(command -v modulecmd); then
+	echo "Oops: modulecmd not found!" 1>&2
+	exit 255
+fi
+alias 'modulecmd'="LD_PRELOAD='' ${_tmp}"
+unset _tmp
+
+
+# Set PATH and source libstd.bash.
+# Note: PATH includes the directories bin und libexec of modbuild! 
+mydir=$(cd "$(/usr/bin/dirname "$0")" && pwd -P)
+prefix=$(/usr/bin/dirname "${mydir}")
+PATH="${prefix}/bin:${prefix}/libexec:/bin:/usr/bin:/sbin:/usr/sbin"
+source "${prefix}/lib/libstd.bash" || {
+        echo "Oops: cannot source library -- '$_'" 1>&2; exit 3;
+}
+unset mydir
+
+##
+## Exit script on errror.
+##
+## Arguments:
+##   $1 -  exit code
 #
 _error_handler() {
         local -i ec=$?
@@ -38,42 +66,10 @@ _error_handler() {
         std::die ${ec} "Oops"
 }
 readonly -f _error_handler
-
-# use the same PATH for build sub-packages
-declare save_PATH="${PATH}"
-
-# :FIXME: this is a hack!
-declare -- _tmp=''
-_tmp=$(command -v modulecmd)
-if (( $? != 0 )); then
-	echo "Oops: modulecmd not found!" 1>&2
-	exit 255
-fi
-alias 'modulecmd'="LD_PRELOAD='' ${_tmp}"
-
-
-# Get absolute path of script
-mydir=$(cd "$(/usr/bin/dirname "$0")" && pwd -P)
-prefix=$(/usr/bin/dirname "${mydir}")
-
-PATH="${prefix}/bin:${prefix}/libexec:/bin:/usr/bin:/sbin:/usr/sbin"
-
-source "${prefix}/lib/libstd.bash" || {
-        echo "Oops: cannot source library -- '$_'" 1>&2; exit 3;
-}
-
 trap "_error_handler" ERR
 
+# :FIXME: move other calls from libstd.bash to this or a better place
 std::def_cmd2 'sevenz'
-
-
-source "${prefix}/lib/libpmodules.bash"  || \
-        std::die 3 "Oops: cannot source library -- '$_'"
-source "${prefix}/lib/libpbuild.bash"    || \
-        std::die 3 "Oops: cannot source library -- '$_'"
-unset mydir
-unset prefix
-unset _tmp
 
 declare -A __PB_EC=()
 __PB_EC['ARGS']=1
@@ -81,6 +77,17 @@ __PB_EC['CONFIG']=2
 __PB_EC['NEXISTS']=3
 __PB_EC['CMD']=4
 __PB_EC['INTERNAL']=255
+
+[[ -v PMODULES_HOME ]] && \
+	std::die ${__PB_EC['CMD']} \
+		 "%s " \
+		 "This version of modbuild cannot be used with the modulecmd from Pmodules!"
+
+source "${prefix}/lib/libpmodules.bash"  || \
+        std::die ${__PB_EC['INTERNAL']} "Oops: cannot source library -- '$_'"
+source "${prefix}/lib/libpbuild.bash"    || \
+        std::die ${__PB_EC['INTERNAL']} "Oops: cannot source library -- '$_'"
+unset prefix
 
 # these variables must be exported for envsubst(1)
 declare -x P=''
@@ -553,11 +560,9 @@ declare -A KernelNames=(
 )
 
 declare -A TargetCPUs=(
-        ['x86_64']='x86_64'
-        ['arm64']='arm64'
-        ['arm64']='aarch64'
-        ['aarch64']='arm64'
-        ['aarch64']='aarch64'
+        ['x86_64']=1
+        ['arm64']=1
+        ['aarch64']=1
         ['any']='1'
 )
 
@@ -575,13 +580,12 @@ cfg::err_missing_group_dependencies(){
                  "${name}:" \
                  "Error: missing group dependency for module in group '${__cfg['group']}' -" \
                  "$2"
-
 }
 
 cfg::err_invalid_group_dependency(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Error: invalid group dependency for module in group '${__cfg['group']}' -" \
                  "$2"
@@ -590,7 +594,7 @@ cfg::err_invalid_group_dependency(){
 cfg::err_invalid_variants_block(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Error: invalid type of variants block: must be '!!seq' but is - '$2'!"
 }
@@ -598,7 +602,7 @@ cfg::err_invalid_variants_block(){
 cfg::err_invalid_value(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 1 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Error: invalid value for key '$3' in $2 - '$4'"
 }
@@ -608,7 +612,7 @@ cfg::err_invalid_key(){
         local -r str="$2"
         shift 2
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Error: invalid key(s) in ${str} -" "$@"
 }
@@ -616,7 +620,7 @@ cfg::err_invalid_key(){
 cfg::err_wrong_module_type(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Module type is '$2' but was called as - '$3'!"
 }
@@ -624,7 +628,7 @@ cfg::err_wrong_module_type(){
 cfg::err_invalid_module_type(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Invalid module type - '$2'"
 }
@@ -632,7 +636,7 @@ cfg::err_invalid_module_type(){
 cfg::err_undef_group(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Error: group must be defined before group dependencies!"
 }
@@ -640,9 +644,16 @@ cfg::err_undef_group(){
 cfg::err_group_not_hierarchical(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CMD']} "%s " \
                  "${name}:" \
                  "Error: group dependencies defined for non-hierarchical group '${__cfg['group']}'!"
+}
+
+cfg::err_ctrl_char_in_version_key(){
+        local -n __cfg="$1"
+        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
+        std::die ${__PB_EC['CMD']} "%s " \
+		 "Control characters in version keys are forbidden!"
 }
 
 ##
@@ -1114,7 +1125,7 @@ cfg::is_variant_to_build(){
                 system_cpu=$(std::get_system_cpu)
                 local -- cpu=''
                 for cpu in "${target_cpus[@]}"; do
-                        [[ ${cpu,,} =~ 'any' ]] && return 0
+                        [[ ${cpu,,} == 'any' ]] && return 0
                         [[ "${system_cpu,,}" == "${cpu,,}" ]] && return 0
                 done
                 std::info "%s " "Skipping variant '${version}'" \
@@ -1224,6 +1235,8 @@ cfg::expand_version_key(){
         # loop over semicolon separated list of keys
         local -- k
         for k in ${key//;/ }; do
+		[[ "$k" =~ [[:cntrl:]] ]] && \
+			cfg::err_ctrl_char_in_version_key
                 local -a list=()
                 readarray -t list < <(std::expand_braces "${k}")
                 local -- l
@@ -1259,6 +1272,8 @@ cfg::get_matching_version_keys(){
                 # loop over semicolon separated list of keys
                 for k in ${key//;/ }; do
                         local -a list=()
+			[[ "$k" =~ [[:cntrl:]] ]] && \
+				cfg::err_ctrl_char_in_version_key
                         readarray -t list < <(std::expand_braces "${k}")
                         local -- l=''
                         for l in "${list[@]}"; do
@@ -1611,22 +1626,19 @@ build::modules_yaml_v1(){
                                         local -- type_of_node=''
                                         yml::get_type type_of_node yaml_module_config \
                                                       "${node}.variants"
-                                        if [[ "${type_of_node}" == '!!null' ]]; then
-                                                num_variants=0
-                                        elif [[ "${type_of_node}" != '!!seq' ]]; then
+                                        [[ "${type_of_node}" == '!!seq' ]] || \
                                                 cfg::err_invalid_variants_block \
                                                         'mod_config_version' \
                                                         "${type_of_node}"
-                                        else
-                                                yml::get_seq_length \
-                                                        num_variants \
-                                                        yaml_module_config \
-                                                        "${node}.variants"
-                                        fi
+                                        yml::get_seq_length \
+                                                num_variants \
+                                                yaml_module_config \
+                                                "${node}.variants"
                                         ;;
                                 * )
-                                        # :FIXME: add default case: invalid key
-                                        :
+					cfg::err_invalid_key \
+						'mod_config_version' \
+						'general config block' "${key}"
                                         ;;
                         esac
                 done
@@ -1712,7 +1724,7 @@ fi
 
 declare version=''
 for version in "${versions_to_build[@]}"; do
-        build::modules "${module_name}" "${version}" "${opt_with_modules[@]}"
+        build::modules "${module_name}" "${version}"
 done
 
 # Local Variables:
