@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 (( BASH_VERSINFO[0] >= 5 )) || \
         {
@@ -123,6 +123,15 @@ std::def_cmd2(){
 }
 readonly -f std::def_cmd2
 
+declare -rg KERNEL_NAME="$(uname -s)"
+declare -rg SYSTEM_CPU="$(uname -m)"
+
+case ${KERNEL_NAME} in
+        Darwin )
+                PATH+=':/opt/local/bin:/usr/local/bin'
+		;;
+esac
+
 #
 # Since we are using aliases, we have to define some before using them in a function.
 # Alias expansion happens when a function is parsed!
@@ -166,9 +175,6 @@ std::def_cmd2 'tput'
 std::def_cmd2 'uname'
 std::def_cmd2 'yq'
 
-declare -rg KERNEL_NAME="$(uname -s)"
-declare -rg SYSTEM_CPU="$(uname -m)"
-
 case ${KERNEL_NAME} in
         Linux )
                 std::def_cmd2 'ldd'
@@ -176,7 +182,6 @@ case ${KERNEL_NAME} in
                 std::def_cmd2 'sha256sum'
                 ;;
         Darwin )
-                PATH+=':/opt/local/bin'
                 std::def_cmd2 'otool'
                 std::def_cmd2 'shasum'
                 std::def_cmd2 'sysctl'
@@ -707,16 +712,11 @@ readonly -f std::get_num_cores
 ## Output:
 ##   The expanded text.
 ##
-std::expand_braces() {
-	local saved=$(shopt -po noglob)
-        set -o noglob
+std::expand_braces() (
         local s
-        [[ "$1" =~ [[:cntrl:]] ]] && \
-                std::die 2 "%s" "Control characters in version keys are forbidden"
         s=$(sed 's|[^[:alnum:]_/.:=+@%^,{}-]|\\&|g' <<<"$1")
         eval "printf '%s\n' $s"
-	eval "${saved}"
-}
+)
 
 ##
 ## yml::die_parsing
@@ -849,96 +849,41 @@ readonly -f yml::get_type
 ##   $4 - [in] expected type of node
 ##
 yml::get_value(){
-        local -n yml_val="$1"
-        local -n yml_text="$2"
-        local -- yml_key="$3"
-        local -- yml_type="$4"
+        local -n __gv_val="$1"
+        local -n __gv_text="$2"
+        local -- __gv_key="$3"
+        local -- __gv_type="$4"
 
         # Step 1: metadata only — line number and actual tag.
         # NOTE: no '-e' here! yq exits 1 for a value of 'false' or 'null',
         #       which would be indistinguishable from a parse error.
-        local -- info=''
-        info=$(yq -N "${yml_key} | [(. | line), (. | tag)] | join(\" \")" \
-                  <<<"${yml_text}") || yml::die_parsing "${yml_text}"
+        local -- __gv_info=''
+        __gv_info=$(yq -N "${__gv_key} | [(. | line), (. | tag)] | join(\" \")" \
+                  <<<"${__gv_text}") || yml::die_parsing "${__gv_text}"
 
-        local -i lineno=0
-        local -- got_type=''
-        read -r lineno got_type <<<"${info}"
+        local -i __gv_lineno=0
+        local -- __gv_got_type=''
+        read -r __gv_lineno __gv_got_type <<<"${__gv_info}"
 
         # Step 2: decide in bash.
-        if (( lineno == 0 )); then
-                yml::die_undefined "${yml_key}"          # node not in the document
-        elif [[ "${got_type}" == '!!null' ]]; then
-                yml_val=''                                # key exists, has no value
+        if (( __gv_lineno == 0 )); then
+                yml::die_undefined "${__gv_key}"          # node not in the document
+        elif [[ "${__gv_got_type}" == '!!null' ]]; then
+                __gv_val=''                                # key exists, has no value
                 return 0
-        elif [[ "${got_type}" != "${yml_type}" ]]; then
+        elif [[ "${__gv_got_type}" != "${__gv_type}" ]]; then
                 echo -en "Error in configuration file:\n---\n" 1>&2
-                sed -n "${lineno}p" <<<"${yml_text}" 1>&2
+                sed -n "${__gv_lineno}p" <<<"${__gv_text}" 1>&2
                 echo -en "---\n" 1>&2
-                yml::die_type_error "${yml_key}" "${yml_type}" "${got_type}"
+                yml::die_type_error "${__gv_key}" "${__gv_type}" "${__gv_got_type}"
         fi
 
         # Step 3: only now fetch the value.
-        yml_val=$(yq -N "${yml_key}" <<<"${yml_text}") || yml::die_parsing "${yml_text}"
+        __gv_val=$(yq -N "${__gv_key}" <<<"${__gv_text}") || yml::die_parsing "${__gv_text}"
         return 0
-}
-yml::get_value_old(){
-        local -n yml_val="$1"
-        local -n yml_text="$2"
-        local -- yml_key="$3"
-        local -- yml_type="$4"
-        yml_val=$( yml_type="${yml_type}" yq -Ne \
-                       'strenv(yml_type) as $yml_type
-                           | '"${yml_key}"'
-                           | (select(tag == $yml_type)
-                               // ("Error in line: " + (.|line)
-                                   + ", path: " + (.|path | join("."))
-                                   + " expected type: " + $yml_type + ", got: " + (.|tag)))' \
-                                           <<<"${yml_text}" )
-        if [[ "${yml_val}" != "Error in line: "* ]]; then
-                return 0
-        elif [[ "${yml_val}" == "Error in line: 0,"* ]]; then
-                yml::die_undefined "${yml_key}"
-        elif [[ "${yml_val}" == *"got: !!null" ]]; then
-                # key has no node/value
-                yml_val=''
-                return 0
-        else
-                local -- got_type=''
-                local -- lineno
-                got_type=$(awk '{print $NF}' <<<"${yml_val}")
-                lineno=$(awk '{print $4}' <<<"${yml_val}")
-                lineno="${lineno/,}"
-                ## (( lineno+=1))
-                echo -en "Error in configuration file:\n---\n" 1>&2
-                sed -n "${lineno}p" <<<"${yml_text}" 1>&2
-                echo -en "---\n" 1>&2
-                yml::die_type_error "${yml_key}" "${yml_type}" "${got_type}"
-        fi
 }
 readonly -f yml::get_value
 
-#yml::get_value(){
-#       local -n yml_val="$1"
-#       local -n yml_text="$2"
-#       local -- yml_key="$3"
-#       local -- yml_expected_type="$4"
-#
-#       yml_val=$( yq -N "${yml_key} | select(tag == \"${yml_expected_type}\")" \
-#                          <<<"${yml_text}" ) || \
-#               yml::die_type_error "${yml_key}" "${yml_expected_type}" "${type}"
-#}
-
-##
-## yml::get_seq_length - get the length of a sequence
-##
-## Return 0 as length, if the key doesn't exists or the node is not a sequence.
-##
-## Arguments:
-##   $1 - [out]reference variable for result
-##   $2 - [in] YAML text
-##   $3 - [in] key of entry
-##
 ##
 ## yml::get_seq_length - get the length of a sequence
 ##
@@ -989,17 +934,6 @@ yml::get_seq_length(){
         return 0
 }
 readonly -f yml::get_seq_length
-yml::get_seq_length2(){
-        local -n yml_seq_length="$1"
-        local -n yml_text="$2"
-        local -- yml_key="$3"
-
-        local -i _len=0
-        _len=$(yq -e "${yml_key} | select(tag == \"!!seq\") | length" <<<"${yml_text}") || \
-                yml::die_parsing "${yml_text}"
-        yml_seq_length="${_len}"
-}
-readonly -f yml::get_seq_length2
 
 ##
 ## yml::get_seq - get sequence
