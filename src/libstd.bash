@@ -713,6 +713,7 @@ readonly -f std::get_num_cores
 ##   The expanded text.
 ##
 std::expand_braces() (
+	[[ "$1" =~ [[:cntrl:]] ]] && exit 1
         local s
         s=$(sed 's|[^[:alnum:]_/.:=+@%^,{}-]|\\&|g' <<<"$1")
         eval "printf '%s\n' $s"
@@ -854,7 +855,7 @@ yml::get_value(){
         local -- __gv_key="$3"
         local -- __gv_type="$4"
 
-        # Step 1: metadata only — line number and actual tag.
+        # Step 1: metadata only - line number and actual tag.
         # NOTE: no '-e' here! yq exits 1 for a value of 'false' or 'null',
         #       which would be indistinguishable from a parse error.
         local -- __gv_info=''
