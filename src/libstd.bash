@@ -420,27 +420,27 @@ readonly -f std::prepend_path
 ##   0
 ##
 std::remove_path() {
-        local -n rp_path="$1"
+        local -n __rp_path="$1"
         shift 1
-        local -ar rp_dirs=("$@")
+        local -ar __rp_dirs=("$@")
 
-        local -a rp_paths=()
-        IFS=':' read -r -a rp_paths <<<"${rp_path}"
-        local -- rp_dir=''
-        for rp_dir in "${rp_dirs[@]}"; do
+        local -a __rp_paths=()
+        IFS=':' read -r -a __rp_paths <<<"${__rp_path}"
+        local -- __rp_dir=''
+        for __rp_dir in "${__rp_dirs[@]}"; do
                 # loop over all entries in path and mark
                 # the to be deleted directories.
                 local -i i=0
-                for ((i=0; i<${#rp_paths[@]}; i++)); do
-                        [[ "${rp_paths[i]}" == "${rp_dir}" ]] && rp_paths[i]=''
+                for ((i=0; i<${#__rp_paths[@]}; i++)); do
+                        [[ "${__rp_paths[i]}" == "${__rp_dir}" ]] && __rp_paths[i]=''
                 done
         done
         # assemble new path
-        rp_path=''
-        for rp_dir in "${rp_paths[@]}"; do
-                [[ -n "${rp_dir}" ]] && rp_path+="${rp_dir}:"
+        __rp_path=''
+        for __rp_dir in "${__rp_paths[@]}"; do
+                [[ -n "${__rp_dir}" ]] && __rp_path+="${__rp_dir}:"
         done
-        rp_path="${rp_path%:}"          # remove trailing ':'
+        __rp_path="${__rp_path%:}"          # remove trailing ':'
 }
 readonly -f std::remove_path
 
@@ -571,15 +571,15 @@ readonly -f std::array::contains
 ##   Here we do a linear search. For small arrays this is ok.
 ##
 std::array::is_subset() {
-        local -n _sub="$1"
+        local -n __i_sub="$1"
         shift 1
-        local -A _seen=()
-        local -- el=''
-        for el in "$@"; do
-                _seen[${el}]=1;
+        local -A __i_seen=()
+        local -- __i_el=''
+        for __i_el in "$@"; do
+                __i_seen[${__i_el}]=1;
         done
-        for el in "${_sub[@]}"; do
-                [[ -v _seen[${el}] ]] || return 1
+        for __i_el in "${__i_sub[@]}"; do
+                [[ -v __i_seen[${__i_el}] ]] || return 1
         done
         return 0
 }
@@ -596,18 +596,18 @@ readonly -f std::array::is_subset
 ##   $3 - second array B
 ##
 std::array::difference() {
-        local -n ad_result="$1"
-        local -n ad_arrA="$2"
-        local -n ad_arrB="$3"
+        local -n __ad_result="$1"
+        local -n __ad_arrA="$2"
+        local -n __ad_arrB="$3"
 
-        local -A ad_inB=()
-        local -- ad_el=''
-        ad_result=()
-        for ad_el in "${ad_arrB[@]}"; do
-                ad_inB[${ad_el}]=1
+        local -A __ad_inB=()
+        local -- __ad_el=''
+        __ad_result=()
+        for __ad_el in "${__ad_arrB[@]}"; do
+                __ad_inB[${__ad_el}]=1
         done
-        for ad_el in "${ad_arrA[@]}"; do
-                [[ -v ad_inB[${ad_el}] ]] || ad_result+=( "${ad_el}" )
+        for __ad_el in "${__ad_arrA[@]}"; do
+                [[ -v __ad_inB[${__ad_el}] ]] || __ad_result+=( "${__ad_el}" )
         done
 }
 readonly -f std::array::difference
@@ -620,13 +620,13 @@ readonly -f std::array::difference
 ##   $2 - reference variable to the original
 ##
 std::dict::copy() {
-        local -n dc_dst="$1"
-        local -n dc_src="$2"
-        local -- dc_suffix="${3:-}"
-        local -- dc_key=''
-        dc_dst=()
-        for dc_key in "${!dc_src[@]}"; do
-                dc_dst[${dc_key}${dc_suffix}]="${dc_src[${dc_key}]}"
+        local -n __dc_dst="$1"
+        local -n __dc_src="$2"
+        local -- __dc_suffix="${3:-}"
+        local -- __dc_key=''
+        __dc_dst=()
+        for __dc_key in "${!__dc_src[@]}"; do
+                __dc_dst[${__dc_key}${__dc_suffix}]="${__dc_src[${__dc_key}]}"
         done
 }
 readonly -f std::dict::copy
@@ -639,12 +639,12 @@ readonly -f std::dict::copy
 ##   $2 - reference variable to the original
 ##
 std::dict::merge() {
-        local -n dm_dst="$1"
-        local -n dm_src="$2"
-        local -- dm_suffix="${3:-}"
-        local -- dm_key=''
-        for dm_key in "${!dm_src[@]}"; do
-                dm_dst[${dm_key}${dm_suffix}]="${dm_src[${dm_key}]}"
+        local -n __dm_dst="$1"
+        local -n __dm_src="$2"
+        local -- __dm_suffix="${3:-}"
+        local -- __dm_key=''
+        for __dm_key in "${!__dm_src[@]}"; do
+                __dm_dst[${__dm_key}${__dm_suffix}]="${__dm_src[${__dm_key}]}"
         done
 }
 readonly -f std::dict::merge
@@ -754,10 +754,10 @@ readonly -f yml::die_parsing
 ##   0
 ##
 yml::read_file(){
-        local -n yml_text="$1"
-        local -- yml_fname="$2"
+        local -n __rf_text="$1"
+        local -- __rf_fname="$2"
 
-        yml_text=$(yq -N ".|explode(.)" "${yml_fname}") || \
+        __rf_text=$(yq -N ".|explode(.)" "${__rf_fname}") || \
                 std::die 3 "Cannot read file. Please check with yamllint -- $2"
 }
 readonly -f yml::read_file
@@ -774,10 +774,10 @@ readonly -f yml::read_file
 ##   1 - otherwise
 ##
 yml::has_key(){
-        local -n yml_text="$1"
-        local -- yml_key="$2"
+        local -n __hk_text="$1"
+        local -- __hk_key="$2"
 
-        [[ $(KEY="${yml_key}" yq 'has(strenv(KEY))' <<<"${yml_text}") == 'true' ]]
+        [[ $(KEY="${__hk_key}" yq 'has(strenv(KEY))' <<<"${__hk_text}") == 'true' ]]
 }
 readonly -f yml::has_key
 
@@ -805,20 +805,20 @@ readonly -f yml::has_key
 ##   0
 ##
 yml::get_keys(){
-        local -n yml_keys="$1"
-        local -n yml_text="$2"
-        local -- yml_key="$3"
+        local -n __gk_keys="$1"
+        local -n __gk_text="$2"
+        local -- __gk_key="$3"
 
-        local -- str
-        str="$(yq -N "${yml_key}" <<<"${yml_text}")" || \
-                yml::die_parsing "${yml_text}"
-        if [[ -z "${str}" || "${str}" == 'null' || "${str}" == 'false' ]]; then
-                yml_keys=()
+        local -- __gk_str
+        __gk_str="$(yq -N "${__gk_key}" <<<"${__gk_text}")" || \
+                yml::die_parsing "${__gk_text}"
+        if [[ -z "${__gk_str}" || "${__gk_str}" == 'null' || "${__gk_str}" == 'false' ]]; then
+                __gk_keys=()
                 return 0
         fi
-        str="$(yq -N ".|keys[]" <<<"${str}")" || \
-                yml::die_parsing  "${yml_text}"
-        readarray -t yml_keys <<<"${str}"
+        __gk_str="$(yq -N ".|keys[]" <<<"${__gk_str}")" || \
+                yml::die_parsing  "${__gk_text}"
+        readarray -t __gk_keys <<<"${__gk_str}"
 }
 readonly -f yml::get_keys
 
@@ -831,11 +831,11 @@ readonly -f yml::get_keys
 ##   $3 - [in] key of entry
 ##
 yml::get_type(){
-        local -n yml_type="$1"
-        local -n yml_text="$2"
-        local -- yml_key="$3"
-        yml_type="$(yq -N "${yml_key}|type" <<<"${yml_text}")" || \
-                yml::die_parsing "${yml_text}"
+        local -n __gt_type="$1"
+        local -n __gt_text="$2"
+        local -- __gt_key="$3"
+        __gt_type="$(yq -N "${__gt_key}|type" <<<"${__gt_text}")" || \
+                yml::die_parsing "${__gt_text}"
 }
 readonly -f yml::get_type
 
@@ -947,26 +947,26 @@ readonly -f yml::get_seq_length
 ##   $3 - [in] key of entry
 ##
 yml::get_seq(){
-        local -n yml_val="$1"
-        local -n yml_text="$2"
-        local -- yml_key="$3"
+        local -n __gs_val="$1"
+        local -n __gs_text="$2"
+        local -- __gs_key="$3"
 
         local -- type=''
-        type=$( yq "${yml_key}|type" <<<"${yml_text}")
+        type=$( yq "${__gs_key}|type" <<<"${__gs_text}")
         if [[ "${type}" == '!!null' ]]; then
-                yml_val=''
+                __gs_val=''
                 return 0
         fi
         [[ "${type}" == '!!seq' ]] || \
-                yml::die_type_error "${yml_key}" '!!seq' "${type}"
+                yml::die_type_error "${__gs_key}" '!!seq' "${type}"
         local -i length=0
-        length=$(yq "${yml_key}|length" <<<"${yml_text}")
+        length=$(yq "${__gs_key}|length" <<<"${__gs_text}")
         if (( length == 0 )); then
-                yml_val=''
+                __gs_val=''
                 return 0
         fi
-        yml_val=$( yq "${yml_key}[]" <<<"${yml_text}" ) || \
-                yml::die_parsing "${yml_text}"
+        __gs_val=$( yq "${__gs_key}[]" <<<"${__gs_text}" ) || \
+                yml::die_parsing "${__gs_text}"
 }
 readonly -f yml::get_seq
 
