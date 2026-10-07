@@ -576,7 +576,7 @@ declare -A hierarchical_groups=(
 cfg::err_missing_group_dependencies(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die 2 "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Error: missing group dependency for module in group '${__cfg['group']}' -" \
                  "$2"
@@ -585,7 +585,7 @@ cfg::err_missing_group_dependencies(){
 cfg::err_invalid_group_dependency(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Error: invalid group dependency for module in group '${__cfg['group']}' -" \
                  "$2"
@@ -594,7 +594,7 @@ cfg::err_invalid_group_dependency(){
 cfg::err_invalid_variants_block(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Error: invalid type of variants block: must be '!!seq' but is - '$2'!"
 }
@@ -602,7 +602,7 @@ cfg::err_invalid_variants_block(){
 cfg::err_invalid_value(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Error: invalid value for key '$3' in $2 - '$4'"
 }
@@ -612,7 +612,7 @@ cfg::err_invalid_key(){
         local -r str="$2"
         shift 2
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Error: invalid key(s) in ${str} -" "$@"
 }
@@ -620,7 +620,7 @@ cfg::err_invalid_key(){
 cfg::err_wrong_module_type(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Module type is '$2' but was called as - '$3'!"
 }
@@ -628,7 +628,7 @@ cfg::err_wrong_module_type(){
 cfg::err_invalid_module_type(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Invalid module type - '$2'"
 }
@@ -644,7 +644,7 @@ cfg::err_undef_group(){
 cfg::err_group_not_hierarchical(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
                  "${name}:" \
                  "Error: group dependencies defined for non-hierarchical group '${__cfg['group']}'!"
 }
@@ -652,7 +652,8 @@ cfg::err_group_not_hierarchical(){
 cfg::err_ctrl_char_in_version_key(){
         local -n __cfg="$1"
         local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
+        std::die ${__PB_EC['CONFIG']} "%s " \
+		 "${name}:" \
 		 "Control characters in version keys are forbidden!"
 }
 
@@ -1004,10 +1005,6 @@ cfg::parse_urls(){
         local -- yaml="$2"
         local -n _cfg="$3"
 
-        # this query is used in the for loop below
-        local -r str=$(printf '.%s, ' "${!Yaml_source_keys[@]}")
-        local -r query="[${str%, }] | @tsv"
-
         local -i i=0 len=0 n=0
         yml::get_seq_length len yaml .
         [[ "${mode}" == 'add' ]] && n=${_cfg['num_sources']}
@@ -1222,27 +1219,30 @@ cfg::parse_version() {
 ## Brace expansion has to be performed on each version specification in the list.
 ##
 ## Arguments:
-##   $1 - reference variable to return result
-##   $2 - version key used in YAML configuration file
-##   $3 - regex
+##   $1 - nameref to module configuration
+##   $2 - reference variable to return result
+##   $3 - version key used in YAML configuration file
+##   $4 - regex
 ##
 cfg::expand_version_key(){
-        local -n ev_result="$1"
-        local -- key="$2"
-        local -- version="$3"
+	local -n __evk_cfg="$1"
+        local -n __evk_result="$2"
+        local -- __evk_key="$3"
+        local -- __evk_version="$4"
 
-        ev_result=()
+        __evk_result=()
         # loop over semicolon separated list of keys
-        local -- k
-        for k in ${key//;/ }; do
-		[[ "$k" =~ [[:cntrl:]] ]] && \
-			cfg::err_ctrl_char_in_version_key
-                local -a list=()
-                readarray -t list < <(std::expand_braces "${k}")
-                local -- l
-                for l in "${list[@]}"; do
-                        if [[ $l =~ ^${version}$ ]]; then
-                                ev_result+=("${l}")
+        local -- __evk_k
+        for __evk_k in ${__evk_key//;/ }; do
+		local __evk_tmp
+		__evk_tmp=$(std::expand_braces "${__evk_k}") || \
+			cfg::err_ctrl_char_in_version_key __evk_cfg
+                local -a __evk_list=()
+                readarray -t __evk_list <<<"${__evk_tmp}"
+                local -- __evk_l
+                for __evk_l in "${__evk_list[@]}"; do
+                        if [[ ${__evk_l} =~ ^${__evk_version}$ ]]; then
+                                __evk_result+=("${__evk_l}")
                         fi
                 done
         done
@@ -1255,37 +1255,40 @@ cfg::expand_version_key(){
 ## corresponding '.version' node of the YAML configuration file.
 ##
 ## Arguments:
-##   $1 - [in] YAML text
-##   $2 - [out] list of matching version keys
-##   $3 - [in] regex pattern (not glob!)
+##   $1 - [in] nameref to module configuration
+##   $2 - [in] YAML text
+##   $3 - [out] list of matching version keys
+##   $4 - [in] regex pattern (not glob!)
 ##
 cfg::get_matching_version_keys(){
-        local -n yaml_input="$1"
-        local -n result="$2"
-        local -- version="$3"
+	local -n __gvk_cfg="$1"
+        local -n __gvk_yml="$2"
+        local -n __gvk_result="$3"
+        local -- __gvk_version="$4"
 
-        local -a keys=()
-        yml::get_keys keys yaml_input '.versions'
-        result=()
-        local -- key k
-        for key in "${keys[@]}"; do
+        local -a __gvk_keys=()
+        yml::get_keys __gvk_keys '__gvk_yml' '.versions'
+        __gvk_result=()
+        local -- __gvk_key __gvk_k
+        for __gvk_key in "${__gvk_keys[@]}"; do
                 # loop over semicolon separated list of keys
-                for k in ${key//;/ }; do
-                        local -a list=()
-			[[ "$k" =~ [[:cntrl:]] ]] && \
-				cfg::err_ctrl_char_in_version_key
-                        readarray -t list < <(std::expand_braces "${k}")
-                        local -- l=''
-                        for l in "${list[@]}"; do
-                                if [[ ${l} =~ ^${version}$ ]]; then
-                                        result+=("${key}")
+                for __gvk_k in ${__gvk_key//;/ }; do
+			local __gvk_tmp
+			__gvk_tmp=$(std::expand_braces "${__gvk_k}") || \
+				cfg::err_ctrl_char_in_version_key __gvk_cfg
+                        local -a __gvk_list=()
+                        readarray -t __gvk_list <<<"${__gvk_tmp}"
+                        local -- __gvk_l=''
+                        for __gvk_l in "${__gvk_list[@]}"; do
+                                if [[ ${__gvk_l} =~ ^${__gvk_version}$ ]]; then
+                                        __gvk_result+=("${__gvk_key}")
                                         break
                                 fi
                         done
                 done
         done
-        (( ${#result[@]} == 0 )) && \
-                std::die 3 "%s" "No configuration for version -- ${version}"
+        (( ${#__gvk_result[@]} == 0 )) && \
+                std::die 3 "%s" "No configuration for version -- ${__gvk_version}"
         return 0
 }
 
@@ -1460,9 +1463,6 @@ build::modules_other(){
 build::modules_variant(){
         local -n module_config="$1"
 
-        local -- module_name="${module_config['name']}"
-        local -- module_version="${module_config['version']}"
-
         if [[ -n "${module_config['download_dir']}" ]]; then
                 PMODULES_DISTFILESDIR="${module_config['download_dir']}"
         fi
@@ -1585,6 +1585,7 @@ build::modules_yaml_v1(){
                                 ;;
                         'versions' )
                                 cfg::get_matching_version_keys \
+					mod_config_default \
                                         yaml_module_config \
                                         version_keys \
                                         "${version_pattern}"
@@ -1650,7 +1651,8 @@ build::modules_yaml_v1(){
 		(( num_variants > 0 )) && \
 			std::info "%s" "Number of variants for ${name}/${version_pattern}: ${num_variants}"
                 local -a versions=()
-                cfg::expand_version_key versions "${version_key}" "${version_pattern}"
+                cfg::expand_version_key \
+			'mod_config_version' 'versions' "${version_key}" "${version_pattern}"
                 local -- version=''
                 for version in "${versions[@]}"; do
                         P="${name}"

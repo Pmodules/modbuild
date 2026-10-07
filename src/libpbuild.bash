@@ -49,19 +49,26 @@ pbcore::err_func_not_defined(){
 }
 
 pbcore::err_sub_package_name_missing(){
-        pbcore::err ${__PB_EC['CONFIG']} "Name of sub-package missing in \n===\n$1\n===\n"
+        pbcore::err ${__PB_EC['CONFIG']} "Name of sub-package missing in" \
+		    $'\n'"==="$'\n'"${1}"$'\n'"==="$'\n'
 }
 pbcore::err_sub_package_version_missing(){
-         pbcore::err ${__PB_EC['CONFIG']} "Version of sub-package not specified in \n===\n$1\n===\n"
+        pbcore::err ${__PB_EC['CONFIG']} "Version of sub-package not specified in" \
+		    $'\n'"==="$'\n'"${1}"$'\n'"==="$'\n'
 }
 
 pbcore::err_invalid_value(){
 	pbcore::err ${__PB_EC['CONFIG']} "Invalid value '$1' for '$2'!"
 }
 pbcore::err_group_dependency(){
-	pbcore::err ${__PB_EC['CONFIG']} "Required environemnt variables for '$1' are not set!"
+	pbcore::err ${__PB_EC['CONFIG']} "Issue with group dependencies:" \
+		    "required environemnt variables for '$1' are not set!"
 }
 
+pbcore::err_invalid_group_name(){
+	pbcore::err ${__PB_EC['CONFIG']} "The group name '$1' is not allowed." \
+		    "Note: hierarchical group names are case-sensitive!"
+}
 pbcore::err_file_not_found(){
 	pbcore::err ${__PB_EC['NEXISTS']} "file '${1}' not found!"
 }
@@ -861,7 +868,12 @@ pbcore::set_mod_dir_and_prefix() {
                         prefix+="${COMPILER}/${COMPILER_VERSION}/"
                         ;;
                 * )
-			: # nothing to do for non-hierarchical groups
+			case "${group,,}" in
+				compiler|mpi|hdf5|hdf5_serial )
+					pbcore::err_invalid_group_name "${group}"
+				;;
+			esac
+			# nothing to do for non-hierarchical groups
                         ;;
         esac
         mod_dir+="${mod_name}"
