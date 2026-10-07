@@ -11,16 +11,16 @@ modbuild:
       - url: https://github.com/Pmodules/$P/archive/refs/tags/$P-${V_PKG}.tar.gz
   shasums:
   versions:
-    2.1.4:
+    2.1.4;2.2.0:
       config:
-        overlay: devel
+        #overlay: devel
         relstage: unstable
         docfiles: [LICENSE.txt]
         sub_packages:
           - name: sevenz
             version: !!str 26.01
           - name: yq
-            version: 4.53.2
+            version: 4.54.1
           - name: bash
             version: 5.3.9
           - name: patchelf
@@ -64,12 +64,29 @@ yq:
   type: sub_package
   shasums:
   versions:
+    4.54.1:
+      variants:
+        - target_cpus:
+            - x86_64
+          urls:
+            - url: https://github.com/mikefarah/yq/releases/download/v$V/yq_linux_amd64.tar.gz
+              unpack_dir: ${SRC_DIR}
+        - target_cpus:
+            - aarch64
+          urls:
+            - url: https://github.com/mikefarah/yq/releases/download/v$V/yq_linux_arm64.tar.gz
+              unpack_dir: ${SRC_DIR}
     4.53.2:
       variants:
         - target_cpus:
             - x86_64
           urls:
             - url: https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_amd64.tar.gz
+              unpack_dir: ${SRC_DIR}
+        - target_cpus:
+            - aarch64
+          urls:
+            - url: https://github.com/mikefarah/yq/releases/download/v4.53.2/yq_linux_arm64.tar.gz
               unpack_dir: ${SRC_DIR}
 
 sevenz:
