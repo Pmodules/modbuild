@@ -11,9 +11,22 @@ modbuild:
       - url: https://github.com/Pmodules/$P/archive/refs/tags/$P-${V_PKG}.tar.gz
   shasums:
   versions:
+    2.2.1:
+      config:
+        overlay: devel
+        relstage: unstable
+        docfiles: [LICENSE.txt]
+        sub_packages:
+          - name: sevenz
+            version: !!str 26.01
+          - name: yq
+            version: 4.54.1
+          - name: bash
+            version: 5.3.9
+          - name: patchelf
+            version: 0.14.5
     2.1.4;2.2.0:
       config:
-        #overlay: devel
         relstage: unstable
         docfiles: [LICENSE.txt]
         sub_packages:
