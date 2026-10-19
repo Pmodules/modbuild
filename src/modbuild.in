@@ -248,7 +248,25 @@ declare --      opt_variant=''
 declare --      BUILD_SCRIPT=''
 declare --      module_name=''
 
-parse_args() {
+args::info_version(){
+	std::die 0  "\nmodbuild version ${VERSION}\nCopyright GNU GPL v2\n"
+}
+
+args::err_missing_value(){
+        std::die ${__PB_EC['ARGS']} "Option '%s': missing value" "$1"
+
+}
+args::err_invalid_value(){
+        std::die ${__PB_EC['ARGS']} "Option '%s': invalid value '%s'" "$1" "$2"
+}
+args::err_invalid_option(){
+        std::die ${__PB_EC['ARGS']} "Option '%s': invalid" "$1"
+}
+args::err_buildscript_missing(){
+        std::die ${__PB_EC['ARGS']} "Build script argument missing!"
+}
+
+args::parse() {
         #
         # The first argument ($1) is the build-script, if called in the
         # usual way:
@@ -271,9 +289,9 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${val}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+                                        args::err_missing_value "${option}"
                                 [[ "${val}" =~ ^[0-9]+$ ]] || \
-                                        std::die 1 "Invalid jobs value: ${val}"
+                                        args::err_invalid_value "${option}" "${val}"
                                 BuildOpts['num_jobs']="${val}"
                                 shift
                                 ;;
@@ -292,7 +310,7 @@ parse_args() {
                                 usage
                                 ;;
                         -V | --version )
-                                std::die 0  "\nmodbuild version ${VERSION}\nCopyright GNU GPL v2\n"
+                                args::info_version
                                 ;;
                         --disable-cleanup )
                                 BuildOpts['cleanup_build']='no'
@@ -314,7 +332,7 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${PMODULES_DISTFILESDIR}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 ;;
                         --exit-on-error )
                                 # this is for testing!
@@ -330,7 +348,7 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${PMODULES_TMPDIR}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 ;;
                         --system | --system=* )
                                 option="$1"
@@ -342,7 +360,7 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${opt_system}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 ;;
                         --with | --with=* )
                                 option="$1"
@@ -354,7 +372,7 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${with}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 opt_with_modules+=( "${with}" )
                                 opt_with_dict[${with}]=0
                                 ;;
@@ -387,7 +405,7 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${opt_config_file}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 ;;
                         --variant | --variant=* )
                                 option="$1"
@@ -399,7 +417,7 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${opt_variant}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 ;;
                         --parent-prefix | --parent-prefix=* )
                                 option="$1"
@@ -411,14 +429,14 @@ parse_args() {
                                         shift
                                 fi
                                 [[ -n "${BuildOpts['prefix']}" ]] || \
-                                        std::die 1 "Option '${option}': missing value"
+					args::err_missing_value "${option}"
                                 BuildOpts['is_subpkg']='yes'
                                 ;;
                         -- | '' )
                                 :
                                 ;;
                         -* )
-                                std::die 1 "Invalid option -- '$1'"
+                                args::err_invalid_option "$1"
                                 ;;
                         * )
                                 local -- arg="$1"
@@ -436,9 +454,7 @@ parse_args() {
                 shift
         done
 
-        [[ -z "${BUILD_SCRIPT}" ]] && \
-                std::die 1 "%s " \
-                         "Build script argument missing!"
+        [[ -z "${BUILD_SCRIPT}" ]] && args::err_buildscript_missing
 
         # if no version is specified on the cmd-line, build all versions
         (( ${#versions_to_build[@]} > 0)) || versions_to_build+=( '.*' )
@@ -535,6 +551,7 @@ declare -A Yaml_default_config=(
         ['group_deps:hdf5_serial']=''
         ['group_deps:yaml']=''
         ['num_sources']=0
+	['modulefile_dir']=0
 )
 
 declare -A Yaml_source_keys=(
@@ -1507,7 +1524,9 @@ build::modules(){
         case "${file_fmt}" in
                 1 )
                         yml::has_key config_yml "${name}" || \
-                                std::die 3 "%s " "Configuration for '${name}'" \
+                                std::die ${__PB_EC['CONFIG']} \
+					 "%s " \
+					 "Configuration for '${name}'" \
                                          "is missing in config file" \
                                          "- ${BuildOpts['config_file']}"
                         yml::get_value module_config_yml config_yml ".${name}" '!!map'
@@ -1517,7 +1536,7 @@ build::modules(){
                                 "${version_pattern}"
                         ;;
                 * )
-                        std::die 255 "Oops!" # we should never be here!
+                        std::die ${__PB_EC['INTERNAL']} "Oops!" # we should never be here!
                         ;;
         esac
 }
@@ -1696,7 +1715,7 @@ eval "$( modulecmd bash use deprecated )"
 eval "$( modulecmd bash use Libraries )"
 eval "$( modulecmd bash use System )"
 
-parse_args "$@"
+args::parse "$@"
 
 #
 # :FIXME: add comments on what we are doing and why!

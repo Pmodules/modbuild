@@ -144,17 +144,42 @@ pbcore::err_internal(){
 # build-scripts
 #
 
+##
+## pbuild::{pre,post}_{prep,configure,compile,install} - stubs for pre- and post-steps
+##
+pbuild::pre_prep(){
+        :
+}
+pbuild::post_prep(){
+        :
+}
+pbuild::pre_configure() {
+        :
+}
+pbuild::post_configure() {
+        :
+}
+pbuild::pre_compile() {
+        :
+}
+pbuild::post_compile() {
+        :
+}
+pbuild::pre_install() {
+        :
+}
+pbuild::post_install() {
+        :
+}
+
 #..............................................................................
 #
 # Test whether a module with the given name is available. If yes, return
 # release stage in second argument.
 #
 # Arguments:
-#   $1: module name
+#   $1: module name and version (e.g.: gcc/15.2.0)
 #   $2: optional variable name to return release stage
-#
-# Notes:
-#   The passed module name must be module/version!
 #
 # Exit codes:
 #   0 if module/version is available
@@ -202,19 +227,39 @@ pbuild::module_is_avail() {
 }
 readonly -f pbuild::module_is_avail
 
-#..............................................................................
-#
+##
+## pbuild::use_flag - check whether give use flag is set or not
+##
+## Arguments:
+##   $1 - use flag to test
+##
+## Returns:
+##   0 - if set
+##   1 - otherwise
+##
 pbuild::use_flag() {
         [[ " ${ModuleConfig['use_flags']} " == *" ${1} "* ]]
 }
 readonly -f pbuild::use_flag
 
-##############################################################################
-#
-# functions to prepare the sources
-
-#..............................................................................
-#
+##
+## pbuild::unpack - unpack a given source file
+##
+## For now only the tools 'tar', '7z' and 'none' are supported.
+##
+## Notes:
+##   tar:  tar is the default unpacker. If nothing is specified the
+##         first directory will be stripped.
+##   7z:   7z doesn't support stripping directories. The corresponding
+##         argument will be ignored.
+##   none: none just copyies the source file to the given target directory. 
+##
+## Arguments:
+##   $1 - the source file
+##   $2 - the target directory
+##   $3 - directories to strip (defaults to 1)
+##   $4 - unpacker to use (defaults to tar)
+##
 pbuild::unpack(){
         local -- fname="$1"
         local -- dir="$2"
@@ -255,16 +300,21 @@ pbuild::unpack(){
         esac
 }
 
-#..............................................................................
-#
-# extract sources. For the time being only tar-files are supported.
-#
-pbuild::pre_prep(){
-        :
-}
-pbuild::post_prep(){
-        :
-}
+##
+## pbuild::prep - default function for the prepare step
+##
+## The function performs the following steps
+##  - download the source files if not already available
+##  - check the SHA256 hash-sum
+##  - unpack the source file
+##  - apply given patch files
+##
+## Arguments:
+##   none
+##
+## Global variables used:
+##   ModuleConfig
+##
 pbuild::prep() {
         local -i i=0 num_sources="${ModuleConfig['num_sources']}"
         for ((i=0; i<num_sources; i++)); do
@@ -335,38 +385,58 @@ pbuild::prep() {
         mkdir -p "${BUILD_DIR}"
 }
 
-
+##
+## pbuild::prep_pip3 - create a Python virtual environemnt
+##
+## Create a Python virtual environemnt in the installation directory of
+## the module.
+##
+## Arguments:
+##   none
+##
+## Global variables used:
+##   PREFIX
+##
 pbuild::prep_pip3(){
         python3 -m venv "${PREFIX}"
         source "${PREFIX}/bin/activate"
 
 }
 
-###############################################################################
-#
-# functions to configure the sources
-
-#..............................................................................
-#
+##
+## pbuild::add_configure_args - define additional arguments for CMake/autotools
+##
+## Usually arguments for CMake/autotools should be defined in the YAML
+## configuration file. But in some cases it is easier or even necessary
+## to set them in the build-script.
+##
+## :FIXME: Instead of using a global variable to store the arguments,
+##         they should be added to ModuleConfig['configure_args']
+##
+## Arguments:
+##   $@ - list of arguments which have to be passed to CMake/configure
+##
+## Global variables used:
+##   CONFIGURE_ARGS
+##
 declare -a CONFIGURE_ARGS=()
 pbuild::add_configure_args(){
         CONFIGURE_ARGS+=( "$@" )
 }
 readonly -f pbuild::add_configure_args
 
-#..............................................................................
-#
-# Configure the software to be compiled.
-#
-# Arguments:
-#       none
-#
-pbuild::pre_configure() {
-        :
-}
-pbuild::post_configure() {
-        :
-}
+##
+## pbuild::configure - configure the software
+##
+## Arguments:
+##   none
+##
+## Global variables used:
+##   ModuleConfig
+##   CONFIGURE_ARGS
+##   PREFIX
+##   SRC_DIR
+##
 pbuild::configure() {
         local -r configure_with="${ModuleConfig['configure_with']}"
         case "${configure_with}" in
@@ -411,28 +481,16 @@ pbuild::configure() {
         fi
 }
 
-
-##############################################################################
-#
-# functions to compile the sources
-
-#..............................................................................
-#
-# Default compile function.
-#
-# Note:
-# Makefiles generated by autotools can fail if the environemnt variable
-# V is set.
-#
-# Arguments:
-#       none
-#
-pbuild::pre_compile() {
-        :
-}
-pbuild::post_compile() {
-        :
-}
+##
+## pbuild::compile - default compile function.
+##
+##
+## Arguments:
+##       none
+##
+## Global variables used:
+##   Options
+##
 pbuild::compile() {
         local -- tmp_v="$V"
         local -- restore='no'
@@ -456,23 +514,18 @@ pbuild::compile() {
         fi
 }
 
-##############################################################################
-#
-# functions to install everything
-
-#..............................................................................
-#
-# Default install function.
-#
-# Arguments:
-#       none
-#
-pbuild::pre_install() {
-        :
-}
-pbuild::post_install() {
-        :
-}
+##
+## pbuild::post_install_pip3 - post install for a module build with pip2
+##
+## Note:
+##   This function is still experimental!
+##
+## Arguments:
+##   none
+##
+## Global variables used:
+##   PREFIX
+##
 pbuild::post_install_pip3(){
         mkdir -p "${PREFIX}/.bin"
         mv "${PREFIX}/bin/python3"  "${PREFIX}/.bin"
@@ -495,12 +548,30 @@ pbuild::post_install_pip3(){
         done
 }
 
+##
+## pbuild::install - default install function.
+##
+## Arguments:
+##   none
+##
 pbuild::install() {
         make install || pbcore::err_installation_failed
 }
 
-#..............................................................................
-#
+##
+## pbuild::install_shared_libs - copy needed shared libs to module
+##
+## The function checks which shared libraries are needed and copies the
+## libraries matching the pattern in $3 to the directory $2.
+##
+## Note:
+##   This function is still experimental!
+##
+## Arguments:
+##   $1 - the binary
+##   $2 - the destination directory for the libraries to copy
+##   $3 - pattern the libraries must match
+##
 pbuild::install_shared_libs() {
         local -r binary="$1"
         local -r dstdir="$2"
@@ -748,9 +819,7 @@ pbcore::is_loaded() {
 ##   ModuleConfig
 ##
 pbcore::load_overlays(){
-        local -n config="$1"
-
-        [[ -n ${config['use_overlays']} ]] || return 0
+        [[ -n ${ModuleConfig['use_overlays']} ]] || return 0
 
         local -a use_overlays=()
         readarray -t use_overlays <<< "${config['use_overlays']}"
@@ -763,18 +832,12 @@ pbcore::load_overlays(){
 ## pbcore::load_dependencies - Load dependencies.
 ##
 ## Arguments:
-##   $1 - module name
-##   $2 - module version
-##   $3 - release stage of module
-##   $4... - dependencies
+##   $@ - dependencies
 ##
 pbcore::load_dependencies() {
-        local -n config="$1"
-        shift 1
-
         local -a build_requires=()
-        if [[ -n ${config['build_requires']} ]]; then
-                readarray -t build_requires <<<"${module_config['build_requires']}"
+        if [[ -n ${ModuleConfig['build_requires']} ]]; then
+                readarray -t build_requires <<<"${ModuleConfig['build_requires']}"
         fi
 
         local -ar dependencies=( "$@" "${build_requires[@]}" )
@@ -787,14 +850,14 @@ pbcore::load_dependencies() {
                         pbcore::err_module_nexists "$m"
 
                 # for a stable module all dependencies must be stable
-                if [[ "${config['relstage']}" == 'stable' ]] \
+                if [[ "${ModuleConfig['relstage']}" == 'stable' ]] \
                            && [[ "${relstage_of_dependency}" != 'stable' ]]; then
-			pbcore::err_setting_relstage "${config['relstage']}" "$m" \
+			pbcore::err_setting_relstage "${ModuleConfig['relstage']}" "$m" \
 						     "${relstage_of_dependency}"
                         # for a unstable module no dependency must be deprecated
-                elif [[ "${config['relstage']}" == 'unstable' ]] \
+                elif [[ "${ModuleConfig['relstage']}" == 'unstable' ]] \
                              && [[ "${relstage_of_dependency}" == 'deprecated' ]]; then
-			pbcore::err_setting_relstage "${config['relstage']}" "$m" \
+			pbcore::err_setting_relstage "${ModuleConfig['relstage']}" "$m" \
 						     "${relstage_of_dependency}"
                 fi
 
@@ -806,26 +869,28 @@ pbcore::load_dependencies() {
 }
 
 ##
-## compute full module name and installation prefix
+## pbcore::set_mod_dir_and_prefix - compute modulefile path and PREFIX
+##
+## Sets directory of modulefile in the global nameref ModuleConfig and
+## echo installation prefix to stdout.
 ##
 ## The following variables are expected to be set:
 ##       variables defining the hierarchical environment like
 ##      COMPILER and COMPILER_VERSION
 ##
-##
+## Arguments:
+##   none
+##   
 pbcore::set_mod_dir_and_prefix() {
-        local -n config="$1"
-        local -n prefix="$2"
-
-        local -r mod_name="${config['name']}"
-        local -r mod_version="${config['version']}"
-        local -r group="${config['group']}"
-        local -r ol_name="${config['overlay']}"
+        local -r mod_name="${ModuleConfig['name']}"
+        local -r mod_version="${ModuleConfig['version']}"
+        local -r group="${ModuleConfig['group']}"
+        local -r ol_name="${ModuleConfig['overlay']}"
         local -r ol_install_root="${OverlayInfo[${ol_name}:install_root]}"
         local -r ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
 
         local -- mod_dir="${ol_modulefiles_root}/${group}/${__MODULEFILES_DIR__}/"
-        prefix="${ol_install_root}/${group}/${mod_name}/${mod_version}/"
+        local -- prefix="${ol_install_root}/${group}/${mod_name}/${mod_version}/"
         case "${group}" in
                 Compiler )
                         [[ -v COMPILER && -v COMPILER_VERSION ]] || \
@@ -877,29 +942,26 @@ pbcore::set_mod_dir_and_prefix() {
                         ;;
         esac
         mod_dir+="${mod_name}"
-        config['modulefile_dir']="${mod_dir}"
+        ModuleConfig['modulefile_dir']="${mod_dir}"
+	echo "${prefix}"
 }
 
-#......................................................................
-# post-install.
-#
-# Arguments:
-#       none
+##
+## pbcore::post_install - post installation
+##
+## Install
+## - build-script
+## - list of loaded modules while building
+## - doc-files specified in the build-script
+## - for Linux we need a special post-install to solve the multilib problem
+##   with LIBRARY_PATH on 64-bit systems
+##
+## Arguments:
+##       none
+##
 pbcore::post_install() {
-        local -n config="$1"
+        local -r mod_name="${ModuleConfig['name']}"
 
-        local -r mod_name="${config['name']}"
-        local -r mod_version="${config['version']}"
-
-        #..............................................................
-        # post-install:
-        # - build-script
-        # - list of loaded modules while building
-        # - doc-files specified in the build-script
-        #
-        # Arguments:
-        #     none
-        #
         install_doc() {
                 local -r docdir="${PREFIX}/${_DOCDIR}/${mod_name}"
                 pbcore::info "installing documentation to ${docdir}"
@@ -908,18 +970,15 @@ pbcore::post_install() {
                 modulecmd bash list -t 2>&1 1>/dev/null | \
                         grep -v "Currently Loaded" > \
                              "${docdir}/dependencies" || :
-                [[ -n ${config['docfiles']} ]] || return 0
+                [[ -n ${ModuleConfig['docfiles']} ]] || return 0
                 local -a docfiles=()
-                readarray -t docfiles <<<"${config['docfiles']}"
+                readarray -t docfiles <<<"${ModuleConfig['docfiles']}"
                 install -m0644 \
                         "${docfiles[@]/#/${SRC_DIR}/}" \
                         "${docdir}"
                 return 0
         }
 
-        #..............................................................
-        # post-install: for Linux we need a special post-install to
-        # solve the multilib problem with LIBRARY_PATH on 64-bit systems
         post_install_linux() {
                 pbcore::info "running post-installation for ${KERNEL_NAME} ..."
 		local -r pwd_saved="${PWD}"
@@ -938,43 +997,59 @@ pbcore::post_install() {
         return 0
 }
 
-#......................................................................
-pbcore::install_module_config(){
-        local -n config="$1"
-
+##
+## pbcore::install_modulefile - install the modulefile
+##
+## Arguments:
+##   none
+##
+pbcore::install_modulefile(){
         [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
 
+	local -r modulefile="${ModuleConfig['modulefile']}"
+	local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
+	local -r mod_version="${ModuleConfig['version']}"
+	local -r mod_overlay="${ModuleConfig['overlay']}"
         local -- src=''
-        if [[ -n "${config['modulefile']}" ]]; then
-                [[ -e "${config['modulefile']}" ]] || \
-			pbcore::err_modulefile_nexists "${config['modulefile']}"
-                src="${config['modulefile']}"
+        if [[ -n "${modulefile}" ]]; then
+                [[ -e "${modulefile}" ]] || \
+			pbcore::err_modulefile_nexists "${modulefile}"
+                src="${modulefile}"
         elif [[ -e "${BUILDBLOCK_DIR}/modulefile" ]]; then
                 src="${BUILDBLOCK_DIR}/modulefile"
         else
                 pbcore::info "skipping modulefile installation ..."
                 return
         fi
-        pbcore::info "adding modulefile to overlay '${config[overlay]}' ..."
-        mkdir -p "${config['modulefile_dir']}"
-        install -m 0644 "${src}" "${config['modulefile_dir']}/${config['version']}"
+        pbcore::info "adding modulefile to overlay '${mod_overlay}' ..."
+        mkdir -p "${modulefile_dir}"
+        install -m 0644 "${src}" "${modulefile_dir}/${mod_version}"
 }
 
-#..............................................................
-pbcore::install_runtime_dependencies() {
-        local -n config="$1"
-        shift
-
+##
+## pbcore::install_runtime_deps_file - install .deps-N file
+##
+## Install the .deps-N file for the module in the same directory as
+## the modulefile. An existing file will be removed
+##
+## Note: In the future this should be added to the modulefile itself!
+##
+## Arguments:
+##   none
+##
+pbcore::install_runtime_deps_file() {
         local -a runtime_deps=()
-        if [[ -n ${module_config['runtime_deps']} ]]; then
-                readarray -t runtime_deps <<<"${config['runtime_deps']}"
+        if [[ -n ${ModuleConfig['runtime_deps']} ]]; then
+                readarray -t runtime_deps <<<"${ModuleConfig['runtime_deps']}"
         fi
         local -a dependencies=( "$@" "${runtime_deps[@]}" )
 
+	local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
+	local -r mod_version="${ModuleConfig['version']}"
 
         # We remove the file even if the module has no dependencies - just in
         # case an older version had dependencies.
-        local -r fname="${config['modulefile_dir']}/.deps-${config['version']}"
+        local -r fname="${modulefile_dir}/.deps-${mod_version}"
         rm -f "${fname}"
         (( ${#dependencies[@]} == 0 )) && return
 
@@ -1000,45 +1075,46 @@ pbcore::install_runtime_dependencies() {
 ## Tcl Environment Modules!
 ##
 ## Arguments:
-##   $1 - reference to module configuration
+##   none
 ##
 pbcore::set_relstages() {
-        local -n config="$1"
-
         [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
 
         #
         # update .config-${module_version}
         #
-        local -r yaml_config_file="${config['modulefile_dir']}/.config-${config['version']}"
+	local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
+	local -r mod_version="${ModuleConfig['version']}"
+	local -r mod_relstage="${ModuleConfig['relstage']}"
+        local -r cfg_file="${modulefile_dir}/.config-${mod_version}"
         local -- relstage='new'
-        if [[ -r "${yaml_config_file}" ]]; then
-                relstage="$(awk '/relstage:/ {print $2}' "${yaml_config_file}")"
+        if [[ -r "${cfg_file}" ]]; then
+                relstage="$(awk '/relstage:/ {print $2}' "${cfg_file}")"
         fi
-        if [[ "${relstage}" != "${config['relstage']}" ]]; then
+        if [[ "${relstage}" != "${mod_relstage}" ]]; then
                 pbcore::info "changing release stage from" \
-                             "'${relstage}' to '${config['relstage']}' ..."
+                             "'${relstage}' to '${mod_relstage}' ..."
         else
-                pbcore::info "setting release stage to '${config['relstage']}' ..."
+                pbcore::info "setting release stage to '${mod_relstage}' ..."
         fi
 
-        echo "relstage: ${config['relstage']}" > "${yaml_config_file}"
+        echo "relstage: ${mod_relstage}" > "${cfg_file}"
 
-        if [[ -n "${config['systems']}" ]]; then
+        if [[ -n "${ModuleConfig['systems']}" ]]; then
                 local -a systems=()
-                readarray -t systems <<< "${config['systems']}"
-                echo -n "systems: [${systems[0]}" >> "${yaml_config_file}"
+                readarray -t systems <<< "${ModuleConfig['systems']}"
+                echo -n "systems: [${systems[0]}" >> "${cfg_file}"
                 local -- system=''
                 for system in "${systems[@]:1}"; do
-                        echo -n ", ${system}" >> "${yaml_config_file}"
+                        echo -n ", ${system}" >> "${cfg_file}"
                 done
-                echo "]" >> "${yaml_config_file}"
+                echo "]" >> "${cfg_file}"
         fi
 
         #
         # Update .modulerc
         #
-        local -r modulerc_file="${config['modulefile_dir']}/.modulerc"
+        local -r modulerc_file="${modulefile_dir}/.modulerc"
         echo '#%Module' > "${modulerc_file}"
         echo 'if {[info exists ModuleTool] && $ModuleTool == {Modules}} {' \
              >> "${modulerc_file}"
@@ -1047,7 +1123,7 @@ pbcore::set_relstages() {
         while read -r config_file; do
                 local version="${config_file##*/}"
                 version="${version/.config-}"
-                local name="${config['name']}/${version}"
+                local name="${ModuleConfig['name']}/${version}"
                 local relstage=$(awk '/relstage:/ {print $2}' "${config_file}")
                 case ${relstage} in
                         unstable )
@@ -1059,26 +1135,32 @@ pbcore::set_relstages() {
                                      >> "${modulerc_file}"
                                 ;;
                 esac
-        done < <(find "${config['modulefile_dir']}"  -type f -name '.config-*')
+        done < <(find "${ModuleConfig['modulefile_dir']}"  -type f -name '.config-*')
         echo '}' >> "${modulerc_file}"
 }
 
-#..............................................................
+##
+## pbcore::cleanup_modulefiles - remove modulefiles in other overlays
+##
+## In case the overlay of the module changed, we have to remove the
+## modulefile etc. from the other overlay.
+##
+## FIXME: Can it happen, that we remove module-/config-files which
+##        we shouldn't remove?
+##        For now we exclude removing from the overlay 'base' only
+##        This function is only called if the option '--cleanup-modulefiles'
+##        was specified.
+##
+## Arguments:
+##   noone
+##
 pbcore::cleanup_modulefiles(){
-        local -n config="$1"
-
-        #
-        # FIXME: Can it happen, that we remove module-/config-files which
-        #        we shouldn't remove?
-        #        For now we exclude removing from the overlay 'base' only
-        #        This function is only called if the option '--cleanup-modulefiles'
-        #        was specified.
-        #
         [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
 
-        local -r ol_name="${config['overlay']}"
+        local -r ol_name="${ModuleConfig['overlay']}"
         local -r ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
-        local -r modulefile_dir="${config['modulefile_dir']}"
+        local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
+	local -r mod_version="${ModuleConfig['mod_version']}"
 
         local -- ol=''
         for ol in "${Overlays[@]}"; do
@@ -1087,17 +1169,20 @@ pbcore::cleanup_modulefiles(){
                 local -- modulefiles_root="${OverlayInfo[${ol}:modulefiles_root]}"
                 local -- dir="${modulefile_dir/#"${ol_modulefiles_root}"/${modulefiles_root}}"
 
-                pbcore::remove_file "${dir}/${config['version']}"
-                pbcore::remove_file "${dir}/.release-${config['version']}"
-                pbcore::remove_file "${dir}/.config-${config['version']}"
-                pbcore::remove_file "${dir}/.deps-${config['version']}"
+                pbcore::remove_file "${dir}/${mod_version}"
+                pbcore::remove_file "${dir}/.release-${mod_version}"
+                pbcore::remove_file "${dir}/.config-${mod_version}"
+                pbcore::remove_file "${dir}/.deps-${mod_version}"
         done
 }
 
-#..............................................................
+##
+## pbcore::cleanup_build - cleanup build directory
+##
+## Arguments:
+##   none
+##
 pbcore::cleanup_build() {
-        local -n config="$1"
-
         [[ ${Options['cleanup_build']} != 'yes' ]] && return 0
         [[ "${BUILD_DIR}" == "${SRC_DIR}" ]] && return 0
         [[ -d "${BUILD_DIR}/../.." ]] || return 0
@@ -1110,10 +1195,13 @@ pbcore::cleanup_build() {
         return 0
 }
 
-#..............................................................
+##
+## pbcore::cleanup_src - cleanup source directory
+##
+## Arguments:
+##   none
+##
 pbcore::cleanup_src() {
-        local -n config="$1"
-
         [[ ${Options['cleanup_src']} != 'yes' ]] && return 0
         [[ -d "/${SRC_DIR}/.." ]] || return 0
         cd "${SRC_DIR}/.." || pbcore::err_chdir "${SRC_DIR}/.."
@@ -1124,21 +1212,24 @@ pbcore::cleanup_src() {
         return 0
 }
 
-#......................................................................
-# build module ${module_name}/${module_version}
+##
+## pbcore::compile_and_install - compile and install the package
+##
+## Arguments:
+##   $1 - source or build directory, depends on target
+##   $2 - target, either prep, configure, compile or install
+##
 pbcore::compile_and_install() {
-        local -n config="$1"
-
         build_target() {
-                local -- dir="$1"       # src or build directory, depends on target
-                local -- target="$2"    # prep, configure, compile or install
+                local -- dir="$1"
+                local -- target="$2"
 
                 if [[ -e "${BUILD_DIR}/.${target}" ]] && \
                            [[ ${Options['force_rebuild']} == 'no' ]]; then
                         return 0
                 fi
                 local -- t=''
-                if (( ${#config[target_funcs:${target}]} == 0 )); then
+                if (( ${#ModuleConfig[target_funcs:${target}]} == 0 )); then
                         touch "${BUILD_DIR}/.${target}"
                         return 0
                 fi
@@ -1150,7 +1241,7 @@ pbcore::compile_and_install() {
                 )
                 pbcore::info "${target_info[${target}]} ..."
                 local -- t=''
-                for t in ${config[target_funcs:${target}]}; do
+                for t in ${ModuleConfig[target_funcs:${target}]}; do
                         # We cd into the dir before calling the function -
                         # just to be sure we are in the right directory.
                         #
@@ -1185,6 +1276,12 @@ pbcore::compile_and_install() {
         build_target "${BUILD_DIR}" install
 }
 
+##
+## pbcore::remove_file - remove file if exists
+##
+## Arguments:
+##   $1 - name of file to remove
+##
 pbcore::remove_file() {
         local -r fname="$1"
         if [[ -e "${fname}" ]]; then
@@ -1193,27 +1290,38 @@ pbcore::remove_file() {
         fi
 }
 
-#......................................................................
+##
+## pbcore::remove_module - remove a module
+##
+## Remove module which is installed under ${PREFIX}.
+##
+## Arguments:
+##   none
+##
 pbcore::remove_module() {
-        local -n rm_cfg="$1"
+        local -e modulefile_dir="${ModuleConfig['modulefile_dir']}"
 
         if [[ -n "${PREFIX}" && -d "${PREFIX}" && "${PREFIX}" != '/' ]]; then
                 pbcore::info "removing all files in '${PREFIX}' ..."
                 rm -rf "${PREFIX}"
         fi
-        pbcore::remove_file "${rm_cfg['modulefile_dir']}/${rm_cfg['version']}"
-        pbcore::remove_file "${rm_cfg['modulefile_dir']}/.release-${rm_cfg['version']}"
-        pbcore::remove_file "${rm_cfg['modulefile_dir']}/.config-${rm_cfg['version']}"
-        pbcore::remove_file "${rm_cfg['modulefile_dir']}/.deps-${rm_cfg['version']}"
-        rmdir -p "${rm_cfg['modulefile_dir']}" 2>/dev/null || :
+        pbcore::remove_file "${modulefile_dir}/${rm_cfg['version']}"
+        pbcore::remove_file "${modulefile_dir}/.release-${rm_cfg['version']}"
+        pbcore::remove_file "${modulefile_dir}/.config-${rm_cfg['version']}"
+        pbcore::remove_file "${modulefile_dir}/.deps-${rm_cfg['version']}"
+        rmdir -p "${modulefile_dir}" 2>/dev/null || :
 }
 
-#......................................................................
+##
+## pbcore::build_sub_packages - build sub-packages
+##
+## Arguments:
+##   none
+##
 pbcore::build_sub_packages(){
         [[ "${Options['skip_subpkgs']}" == 'yes' ]] && return 0
 
-        local -n __bsp_cfg="$1"
-        local -- sub_packages_yml="${__bsp_cfg['sub_packages']}"
+        local -- sub_packages_yml="${ModuleConfig['sub_packages']}"
 
         [[ -n "${sub_packages_yml}" ]] || return 0
 
@@ -1260,7 +1368,7 @@ pbcore::build_sub_packages(){
                                         ;;
                                 * )
                                         cfg::err_invalid_key \
-                                                 '__bsp_cfg' \
+                                                 'ModuleConfig' \
                                                  "in requested sub-package '${i}" \
                                                  "${key}"
                                         ;;
@@ -1285,12 +1393,13 @@ pbcore::build_sub_packages(){
         done
 }
 
-#..............................................................................
-#
-# The real worker function.
-#
+##
+## pbcore::build - the real worker function.
+##
+## Arguments:
+##   TBW
+##
 pbcore::build(){
-        local -n mod_config="$1"
         declare -ng ModuleConfig="$1"
         declare -ng Options="$2"
         shift 2
@@ -1316,11 +1425,11 @@ pbcore::build(){
 	(( ${#with_modules[@]} > 0 )) && \
 		pbcore::info "with" "${with_modules[@]}"
 
-        pbcore::load_overlays 'mod_config'
-        pbcore::load_dependencies 'mod_config' "${with_modules[@]}"
-        BUILD_ROOT="${PMODULES_TMPDIR}/${mod_config['name']}-${mod_config['version']}"
+        pbcore::load_overlays
+        pbcore::load_dependencies "${with_modules[@]}"
+        BUILD_ROOT="${PMODULES_TMPDIR}/${ModuleConfig['name']}-${ModuleConfig['version']}"
         SRC_DIR="${BUILD_ROOT}/src"
-        if [[ "${mod_config['compile_in_sourcetree']}" == 'yes' ]]; then
+        if [[ "${ModuleConfig['compile_in_sourcetree']}" == 'yes' ]]; then
                 BUILD_DIR="${SRC_DIR}"
         else
                 BUILD_DIR="${BUILD_ROOT}/build"
@@ -1329,49 +1438,50 @@ pbcore::build(){
         source "${BUILD_SCRIPT}"
 
         if [[ "${Options['is_subpkg']}" != 'yes' ]]; then
-                pbcore::set_mod_dir_and_prefix mod_config 'PREFIX'
+                PREFIX=$(pbcore::set_mod_dir_and_prefix)
         else
                 PREFIX="${Options['prefix']}"
-                mod_config['modulefile_dir']="${PREFIX}"
+		# sub-packages don't have a modulefile!
+                ModuleConfig['modulefile_dir']=''
         fi
         # ok, finally we can start ...
-        if [[ "${mod_config['relstage']}" == 'remove' ]]; then
-                pbcore::remove_module 'mod_config'
-        elif [[ "${mod_config['relstage']}" == 'deprecated' ]]; then
-                pbcore::set_relstages mod_config
+        if [[ "${ModuleConfig['relstage']}" == 'remove' ]]; then
+                pbcore::remove_module
+        elif [[ "${ModuleConfig['relstage']}" == 'deprecated' ]]; then
+                pbcore::set_relstages
         elif [[ -d "${PREFIX}" && \
                         "${Options['is_subpkg']}" != 'yes' && \
                         "${Options['force_rebuild']}" == 'no' ]]; then
                 pbcore::info "already exists, not rebuilding ..."
                 if [[ "${Options['update_modulefiles']}" == 'yes' ]]; then
-                        pbcore::install_module_config mod_config
-                        pbcore::install_runtime_dependencies 'mod_config' "${with_modules[@]}"
-                        pbcore::set_relstages mod_config
+                        pbcore::install_modulefile
+                        pbcore::install_runtime_deps_file "${with_modules[@]}"
+                        pbcore::set_relstages
                 elif [[ "${Options['update_relstage']}" == 'yes' ]]; then
-                        pbcore::set_relstages mod_config
+                        pbcore::set_relstages
                 else
                         pbcore::info "modulefile and configuration are not updated."
                 fi
         else
                 if [[ "${Options['clean_install']}" == 'yes' ]]; then
                         pbcore::info "remove module, if already exists ..."
-                        pbcore::remove_module 'mod_config'
+                        pbcore::remove_module
                 fi
                 pbcore::info "start building ..."
-                pbcore::cleanup_build 'mod_config'
-                pbcore::cleanup_src 'mod_config'
-                pbcore::compile_and_install  'mod_config'
-                pbcore::post_install  'mod_config'
-                pbcore::install_module_config  'mod_config'
-                pbcore::install_runtime_dependencies 'mod_config' "${with_modules[@]}"
-                pbcore::set_relstages mod_config
-                pbcore::cleanup_build  'mod_config'
-                pbcore::cleanup_src  'mod_config'
-                pbcore::build_sub_packages 'mod_config'
+                pbcore::cleanup_build
+                pbcore::cleanup_src
+                pbcore::compile_and_install
+                pbcore::post_install
+                pbcore::install_modulefile
+                pbcore::install_runtime_deps_file "${with_modules[@]}"
+                pbcore::set_relstages
+                pbcore::cleanup_build
+                pbcore::cleanup_src
+                pbcore::build_sub_packages
 
         fi
         if [[ "${Options['cleanup_modulefiles']}" == 'yes' ]]; then
-                pbcore::cleanup_modulefiles  'mod_config'
+                pbcore::cleanup_modulefiles
         fi
         pbcore::info "done"
 	pbcore::info "* * * * *"
