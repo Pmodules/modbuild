@@ -14,6 +14,8 @@ declare -r  _DOCDIR='share/doc'
 # default value for patch -pN
 declare -r PATCH_STRIP_DEFAULT='1'
 
+declare -r __MODULEFILES_DIR__='modulefiles'
+
 #******************************************************************************
 # info & error messages
 #
@@ -476,13 +478,13 @@ pbuild::configure() {
 ##       none
 ##
 ## Global variables used:
-##   Options
+##   BuildOpts
 ##
 pbuild::compile() {
         local -- tmp_v="$V"
         local -- restore='no'
         local -- tmp_verbose=''
-        if (( Options['verbose'] > 0 )); then
+        if (( BuildOpts['verbose'] > 0 )); then
 		if [[ -v VERBOSE ]]; then
 			tmp_verbose="${VERBOSE}"
 			restore='yes'
@@ -493,10 +495,10 @@ pbuild::compile() {
                 unset V
         fi
         # number of parallel make jobs
-        local -i num_jobs="${Options['num_jobs']}"
+        local -i num_jobs="${BuildOpts['num_jobs']}"
         make -j${num_jobs} -e || pbcore::err_compilation_failed
         declare -gx V="${tmp_v}"
-	if (( Options['verbose'] > 0 )); then
+	if (( BuildOpts['verbose'] > 0 )); then
 		if [[ "${restore}" == 'yes' ]]; then
 			VERBOSE="${tmp_verbose}"
 		else
@@ -998,7 +1000,7 @@ pbcore::post_install() {
 ##   none
 ##
 pbcore::install_modulefile(){
-        [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
+        [[ "${BuildOpts['is_subpkg']}" == 'yes' ]] && return 0
 
 	local -r modulefile="${ModuleConfig['modulefile']}"
 	local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
@@ -1072,7 +1074,7 @@ pbcore::install_runtime_deps_file() {
 ##   none
 ##
 pbcore::set_relstages() {
-        [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
+        [[ "${BuildOpts['is_subpkg']}" == 'yes' ]] && return 0
 
         #
         # update .config-${module_version}
@@ -1150,7 +1152,7 @@ pbcore::set_relstages() {
 ##   none
 ##
 pbcore::cleanup_modulefiles(){
-        [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
+        [[ "${BuildOpts['is_subpkg']}" == 'yes' ]] && return 0
 
         local -r ol_name="${ModuleConfig['overlay']}"
         local -r ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
@@ -1178,7 +1180,7 @@ pbcore::cleanup_modulefiles(){
 ##   none
 ##
 pbcore::cleanup_build() {
-        [[ ${Options['cleanup_build']} != 'yes' ]] && return 0
+        [[ ${BuildOpts['cleanup_build']} != 'yes' ]] && return 0
         [[ "${BUILD_DIR}" == "${SRC_DIR}" ]] && return 0
         [[ -d "${BUILD_DIR}/../.." ]] || return 0
         cd "${BUILD_DIR}/.." || pbcore::err_chdir "${BUILD_DIR}/.."
@@ -1197,7 +1199,7 @@ pbcore::cleanup_build() {
 ##   none
 ##
 pbcore::cleanup_src() {
-        [[ ${Options['cleanup_src']} != 'yes' ]] && return 0
+        [[ ${BuildOpts['cleanup_src']} != 'yes' ]] && return 0
         [[ -d "/${SRC_DIR}/.." ]] || return 0
         cd "${SRC_DIR}/.." || pbcore::err_chdir "${SRC_DIR}/.."
         [[ "${PWD}" == '/' ]] && pbcore::err_internal
@@ -1220,7 +1222,7 @@ pbcore::compile_and_install() {
                 local -- target="$2"
 
                 if [[ -e "${BUILD_DIR}/.${target}" ]] && \
-                           [[ ${Options['force_rebuild']} == 'no' ]]; then
+                           [[ ${BuildOpts['force_rebuild']} == 'no' ]]; then
                         return 0
                 fi
                 local -- t=''
@@ -1259,13 +1261,13 @@ pbcore::compile_and_install() {
         mkdir -p "${BUILD_DIR}"
 
         build_target "${SRC_DIR}" prep
-        [[ "${Options['build_target']}" == "prep" ]] && return 0
+        [[ "${BuildOpts['build_target']}" == "prep" ]] && return 0
 
         build_target "${BUILD_DIR}" configure
-        [[ "${Options['build_target']}" == "configure" ]] && return 0
+        [[ "${BuildOpts['build_target']}" == "configure" ]] && return 0
 
         build_target "${BUILD_DIR}" compile
-        [[ "${Options['build_target']}" == "compile" ]] && return 0
+        [[ "${BuildOpts['build_target']}" == "compile" ]] && return 0
 
         mkdir -p "${PREFIX}"
         build_target "${BUILD_DIR}" install
@@ -1314,7 +1316,7 @@ pbcore::remove_module() {
 ##   none
 ##
 pbcore::build_sub_packages(){
-        [[ "${Options['skip_subpkgs']}" == 'yes' ]] && return 0
+        [[ "${BuildOpts['skip_subpkgs']}" == 'yes' ]] && return 0
 
         local -- sub_packages_yml="${ModuleConfig['sub_packages']}"
 
@@ -1374,11 +1376,11 @@ pbcore::build_sub_packages(){
                 [[ -n "${pkg_version}" ]] || \
                         pbcore::err_sub_package_version_missing "${sub_packages_yml}"
 
-                (( Options['verbose'] > 0 )) && \
+                (( BuildOpts['verbose'] > 0 )) && \
                         pkg_build_args+=( '--verbose' )
-                [[ "${Options['debug']}" == 'yes' ]] && \
+                [[ "${BuildOpts['debug']}" == 'yes' ]] && \
                         pkg_build_args+=( '--debug' )
-                [[ "${Options['force_rebuild']}" == 'yes' ]] && \
+                [[ "${BuildOpts['force_rebuild']}" == 'yes' ]] && \
                         pkg_build_args+=( '-f' )
                 pkg_build_args+=( "--parent-prefix=${PREFIX}" )
                 PATH="${save_PATH}" "$BUILDBLOCK_DIR/build-${pkg_name}" \
@@ -1395,8 +1397,6 @@ pbcore::build_sub_packages(){
 ##   TBW
 ##
 pbcore::build(){
-        declare -ng Options="$1"
-        shift 1
         local -a with_modules=( "$@" )
 
 	ModuleConfig['namevers']="${ModuleConfig['name']}/${ModuleConfig['version']}"
@@ -1431,10 +1431,10 @@ pbcore::build(){
 
         source "${BUILD_SCRIPT}"
 
-        if [[ "${Options['is_subpkg']}" != 'yes' ]]; then
+        if [[ "${BuildOpts['is_subpkg']}" != 'yes' ]]; then
                 pbcore::set_mod_dir_and_prefix
         else
-                PREFIX="${Options['prefix']}"
+                PREFIX="${BuildOpts['prefix']}"
 		# sub-packages don't have a modulefile!
                 ModuleConfig['modulefile_dir']=''
         fi
@@ -1444,20 +1444,20 @@ pbcore::build(){
         elif [[ "${ModuleConfig['relstage']}" == 'deprecated' ]]; then
                 pbcore::set_relstages
         elif [[ -d "${PREFIX}" && \
-                        "${Options['is_subpkg']}" != 'yes' && \
-                        "${Options['force_rebuild']}" == 'no' ]]; then
+                        "${BuildOpts['is_subpkg']}" != 'yes' && \
+                        "${BuildOpts['force_rebuild']}" == 'no' ]]; then
                 pbcore::info "already exists, not rebuilding ..."
-                if [[ "${Options['update_modulefiles']}" == 'yes' ]]; then
+                if [[ "${BuildOpts['update_modulefiles']}" == 'yes' ]]; then
                         pbcore::install_modulefile
                         pbcore::install_runtime_deps_file "${with_modules[@]}"
                         pbcore::set_relstages
-                elif [[ "${Options['update_relstage']}" == 'yes' ]]; then
+                elif [[ "${BuildOpts['update_relstage']}" == 'yes' ]]; then
                         pbcore::set_relstages
                 else
                         pbcore::info "modulefile and configuration are not updated."
                 fi
         else
-                if [[ "${Options['clean_install']}" == 'yes' ]]; then
+                if [[ "${BuildOpts['clean_install']}" == 'yes' ]]; then
                         pbcore::info "remove module, if already exists ..."
                         pbcore::remove_module
                 fi
@@ -1474,7 +1474,7 @@ pbcore::build(){
                 pbcore::build_sub_packages
 
         fi
-        if [[ "${Options['cleanup_modulefiles']}" == 'yes' ]]; then
+        if [[ "${BuildOpts['cleanup_modulefiles']}" == 'yes' ]]; then
                 pbcore::cleanup_modulefiles
         fi
         pbcore::info "done"
