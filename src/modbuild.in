@@ -1397,7 +1397,7 @@ build::modules_hdf5(){
 }
 
 build::modules_other(){
-        pbcore::build 'BuildOpts'
+        pbcore::build
 }
 
 ##
@@ -1421,7 +1421,7 @@ build::modules_variant(){
         if [[ -v build_functions[${ModuleConfig['group']}] ]]; then
                 func=${build_functions[${ModuleConfig['group']}]}
         fi
-        ${func} 'BuildOpts'
+        ${func}
 }
 
 ##
