@@ -813,7 +813,12 @@ yml::get_keys(){
         local -- __gk_str
         __gk_str="$(yq -N "${__gk_key}" <<<"${__gk_text}")" || \
                 yml::die_parsing "${__gk_text}"
-        if [[ -z "${__gk_str}" || "${__gk_str}" == 'null' || "${__gk_str}" == 'false' ]]; then
+        if [[ -z "${__gk_str}" \
+		      || "${__gk_str}" == 'null' \
+		      || "${__gk_str}" == 'false' \
+		      || "${__gk_str}" == '{}' \
+		      || "${__gk_str}" == '[]' \
+	    ]]; then
                 __gk_keys=()
                 return 0
         fi

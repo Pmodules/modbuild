@@ -27,115 +27,116 @@ pbcore::err(){
 }
 
 pbcore::err_invalid_unpacker(){
-	pbcore::err ${__PB_EC['CONFIG']} "Unsupported tool for unpacking -- '$1'"
+	pbcore::err "${__PB_EC['CONFIG']}" "Unsupported tool for unpacking -- '$1'"
 }
 
 pbcore::err_autotools_config_nexists(){
-	pbcore::err ${__PB_EC['CONFIG']} "autotools configuration not available, aborting..."
+	pbcore::err "${__PB_EC['CONFIG']}" "autotools configuration not available, aborting..."
 }
 
 pbcore::err_cmake_config_nexists(){
-	pbcore::err ${__PB_EC['CONFIG']} "CMake configuration not available, aborting..."
+	pbcore::err "${__PB_EC['CONFIG']}" "CMake configuration not available, aborting..."
 }
 
 pbcore::err_setting_relstage(){
-	pbcore::err ${__PB_EC['CONFIG']} \
+	pbcore::err "${__PB_EC['CONFIG']}" \
                     "release cannot be set to '${1}'" \
-                    "since the dependency '${2}' is '${3}!"
+                    "since the dependency '${2}' is '${3}'!"
 }
 
 pbcore::err_func_not_defined(){
-	pbcore::err ${__PB_EC['CONFIG']} "function '${1}' is not defined!"
+	pbcore::err "${__PB_EC['CONFIG']}" "function '${1}' is not defined!"
 }
 
 pbcore::err_sub_package_name_missing(){
-        pbcore::err ${__PB_EC['CONFIG']} "Name of sub-package missing in" \
+        pbcore::err "${__PB_EC['CONFIG']}" "Name of sub-package missing in" \
 		    $'\n'"==="$'\n'"${1}"$'\n'"==="$'\n'
 }
+
 pbcore::err_sub_package_version_missing(){
-        pbcore::err ${__PB_EC['CONFIG']} "Version of sub-package not specified in" \
+        pbcore::err "${__PB_EC['CONFIG']}" "Version of sub-package not specified in" \
 		    $'\n'"==="$'\n'"${1}"$'\n'"==="$'\n'
 }
 
 pbcore::err_invalid_value(){
-	pbcore::err ${__PB_EC['CONFIG']} "Invalid value '$1' for '$2'!"
+	pbcore::err "${__PB_EC['CONFIG']}" "Invalid value '$1' for '$2'!"
 }
 pbcore::err_group_dependency(){
-	pbcore::err ${__PB_EC['CONFIG']} "Issue with group dependencies:" \
-		    "required environemnt variables for '$1' are not set!"
+	pbcore::err "${__PB_EC['CONFIG']}" "Issue with group dependencies:" \
+		    "required environment variables for '$1' are not set!"
 }
 
 pbcore::err_invalid_group_name(){
-	pbcore::err ${__PB_EC['CONFIG']} "The group name '$1' is not allowed." \
+	pbcore::err "${__PB_EC['CONFIG']}" "The group name '$1' is not allowed." \
 		    "Note: hierarchical group names are case-sensitive!"
 }
 pbcore::err_file_not_found(){
-	pbcore::err ${__PB_EC['NEXISTS']} "file '${1}' not found!"
+	pbcore::err "${__PB_EC['NEXISTS']}" "file '${1}' not found!"
 }
 
 pbcore::err_binary_nexists(){
-	pbcore::err ${__PB_EC['NEXISTS']} "binary '${1}' does not exist or is not executable!"
+	pbcore::err "${__PB_EC['NEXISTS']}" "binary '${1}' does not exist or is not executable!"
 }
 
 pbcore::err_modulefile_nexists(){
-	pbcore::err ${__PB_EC['NEXISTS']} "modulefile '${1}' does not exist!"
+	pbcore::err "${__PB_EC['NEXISTS']}" "modulefile '${1}' does not exist!"
 }
 
 pbcore::err_module_nexists(){
-	pbcore::err ${__PB_EC['NEXISTS']} "module '${1}' does not exist!"
+	pbcore::err "${__PB_EC['NEXISTS']}" "module '${1}' does not exist!"
 }
 
 pbcore::err_configure_failed(){
-	pbcore::err ${__PB_EC['CMD']} "configure failed"
+	pbcore::err "${__PB_EC['CMD']}" "configure failed"
 }
 
 pbcore::err_cmake_failed(){
-	pbcore::err ${__PB_EC['CMD']} "CMake failed"
+	pbcore::err "${__PB_EC['CMD']}" "CMake failed"
 }
 
 pbcore::err_compilation_failed(){
-	pbcore::err ${__PB_EC['CMD']} "compilation failed"
+	pbcore::err "${__PB_EC['CMD']}" "compilation failed"
 }
 
 pbcore::err_installation_failed(){
-	pbcore::err ${__PB_EC['CMD']} "installation failed"
+	pbcore::err "${__PB_EC['CMD']}" "installation failed"
 }
 
 pbcore::err_download(){
-	pbcore::err ${__PB_EC['CMD']} "downloading source file '${1}' failed!"
+	pbcore::err "${__PB_EC['CMD']}" "downloading source file '${1}' failed!"
 }
 
 pbcore::err_unpack(){
-	pbcore::err ${__PB_EC['CMD']} "unpacking file '${1}' failed!"
+	pbcore::err "${__PB_EC['CMD']}" "unpacking file '${1}' failed!"
 }
 
 pbcore::err_hashsum(){
-	pbcore::err ${__PB_EC['CMD']} "SHA256 hash mismatch for file '${1}'!"
+	pbcore::err "${__PB_EC['CMD']}" "SHA256 hash mismatch for file '${1}'!"
 }
 
 pbcore::err_patching(){
-	pbcore::err ${__PB_EC['CMD']} "applying patch '${1}' failed!"
+	pbcore::err "${__PB_EC['CMD']}" "applying patch '${1}' failed!"
 }
 
 pbcore::err_loading_module(){
-	pbcore::err ${__PB_EC['CMD']} "loading module '${1}' failed!"
+	pbcore::err "${__PB_EC['CMD']}" "loading module '${1}' failed!"
 }
 
 pbcore::err_chdir(){
-	pbcore::err ${__PB_EC['CMD']} "Changing to directory '${1}' failed!"
+	pbcore::err "${__PB_EC['CMD']}" "Changing to directory '${1}' failed!"
 }
 
 pbcore::err_aborting(){
-	pbcore::err ${__PB_EC['CMD']} "function '${1}' return with error. Aborting!"
+	pbcore::err "${__PB_EC['CMD']}" "function '${1}' return with error. Aborting!"
 }
 
 pbcore::err_building_subpkg(){
-	pbcore::err ${__PB_EC['CMD']} "Building sub-package '${1}' failed!"
+	pbcore::err "${__PB_EC['CMD']}" "Building sub-package '${1}' failed!"
 }
 
 # :FIXME: maybe we should output file name, function name and line number
 pbcore::err_internal(){
-	pbcore::err ${__PB_EC['INTERNAL']} "oops: internal error!"
+	pbcore::err "${__PB_EC['INTERNAL']}" "oops: internal error!"
 }
 
 #******************************************************************************
@@ -252,7 +253,7 @@ readonly -f pbuild::use_flag
 ##         first directory will be stripped.
 ##   7z:   7z doesn't support stripping directories. The corresponding
 ##         argument will be ignored.
-##   none: none just copyies the source file to the given target directory. 
+##   none: none just copies the source file to the given target directory. 
 ##
 ## Arguments:
 ##   $1 - the source file
@@ -360,7 +361,8 @@ pbuild::prep() {
 
                 fi
                 if [[ -n "${ModuleConfig[patch_file:$i]}" ]]; then
-                        local -- patch_file=$(envsubst <<<"${ModuleConfig[patch_file:$i]}")
+                        local -- patch_file=''
+			patch_file=$(envsubst <<<"${ModuleConfig[patch_file:$i]}")
                         local -- patch_strip="${ModuleConfig[patch_strip:$i]:-${PATCH_STRIP_DEFAULT}}"
 			[[ "${patch_strip}" =~ ^[0-9]+$ ]] || \
 				pbcore::err_invalid_value "${patch_strip}" 'patch_strip'
@@ -386,9 +388,9 @@ pbuild::prep() {
 }
 
 ##
-## pbuild::prep_pip3 - create a Python virtual environemnt
+## pbuild::prep_pip3 - create a Python virtual environment
 ##
-## Create a Python virtual environemnt in the installation directory of
+## Create a Python virtual environment in the installation directory of
 ## the module.
 ##
 ## Arguments:
@@ -450,7 +452,6 @@ pbuild::configure() {
                         ;;
         esac
         local -a config_args=()
-        local -a config_args=()
         if [[ -n "${ModuleConfig['configure_args']}" ]]; then
                 readarray -t config_args <<< "${ModuleConfig['configure_args']}"
         fi
@@ -495,13 +496,13 @@ pbuild::compile() {
         local -- tmp_v="$V"
         local -- restore='no'
         local -- tmp_verbose=''
-        if [[ -v VERBOSE ]]; then
-                tmp_verbose="${VERBOSE}"
-                restore='yes'
-        fi
         if (( Options['verbose'] > 0 )); then
-                declare -g V=1
-                declare -g VERBOSE=1
+		if [[ -v VERBOSE ]]; then
+			tmp_verbose="${VERBOSE}"
+			restore='yes'
+		fi
+                declare -gx V=1
+                declare -gx VERBOSE=1
         else
                 unset V
         fi
@@ -509,9 +510,13 @@ pbuild::compile() {
         local -i num_jobs="${Options['num_jobs']}"
         make -j${num_jobs} -e || pbcore::err_compilation_failed
         declare -gx V="${tmp_v}"
-        if [[ "${restore}" == 'yes' ]]; then
-                VERBOSE="${tmp_verbose}"
-        fi
+	if (( Options['verbose'] > 0 )); then
+		if [[ "${restore}" == 'yes' ]]; then
+			VERBOSE="${tmp_verbose}"
+		else
+			unset VERBOSE
+		fi
+	fi
 }
 
 ##
@@ -699,7 +704,9 @@ pbcore::unpack() {
         local -r unpacker="$5"
 
         if ! pbuild::unpack "${fname}" "${target_dir}" "${strip}" "${unpacker}"; then
-                if [[ -n "${src_dir}" && "${src_dir}" != "${BUILDBLOCK_DIR}" ]]; then
+                if [[ -n "${src_dir}" \
+			      && "${src_dir}" != "${BUILDBLOCK_DIR}" \
+			      && "${src_dir}" != "${BUILDBLOCK_DIR}/files" ]]; then
                         rm -f "${fname}"
                 fi
 		pbcore::err_unpack "${fname}"
@@ -822,7 +829,7 @@ pbcore::load_overlays(){
         [[ -n ${ModuleConfig['use_overlays']} ]] || return 0
 
         local -a use_overlays=()
-        readarray -t use_overlays <<< "${config['use_overlays']}"
+        readarray -t use_overlays <<< "${ModuleConfig['use_overlays']}"
 
         pbcore::info "using overlays ${use_overlays[*]}"
         eval "$( modulecmd bash use "${use_overlays[@]}" )"
@@ -862,7 +869,8 @@ pbcore::load_dependencies() {
                 fi
 
                 pbcore::info "Loading module: ${m}"
-                local output="$(modulecmd bash load "${m}")";
+                local output=''
+		output="$(modulecmd bash load "${m}")";
                 eval "${output}"
                 pbcore::is_loaded "$m" || pbcore::err_loading_module "${m}"
         done
@@ -943,7 +951,7 @@ pbcore::set_mod_dir_and_prefix() {
         esac
         mod_dir+="${mod_name}"
         ModuleConfig['modulefile_dir']="${mod_dir}"
-	echo "${prefix}"
+	PREFIX="${prefix}"
 }
 
 ##
@@ -1124,7 +1132,8 @@ pbcore::set_relstages() {
                 local version="${config_file##*/}"
                 version="${version/.config-}"
                 local name="${ModuleConfig['name']}/${version}"
-                local relstage=$(awk '/relstage:/ {print $2}' "${config_file}")
+                local relstage=''
+		relstage=$(awk '/relstage:/ {print $2}' "${config_file}")
                 case ${relstage} in
                         unstable )
                                 echo "   module-tag u ${name}" \
@@ -1152,7 +1161,7 @@ pbcore::set_relstages() {
 ##        was specified.
 ##
 ## Arguments:
-##   noone
+##   none
 ##
 pbcore::cleanup_modulefiles(){
         [[ "${Options['is_subpkg']}" == 'yes' ]] && return 0
@@ -1160,7 +1169,7 @@ pbcore::cleanup_modulefiles(){
         local -r ol_name="${ModuleConfig['overlay']}"
         local -r ol_modulefiles_root="${OverlayInfo[${ol_name}:modulefiles_root]}"
         local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
-	local -r mod_version="${ModuleConfig['mod_version']}"
+	local -r mod_version="${ModuleConfig['version']}"
 
         local -- ol=''
         for ol in "${Overlays[@]}"; do
@@ -1299,16 +1308,16 @@ pbcore::remove_file() {
 ##   none
 ##
 pbcore::remove_module() {
-        local -e modulefile_dir="${ModuleConfig['modulefile_dir']}"
+        local -r modulefile_dir="${ModuleConfig['modulefile_dir']}"
 
         if [[ -n "${PREFIX}" && -d "${PREFIX}" && "${PREFIX}" != '/' ]]; then
                 pbcore::info "removing all files in '${PREFIX}' ..."
                 rm -rf "${PREFIX}"
         fi
-        pbcore::remove_file "${modulefile_dir}/${rm_cfg['version']}"
-        pbcore::remove_file "${modulefile_dir}/.release-${rm_cfg['version']}"
-        pbcore::remove_file "${modulefile_dir}/.config-${rm_cfg['version']}"
-        pbcore::remove_file "${modulefile_dir}/.deps-${rm_cfg['version']}"
+        pbcore::remove_file "${modulefile_dir}/${ModuleConfig['version']}"
+        pbcore::remove_file "${modulefile_dir}/.release-${ModuleConfig['version']}"
+        pbcore::remove_file "${modulefile_dir}/.config-${ModuleConfig['version']}"
+        pbcore::remove_file "${modulefile_dir}/.deps-${ModuleConfig['version']}"
         rmdir -p "${modulefile_dir}" 2>/dev/null || :
 }
 
@@ -1369,7 +1378,7 @@ pbcore::build_sub_packages(){
                                 * )
                                         cfg::err_invalid_key \
                                                  'ModuleConfig' \
-                                                 "in requested sub-package '${i}" \
+                                                 "in requested sub-package '${i}'" \
                                                  "${key}"
                                         ;;
                         esac
@@ -1400,9 +1409,8 @@ pbcore::build_sub_packages(){
 ##   TBW
 ##
 pbcore::build(){
-        declare -ng ModuleConfig="$1"
-        declare -ng Options="$2"
-        shift 2
+        declare -ng Options="$1"
+        shift 1
         local -a with_modules=( "$@" )
 
 	ModuleConfig['namevers']="${ModuleConfig['name']}/${ModuleConfig['version']}"
@@ -1438,7 +1446,7 @@ pbcore::build(){
         source "${BUILD_SCRIPT}"
 
         if [[ "${Options['is_subpkg']}" != 'yes' ]]; then
-                PREFIX=$(pbcore::set_mod_dir_and_prefix)
+                pbcore::set_mod_dir_and_prefix
         else
                 PREFIX="${Options['prefix']}"
 		# sub-packages don't have a modulefile!

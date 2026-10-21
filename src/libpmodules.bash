@@ -7,12 +7,10 @@ set   -o nounset
 shopt -s extglob
 shopt -s nullglob
 
-(( BASH_VERSINFO[0] >= 5 && BASH_VERSINFO[1] >= 3 )) || \
-        {
-                printf "%s\n" "Bash 5.3+ required" 1>&2
-                exit 255
-        }
-
+if (( BASH_VERSINFO[0] < 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] < 3) )); then
+        echo "Bash 5.3+ is required." 1>&2
+        exit 255
+fi
 
 declare -r __MODULEFILES_DIR__='modulefiles'
 declare -g PMODULES_DISTFILESDIR PMODULES_TMPDIR

@@ -55,7 +55,7 @@ source "${prefix}/lib/libstd.bash" || {
 unset mydir
 
 ##
-## Exit script on errror.
+## Exit script on error.
 ##
 ## Arguments:
 ##   $1 -  exit code
@@ -79,14 +79,14 @@ __PB_EC['CMD']=4
 __PB_EC['INTERNAL']=255
 
 [[ -v PMODULES_HOME ]] && \
-	std::die ${__PB_EC['CMD']} \
+	std::die "${__PB_EC['CMD']}" \
 		 "%s " \
 		 "This version of modbuild cannot be used with the modulecmd from Pmodules!"
 
 source "${prefix}/lib/libpmodules.bash"  || \
-        std::die ${__PB_EC['INTERNAL']} "Oops: cannot source library -- '$_'"
+        std::die "${__PB_EC['INTERNAL']}" "Oops: cannot source library -- '$_'"
 source "${prefix}/lib/libpbuild.bash"    || \
-        std::die ${__PB_EC['INTERNAL']} "Oops: cannot source library -- '$_'"
+        std::die "${__PB_EC['INTERNAL']}" "Oops: cannot source library -- '$_'"
 unset prefix
 
 # these variables must be exported for envsubst(1)
@@ -253,17 +253,17 @@ args::info_version(){
 }
 
 args::err_missing_value(){
-        std::die ${__PB_EC['ARGS']} "Option '%s': missing value" "$1"
+        std::die "${__PB_EC['ARGS']}" "Option '%s': missing value" "$1"
 
 }
 args::err_invalid_value(){
-        std::die ${__PB_EC['ARGS']} "Option '%s': invalid value '%s'" "$1" "$2"
+        std::die "${__PB_EC['ARGS']}" "Option '%s': invalid value '%s'" "$1" "$2"
 }
 args::err_invalid_option(){
-        std::die ${__PB_EC['ARGS']} "Option '%s': invalid" "$1"
+        std::die "${__PB_EC['ARGS']}" "Option '%s': invalid" "$1"
 }
 args::err_buildscript_missing(){
-        std::die ${__PB_EC['ARGS']} "Build script argument missing!"
+        std::die "${__PB_EC['ARGS']}" "Build script argument missing!"
 }
 
 args::parse() {
@@ -462,7 +462,7 @@ args::parse() {
         # set system if not set on the cmd-line
         opt_system="${opt_system:-$(std::get_os_release)}"
 
-        if (( ${BuildOpts['num_jobs']} == 0 )); then
+        if (( BuildOpts['num_jobs'] == 0 )); then
                 BuildOpts['num_jobs']=$(std::get_num_cores)
                 (( BuildOpts['num_jobs'] > 10 )) && BuildOpts['num_jobs']=10 || :
         fi
@@ -590,87 +590,62 @@ declare -A hierarchical_groups=(
         ['hdf5_serial']='compiler hdf5_serial'
 )
 
+cfg::err(){
+        local -- name="${ModuleConfig['name']}/"
+	name+="${ModuleConfig['version']:-${ModuleConfig['version_pattern']}}"
+        std::die "$1" "%s " "${name}:" "${@:2}"
+}
+
 cfg::err_missing_group_dependencies(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Error: missing group dependency for module in group '${__cfg['group']}' -" \
-                 "$2"
+	cfg::err "${__PB_EC['CONFIG']}" \
+                 "Error: missing group dependency for module in group '${ModuleConfig['group']}' -" \
+                 "$1"
 }
 
 cfg::err_invalid_group_dependency(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Error: invalid group dependency for module in group '${__cfg['group']}' -" \
-                 "$2"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Error: invalid group dependency for module in group '${ModuleConfig['group']}' -" \
+                 "$1"
 }
 
 cfg::err_invalid_variants_block(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Error: invalid type of variants block: must be '!!seq' but is - '$2'!"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Error: invalid type of variants block: must be '!!seq' but is - " \
+		 "$1"
 }
 
 cfg::err_invalid_value(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Error: invalid value for key '$3' in $2 - '$4'"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Error: invalid value for key '$2' in $1 - $3"
 }
 
 cfg::err_invalid_key(){
-        local -n __cfg="$1"
-        local -r str="$2"
-        shift 2
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Error: invalid key(s) in ${str} -" "$@"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Error: invalid key(s) in ${1} -" "${@:2}"
 }
 
 cfg::err_wrong_module_type(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Module type is '$2' but was called as - '$3'!"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Module type is '$1' but was called as - $2!"
 }
 
 cfg::err_invalid_module_type(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Invalid module type - '$2'"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Invalid module type - $1"
 }
 
 cfg::err_undef_group(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CMD']} "%s " \
-                 "${name}:" \
+        cfg::err "${__PB_EC['CONFIG']}" \
                  "Error: group must be defined before group dependencies!"
 }
 
 cfg::err_group_not_hierarchical(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-                 "${name}:" \
-                 "Error: group dependencies defined for non-hierarchical group '${__cfg['group']}'!"
+        cfg::err "${__PB_EC['CONFIG']}" \
+                 "Error: group dependencies defined for non-hierarchical group '${ModuleConfig['group']}'!"
 }
 
 cfg::err_ctrl_char_in_version_key(){
-        local -n __cfg="$1"
-        local -r name="${__cfg['name']}/${__cfg['version']:-${__cfg['version_pattern']}}"
-        std::die ${__PB_EC['CONFIG']} "%s " \
-		 "${name}:" \
+        cfg::err "${__PB_EC['CONFIG']}" \
 		 "Control characters in version keys are forbidden!"
 }
 
@@ -681,21 +656,19 @@ cfg::err_ctrl_char_in_version_key(){
 ## module configuration structure.
 ##
 ## Arguments:
-##   $1 - reference to dictionary with module configuration
+##   none
 ##
 ## Used global variables:
 ##   opt_with_dict
 ##
 cfg::parse_group_deps(){
-        local -n _cfg="$1"
-        local -r _input_yml="${_cfg['group_deps:yaml']}"
+        local -r _input_yml="${ModuleConfig['group_deps:yaml']}"
 
-        local -- mod_group="${_cfg['group']}"
+        local -- mod_group="${ModuleConfig['group']}"
 
-        [[ -n "${mod_group}" ]] || \
-                cfg::err_undef_group '_cfg'
+        [[ -n "${mod_group}" ]] || cfg::err_undef_group
         [[ -v hierarchical_groups[${mod_group,,}] ]] || \
-                cfg::err_group_not_hierarchical '_cfg'
+                cfg::err_group_not_hierarchical
         # get specified group dependencies
         local -- group=''
         local -a groups=()
@@ -703,12 +676,12 @@ cfg::parse_group_deps(){
         for group in "${groups[@]}"; do
                 # is ${group} a hierarchical group name?
                 [[ -v hierarchical_groups[${group,,}] ]] || \
-                        cfg::err_invalid_group_dependency '_cfg' "${group}"
+                        cfg::err_invalid_group_dependency "${group}"
 
                 # is this in the list of required group dependencies?
                 std::array::contains "${group,,}" \
                                      ${hierarchical_groups[${mod_group,,}]} || \
-                        cfg::err_invalid_group_dependency '_cfg' "${group}"
+                        cfg::err_invalid_group_dependency "${group}"
                 local -- key
                 local -a keys=()
                 local -a with_modules=()
@@ -737,12 +710,12 @@ cfg::parse_group_deps(){
                 fi
                 local -- str
                 printf -v  str "%s\n" "${with_modules[@]}"
-                _cfg[group_deps:${group,,}]="${str:0:-1}"
+                ModuleConfig[group_deps:${group,,}]="${str:0:-1}"
         done
         # are all required hierarchical  dependencies defined?
         for group in ${hierarchical_groups[${mod_group,,}]}; do
-                [[ -n "${_cfg[group_deps:${group,,}]}" ]] || \
-                        cfg::err_missing_group_dependencies '_cfg' "${group}"
+                [[ -n "${ModuleConfig[group_deps:${group,,}]}" ]] || \
+                        cfg::err_missing_group_dependencies "${group}"
         done
 
 }
@@ -753,12 +726,10 @@ cfg::parse_group_deps(){
 ## Arguments:
 ##   $1 - [in] reference to YAML formatted string
 ##   $2 - [in] key of variant configuration
-##   $3 - [out] reference to Bash dictionary
 ##
 cfg::get_config(){
         local -n yml_input="$1"
         local -- cfg_key="$2"
-        local -n cfg="$3"
 
         local -- key=''
         local -- value=''
@@ -780,10 +751,10 @@ cfg::get_config(){
                                                 yml_input \
                                                 "${cfg_key}.build_functions.${key}" || \
                                                 yml::die_parsing "${yml_input}"
-                                        cfg[target_funcs:${key}]="${value}"
+                                        ModuleConfig[target_funcs:${key}]="${value}"
                                         ;;
                                 * )
-                                        cfg::err_invalid_key 'cfg' 'build_functions' "${key}"
+                                        cfg::err_invalid_key 'build_functions' "${key}"
                                         ;;
                         esac
                 done
@@ -810,13 +781,12 @@ cfg::get_config(){
                                         first_match ) : ;;
                                         * )
                                                 cfg::err_invalid_value \
-                                                        'cfg' \
                                                         'config section' \
                                                         "${key}" \
                                                         "${value}"
                                                 ;;
                                 esac
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         compile_in_sourcetree )
                                 yml::get_value \
@@ -825,14 +795,13 @@ cfg::get_config(){
                                         "${cfg_key}.${key}" '!!bool'
                                 case ${value,,} in
                                         true )
-                                                cfg[${key,,}]='yes'
+                                                ModuleConfig[${key,,}]='yes'
                                                 ;;
                                         false )
-                                                cfg[${key,,}]='no'
+                                                ModuleConfig[${key,,}]='no'
                                                 ;;
                                         * )
                                                 cfg::err_invalid_value \
-                                                        'cfg' \
                                                         'config section' \
                                                         "${key}" \
                                                         "${value}"
@@ -846,11 +815,10 @@ cfg::get_config(){
                                         "${cfg_key}.${key}" '!!str'
                                 case ${value,,} in
                                         auto | cmake | autotools )
-                                                cfg[${key,,}]="${value,,}"
+                                                ModuleConfig[${key,,}]="${value,,}"
                                                 ;;
                                         * )
                                                 cfg::err_invalid_value \
-                                                        'cfg' \
                                                         'config section' \
                                                         "${key}" \
                                                         "${value}"
@@ -863,21 +831,21 @@ cfg::get_config(){
                                         value \
                                         yml_input \
                                         "${cfg_key}.${key}" '!!str'
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         overlay )
                                 yml::get_value \
                                         value \
                                         yml_input \
                                         "${cfg_key}.${key}" '!!str'
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         group_deps )
                                 yml::get_value \
                                         value \
                                         yml_input \
                                         "${cfg_key}.${key}" '!!map'
-                                cfg['group_deps:yaml']="${value}"
+                                ModuleConfig['group_deps:yaml']="${value}"
                                 ;;
                         use_flags )
                                 yml::get_seq \
@@ -887,7 +855,7 @@ cfg::get_config(){
                                         yml::die_parsing "${yml_input}"
                                 local -a tmp=()
                                 readarray -t tmp <<<"${value}"
-                                cfg[${key,,}]=" ${tmp[*]} "
+                                ModuleConfig[${key,,}]=" ${tmp[*]} "
                                 ;;
                         relstage )
                                 yml::get_value \
@@ -896,14 +864,13 @@ cfg::get_config(){
                                         "${cfg_key}.${key}" '!!str'
                                 case ${value,,} in
                                         unstable | stable | deprecated )
-                                                cfg[${key,,}]="${value,,}"
+                                                ModuleConfig[${key,,}]="${value,,}"
                                                 ;;
                                         remove | removed )
-                                                cfg[${key,,}]='remove'
+                                                ModuleConfig[${key,,}]='remove'
                                                 ;;
                                         * )
                                                 cfg::err_invalid_value \
-                                                        'cfg' \
                                                         'config section' \
                                                         "${key}" \
                                                         "${value}"
@@ -915,21 +882,21 @@ cfg::get_config(){
                                         value \
                                         yml_input \
                                         "${cfg_key}.${key}" '!!seq'
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         urls | sources )
                                 yml::get_value \
                                         value \
                                         yml_input \
                                         "${cfg_key}.${key}" '!!seq'
-                                cfg::parse_urls 'set' "${value}" cfg
+                                cfg::parse_urls 'set' "${value}"
                                 ;;
                         urls+ | sources+ )
                                 yml::get_value \
                                         value \
                                         yml_input \
                                         "${cfg_key}.${key}" '!!seq'
-                                cfg::parse_urls 'add' "${value}" cfg
+                                cfg::parse_urls 'add' "${value}"
                                 ;;
                         build_requires | configure_args | docfiles | patch_files \
                                 | runtime_deps | systems | use_overlays | variant )
@@ -938,7 +905,7 @@ cfg::get_config(){
                                         yml_input \
                                         "${cfg_key}.${key}" || \
                                         yml::die_parsing "${yml_input}"
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         kernels )
                                 yml::get_seq \
@@ -952,12 +919,11 @@ cfg::get_config(){
                                 for item in "${items[@]}"; do
                                         [[ -v KernelNames[${item}] ]] || \
                                                 cfg::err_invalid_value \
-                                                        'cfg' \
                                                         'config section' \
                                                         'kernel' \
                                                         "${item}"
                                 done
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         target_cpus )
                                 yml::get_seq \
@@ -971,12 +937,11 @@ cfg::get_config(){
                                 for item in "${items[@]}"; do
                                         [[ -v TargetCPUs[${item}] ]] || \
                                                 cfg::err_invalid_value \
-                                                        'cfg' \
                                                         'config section' \
                                                         'CPU' \
                                                         "${item}"
                                 done
-                                cfg[${key,,}]="${value}"
+                                ModuleConfig[${key,,}]="${value}"
                                 ;;
                         'configure_args+' | 'docfiles+' | 'patch_files+' )
                                 yml::get_seq \
@@ -985,28 +950,27 @@ cfg::get_config(){
                                         "${cfg_key}.${key}" || \
                                         yml::die_parsing "${yml_input}"
                                 key="${key:0:-1}"
-                                if [[ -z "${cfg[${key,,}]}" ]]; then
-                                        cfg[${key,,}]="${value}"
+                                if [[ -z "${ModuleConfig[${key,,}]}" ]]; then
+                                        ModuleConfig[${key,,}]="${value}"
                                 else
-                                        cfg[${key,,}]+=$'\n'"${value}"
+                                        ModuleConfig[${key,,}]+=$'\n'"${value}"
                                 fi
                                 ;;
 
                         * )
-                                cfg::err_invalid_key 'cfg' 'config section' "${key}"
+                                cfg::err_invalid_key 'config section' "${key}"
                                 ;;
                 esac
         done
 }
 
 cfg::check_config(){
-	local -n __cc_cfg="$1"
-	local -- __cc_ol="${__cc_cfg['overlay']}"
-        [[ -v OverlayInfo[${__cc_ol}:install_root] ]] || \
+	local -- ol_name="${ModuleConfig['overlay']}"
+        [[ -v OverlayInfo[${ol_name}:install_root] ]] || \
                 std::die 2 "%s" \
-                         "Overlay doesn't exist - ${__cc_ol}"
+                         "Overlay doesn't exist - ${ol_name}"
 
-	[[ -n "${__cc_cfg['group_deps:yaml']}" ]] && cfg::parse_group_deps __cc_cfg
+	[[ -n "${ModuleConfig['group_deps:yaml']}" ]] && cfg::parse_group_deps
 }
 
 ##
@@ -1015,16 +979,14 @@ cfg::check_config(){
 ## Arguments:
 ##   $1 - mode: set or add
 ##   $2 - sources/urls in YAML format
-##   $3 - reference to a dictionary holding the configuration
 ##
 cfg::parse_urls(){
         local -r mode="$1"
         local -- yaml="$2"
-        local -n _cfg="$3"
 
         local -i i=0 len=0 n=0
         yml::get_seq_length len yaml .
-        [[ "${mode}" == 'add' ]] && n=${_cfg['num_sources']}
+        [[ "${mode}" == 'add' ]] && n=${ModuleConfig['num_sources']}
         for ((i=0; i<len; i++, n++)); do
                 local -- url_yaml=''
                 url_yaml=$(yq -Ne ".[$i]" <<<"${yaml}")
@@ -1038,13 +1000,12 @@ cfg::parse_urls(){
                 std::array::difference diff keys valid_keys
                 (( ${#diff[@]} == 0 )) || \
                         cfg::err_invalid_key \
-                                '_cfg' \
                                 'list of sources/URLs' \
                                 "${diff[@]}"
 
                 # initialize n-th source in module config
                 # and loop over all key
-                std::dict::merge _cfg Yaml_source_keys ":$n"
+                std::dict::merge ModuleConfig Yaml_source_keys ":$n"
                 local key='' value=''
                 for key in "${keys[@]}"; do
                         local -- __pu_type='!!str'
@@ -1059,33 +1020,31 @@ cfg::parse_urls(){
                                 patch_strip | strip_dirs)
                                         [[ ${value} =~ ^[0-9]+$ ]] || \
                                                 cfg::err_invalid_value \
-                                                        '_cfg' \
                                                         'list of URLs/sources' \
                                                         "${key}" "${value}"
-                                        _cfg[${key}:$n]="${value}"
+                                        ModuleConfig[${key}:$n]="${value}"
                                         ;;
                                 unpacker)
                                         [[ -v Unpackers[${value,,}] ]] || \
                                                 cfg::err_invalid_value \
-                                                        '_cfg' \
                                                         'list of URLs/sources' \
                                                         "${key}" "${value}"
-                                        _cfg[${key}:$n]=${value,,}
+                                        ModuleConfig[${key}:$n]=${value,,}
                                         ;;
                                 *)
-                                        _cfg[${key}:$n]="${value}"
+                                        ModuleConfig[${key}:$n]="${value}"
                                         ;;
                         esac
                 done
         done
-        _cfg['num_sources']="${n}"
+        ModuleConfig['num_sources']="${n}"
 }
 
 ##
 ## cfg::is_variant_to_build - do we have to build this variant?
 ##
 ## Arguments:
-##   $1 - reference to configuration
+##   none
 ##
 ## Returns:
 ##   0 - yes, we have to build this variant
@@ -1095,14 +1054,13 @@ cfg::parse_urls(){
 ##   opt_system
 ##
 cfg::is_variant_to_build(){
-        local -n config="$1"
-        local -- name="${config['name']}"
-        local -- version="${config['version']}"
+        local -- name="${ModuleConfig['name']}"
+        local -- version="${ModuleConfig['version']}"
 
         check_system(){
-                [[ -z ${config['systems']} ]] && return 0
+                [[ -z ${ModuleConfig['systems']} ]] && return 0
                 local -a systems=()
-                readarray -t systems <<< "${config['systems'],,}"
+                readarray -t systems <<< "${ModuleConfig['systems'],,}"
                 local -- hostname
                 hostname=$(hostname -f)
                 local -- system
@@ -1116,9 +1074,9 @@ cfg::is_variant_to_build(){
         }
 
         check_kernel(){
-                [[ -z ${config['kernels']} ]] && return 0
+                [[ -z ${ModuleConfig['kernels']} ]] && return 0
                 local -a kernels=()
-                readarray -t kernels <<< "${config['kernels'],,}"
+                readarray -t kernels <<< "${ModuleConfig['kernels'],,}"
                 local -- kernel=''
                 local -- kernel_name
                 kernel_name=$(std::get_kernel_name)
@@ -1127,14 +1085,14 @@ cfg::is_variant_to_build(){
                         [[ ${kernel_name,,} =~ ${kernel,,} ]] && return 0
                 done
                 std::info "%s " "Skipping variant '${version}'" \
-                          "for the kernel(s): ${config['kernels']}"
+                          "for the kernel(s): ${ModuleConfig['kernels']}"
                 return 1
         }
 
         check_target_cpu(){
-                [[ -z ${config['target_cpus']} ]] && return 0
+                [[ -z ${ModuleConfig['target_cpus']} ]] && return 0
                 local -a target_cpus=()
-                readarray -t target_cpus <<< "${config['target_cpus'],,}"
+                readarray -t target_cpus <<< "${ModuleConfig['target_cpus'],,}"
                 local -- system_cpu
                 system_cpu=$(std::get_system_cpu)
                 local -- cpu=''
@@ -1143,7 +1101,7 @@ cfg::is_variant_to_build(){
                         [[ "${system_cpu,,}" == "${cpu,,}" ]] && return 0
                 done
                 std::info "%s " "Skipping variant '${version}'" \
-                          "for the CPU(s) ${config['target_cpus']}"
+                          "for the CPU(s) ${ModuleConfig['target_cpus']}"
                 return 1
 
         }
@@ -1151,7 +1109,7 @@ cfg::is_variant_to_build(){
         check_variant(){
                 # If no variant is passed as an argument and no default
                 # is defined, build this variant.
-                local -- build_variant="${opt_variant:-${config['default_variant']}}"
+                local -- build_variant="${opt_variant:-${ModuleConfig['default_variant']}}"
                 [[ -z "${build_variant}" ]] && return 0
 
                 # Don't build if a variant has been specified on the
@@ -1159,10 +1117,10 @@ cfg::is_variant_to_build(){
                 # config) but no variant name is defined in the
                 # configuration of this variant.
                 # Note: ${build_variant} != ''!
-                [[ -z ${config['variant']} ]] && return 1
+                [[ -z ${ModuleConfig['variant']} ]] && return 1
 
                 local -a items=()
-                readarray -t items <<< "${config['variant'],,}"
+                readarray -t items <<< "${ModuleConfig['variant'],,}"
                 local item=''
                 for item in "${items[@]}"; do
                         [[ "${build_variant}" == "${item}" ]] && return 0
@@ -1236,16 +1194,14 @@ cfg::parse_version() {
 ## Brace expansion has to be performed on each version specification in the list.
 ##
 ## Arguments:
-##   $1 - nameref to module configuration
-##   $2 - reference variable to return result
-##   $3 - version key used in YAML configuration file
-##   $4 - regex
+##   $1 - reference variable to return result
+##   $2 - version key used in YAML configuration file
+##   $3 - regex
 ##
 cfg::expand_version_key(){
-	local -n __evk_cfg="$1"
-        local -n __evk_result="$2"
-        local -- __evk_key="$3"
-        local -- __evk_version="$4"
+        local -n __evk_result="$1"
+        local -- __evk_key="$2"
+        local -- __evk_version="$3"
 
         __evk_result=()
         # loop over semicolon separated list of keys
@@ -1253,7 +1209,7 @@ cfg::expand_version_key(){
         for __evk_k in ${__evk_key//;/ }; do
 		local __evk_tmp
 		__evk_tmp=$(std::expand_braces "${__evk_k}") || \
-			cfg::err_ctrl_char_in_version_key __evk_cfg
+			cfg::err_ctrl_char_in_version_key
                 local -a __evk_list=()
                 readarray -t __evk_list <<<"${__evk_tmp}"
                 local -- __evk_l
@@ -1272,16 +1228,14 @@ cfg::expand_version_key(){
 ## corresponding '.version' node of the YAML configuration file.
 ##
 ## Arguments:
-##   $1 - [in] nameref to module configuration
-##   $2 - [in] YAML text
-##   $3 - [out] list of matching version keys
-##   $4 - [in] regex pattern (not glob!)
+##   $1 - [in] YAML text
+##   $2 - [out] list of matching version keys
+##   $3 - [in] regex pattern (not glob!)
 ##
 cfg::get_matching_version_keys(){
-	local -n __gvk_cfg="$1"
-        local -n __gvk_yml="$2"
-        local -n __gvk_result="$3"
-        local -- __gvk_version="$4"
+        local -n __gvk_yml="$1"
+        local -n __gvk_result="$2"
+        local -- __gvk_version="$3"
 
         local -a __gvk_keys=()
         yml::get_keys __gvk_keys '__gvk_yml' '.versions'
@@ -1292,7 +1246,7 @@ cfg::get_matching_version_keys(){
                 for __gvk_k in ${__gvk_key//;/ }; do
 			local __gvk_tmp
 			__gvk_tmp=$(std::expand_braces "${__gvk_k}") || \
-				cfg::err_ctrl_char_in_version_key __gvk_cfg
+				cfg::err_ctrl_char_in_version_key
                         local -a __gvk_list=()
                         readarray -t __gvk_list <<<"${__gvk_tmp}"
                         local -- __gvk_l=''
@@ -1326,14 +1280,11 @@ cfg::get_matching_version_keys(){
 ## - hdf5_serial: ( compiler hdf5_serial )
 ##
 ## Arguments:
-##   $1 - module configuration
-##   $2 - structure with command-line arguments
+##   none
 ##
 build::modules_compiler(){
-        local -n _cfg="$1"
-
         local -a with_compiler=()
-        readarray -t with_compiler <<<"${_cfg['group_deps:compiler']}"
+        readarray -t with_compiler <<<"${ModuleConfig['group_deps:compiler']}"
 
         local -- compiler=''
         for compiler in "${with_compiler[@]}"; do
@@ -1348,20 +1299,15 @@ build::modules_compiler(){
                                 continue
                         fi
                 fi
-                pbcore::build \
-                        "$1" \
-                        "$2" \
-                        "${compiler}"
+                pbcore::build 'BuildOpts' "${compiler}"
         done
 }
 
 build::modules_hdf5_serial(){
-        local -n _cfg="$1"
-
         local -a with_compiler=()
         local -a with_hdf5_serial=()
-        readarray -t with_compiler <<<"${_cfg['group_deps:compiler']}"
-        readarray -t with_hdf5_serial <<<"${_cfg['group_deps:hdf5_serial']}"
+        readarray -t with_compiler <<<"${ModuleConfig['group_deps:compiler']}"
+        readarray -t with_hdf5_serial <<<"${ModuleConfig['group_deps:hdf5_serial']}"
 
         local -- compiler
         local -- hdf5_serial
@@ -1378,22 +1324,16 @@ build::modules_hdf5_serial(){
                                         continue
                                 fi
                         fi
-                        pbcore::build \
-                                "$1" \
-                                "$2" \
-                                "${compiler}" \
-                                "${hdf5_serial}"
+                        pbcore::build 'BuildOpts' "${compiler}" "${hdf5_serial}"
                 done
         done
 }
 
 build::modules_mpi(){
-        local -n _cfg="$1"
-
         local -a with_compiler=()
         local -a with_mpi=()
-        readarray -t with_compiler <<<"${_cfg['group_deps:compiler']}"
-        readarray -t with_mpi <<<"${_cfg['group_deps:mpi']}"
+        readarray -t with_compiler <<<"${ModuleConfig['group_deps:compiler']}"
+        readarray -t with_mpi <<<"${ModuleConfig['group_deps:mpi']}"
 
         local -- compiler
         local -- mpi
@@ -1411,25 +1351,19 @@ build::modules_mpi(){
                                         continue
                                 fi
                         fi
-                        pbcore::build \
-                                "$1" \
-                                "$2" \
-                                "${compiler}" \
-                                "${mpi}"
+			pbcore::build 'BuildOpts' "${compiler}" "${mpi}"
                 done
         done
 }
 
 build::modules_hdf5(){
-        local -n _cfg="$1"
-
         local -a with_compiler=()
         local -a with_mpi=()
         local -a with_hdf5=()
 
-        readarray -t with_compiler <<<"${_cfg['group_deps:compiler']}"
-        readarray -t with_mpi <<<"${_cfg['group_deps:mpi']}"
-        readarray -t with_hdf5 <<<"${_cfg['group_deps:hdf5']}"
+        readarray -t with_compiler <<<"${ModuleConfig['group_deps:compiler']}"
+        readarray -t with_mpi <<<"${ModuleConfig['group_deps:mpi']}"
+        readarray -t with_hdf5 <<<"${ModuleConfig['group_deps:hdf5']}"
 
         local -- compiler
         local -- mpi
@@ -1452,36 +1386,26 @@ build::modules_hdf5(){
                                                 continue
                                         fi
                                 fi
-                                pbcore::build \
-                                        "$1" \
-                                        "$2" \
-                                        "${compiler}" \
-                                        "${mpi}" \
-                                        "${hdf5}"
+				pbcore::build 'BuildOpts' "${compiler}" "${mpi}" "${hdf5}"
                         done
                 done
         done
 }
 
 build::modules_other(){
-        pbcore::build \
-                "$1" \
-                "$2"
+        pbcore::build 'BuildOpts'
 }
 
 ##
-## build::modules_variant - build a specific varian
+## build::modules_variant - build a specific variant
 ##
 ## Arguments:
-##   $1 - the name of the module to build
-##   $2 - the version of the module to build
-##   $3 - the configuration to be used
+##   none
 ##
 build::modules_variant(){
-        local -n module_config="$1"
 
-        if [[ -n "${module_config['download_dir']}" ]]; then
-                PMODULES_DISTFILESDIR="${module_config['download_dir']}"
+        if [[ -n "${ModuleConfig['download_dir']}" ]]; then
+                PMODULES_DISTFILESDIR="${ModuleConfig['download_dir']}"
         fi
         local -A build_functions=(
                 ['Compiler']=build::modules_compiler
@@ -1490,12 +1414,10 @@ build::modules_variant(){
                 ['HDF5']=build::modules_hdf5
         )
         local -- func=build::modules_other
-        if [[ -v build_functions[${module_config['group']}] ]]; then
-                func=${build_functions[${module_config['group']}]}
+        if [[ -v build_functions[${ModuleConfig['group']}] ]]; then
+                func=${build_functions[${ModuleConfig['group']}]}
         fi
-        ${func} \
-                'module_config' \
-                'BuildOpts'
+        ${func} 'BuildOpts'
 }
 
 ##
@@ -1524,7 +1446,7 @@ build::modules(){
         case "${file_fmt}" in
                 1 )
                         yml::has_key config_yml "${name}" || \
-                                std::die ${__PB_EC['CONFIG']} \
+                                std::die "${__PB_EC['CONFIG']}" \
 					 "%s " \
 					 "Configuration for '${name}'" \
                                          "is missing in config file" \
@@ -1536,7 +1458,7 @@ build::modules(){
                                 "${version_pattern}"
                         ;;
                 * )
-                        std::die ${__PB_EC['INTERNAL']} "Oops!" # we should never be here!
+                        std::die "${__PB_EC['INTERNAL']}" "Oops!" # we should never be here!
                         ;;
         esac
 }
@@ -1547,6 +1469,8 @@ build::modules_yaml_v1(){
         local -- version_pattern="$3"
 
         local -A mod_config_default
+	declare -ng ModuleConfig='mod_config_default'
+
         std::dict::copy mod_config_default Yaml_default_config
         mod_config_default['name']="${name}"
         mod_config_default['version_pattern']="${version_pattern}"
@@ -1558,14 +1482,13 @@ build::modules_yaml_v1(){
                 found_keys \
                 yaml_module_config \
                 '.'
-
+	local -- key=''
         for key in "${found_keys[@]}"; do
                 case "${key}" in
                         'defaults' )
                                 cfg::get_config \
                                         yaml_module_config \
-                                        ".${key}" \
-                                        mod_config_default
+                                        ".${key}"
                                 ;;
                         'shasums' )
                                 # :FIXME: this is not safe!
@@ -1587,31 +1510,28 @@ build::modules_yaml_v1(){
                                         'module' )
                                                 [[ "${BuildOpts['is_subpkg']}" == 'yes' ]] && \
                                                         cfg::err_wrong_module_type \
-                                                                'mod_config_default' \
                                                                 'module' 'sub_package'
                                                 ;;
                                         'sub_package' )
                                                 [[ "${BuildOpts['is_subpkg']}" != 'yes' ]] && \
                                                         cfg::err_wrong_module_type \
-                                                                'mod_config_default' \
                                                                 'sub_package' 'module'
                                                 ;;
                                         * )
                                                 cfg::err_invalid_module_type \
-                                                        'mod_config_default' "${value}"
+                                                        "${value}"
                                                 ;;
                                 esac
                                 ;;
                         'versions' )
                                 cfg::get_matching_version_keys \
-					mod_config_default \
                                         yaml_module_config \
                                         version_keys \
                                         "${version_pattern}"
                                 ;;
                         * )
                                 cfg::err_invalid_key \
-                                        'mod_config_default' 'general config block' "${key}"
+                                        'general config block' "${key}"
                                 ;;
                 esac
         done
@@ -1626,18 +1546,19 @@ build::modules_yaml_v1(){
         for version_key in "${version_keys[@]}"; do
                 local -i num_variants=0
                 std::dict::copy mod_config_version mod_config_default
+		declare -ng ModuleConfig='mod_config_version'
                 local -- node=".versions.\"${version_key}\""
                 yml::get_keys \
                         found_keys \
                         yaml_module_config \
                         "${node}"
+		local -- key=''
                 for key in "${found_keys[@]}"; do
                         case "${key}" in
                                 'config' )
                                         cfg::get_config \
                                                 yaml_module_config \
-                                                "${node}.config" \
-                                                mod_config_version
+                                                "${node}.config"
                                         ;;
                                 'variants' )
                                         # check type of node (!!seq) and query the
@@ -1648,7 +1569,6 @@ build::modules_yaml_v1(){
                                                       "${node}.variants"
                                         [[ "${type_of_node}" == '!!seq' ]] || \
                                                 cfg::err_invalid_variants_block \
-                                                        'mod_config_version' \
                                                         "${type_of_node}"
                                         yml::get_seq_length \
                                                 num_variants \
@@ -1657,7 +1577,6 @@ build::modules_yaml_v1(){
                                         ;;
                                 * )
 					cfg::err_invalid_key \
-						'mod_config_version' \
 						'general config block' "${key}"
                                         ;;
                         esac
@@ -1671,7 +1590,7 @@ build::modules_yaml_v1(){
 			std::info "%s" "Number of variants for ${name}/${version_pattern}: ${num_variants}"
                 local -a versions=()
                 cfg::expand_version_key \
-			'mod_config_version' 'versions' "${version_key}" "${version_pattern}"
+			'versions' "${version_key}" "${version_pattern}"
                 local -- version=''
                 for version in "${versions[@]}"; do
                         P="${name}"
@@ -1679,26 +1598,24 @@ build::modules_yaml_v1(){
                         cfg::parse_version "${version}"
 
                         if (( num_variants == 0 )); then
-                                cfg::is_variant_to_build mod_config_version || \
-                                        continue
-				cfg::check_config mod_config_version
+                                cfg::is_variant_to_build || continue
+				cfg::check_config
                                 mod_config_version['version']+="${mod_config_version['suffix']}"
-                                build::modules_variant mod_config_version
+                                build::modules_variant
                         else
                                 local -i n=0
                                 for ((n=0; n<num_variants; n++)); do
                                         std::dict::copy mod_config_variant mod_config_version
+					declare -ng ModuleConfig='mod_config_variant'
                                         cfg::get_config \
-                                                yaml_module_config \
-                                                "${node}.variants[$n]" \
-                                                mod_config_variant
-                                        cfg::is_variant_to_build mod_config_variant || \
-                                                continue
-					cfg::check_config mod_config_variant
+						yaml_module_config \
+						"${node}.variants[$n]"
+                                        cfg::is_variant_to_build || continue
+					cfg::check_config
 
                                         mod_config_variant['version']+="${mod_config_variant['suffix']}"
 
-                                        build::modules_variant mod_config_variant
+                                        build::modules_variant
                                         [[ "${mod_config_variant['build_variants']}" == 'first_match' ]] \
                                                 && break || :
                                 done
@@ -1722,7 +1639,7 @@ args::parse "$@"
 #
 declare -r logfile="${BUILDBLOCK_DIR}/pbuild.log"
 rm -f "${logfile}"
-if (( ${BuildOpts['verbose']} > 0 )); then
+if (( BuildOpts['verbose'] > 0 )); then
         exec  > >(tee -a "${logfile}")
 else
         exec > >(cat >> "${logfile}")
