@@ -22,7 +22,7 @@ modbuild:
           - name: yq
             version: 4.54.1
           - name: bash
-            version: 5.3.9
+            version: 5.3.20
           - name: patchelf
             version: 0.14.5
     2.1.4;2.2.0:
@@ -55,9 +55,35 @@ modbuild:
 bash:
   type: sub_package
   defaults:
+    configure_args:
+      - --bindir=${PREFIX}/libexec
   shasums:
     bash-5.3.tar.gz: 0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba 
   versions:
+    5.3.20:
+      config:
+        urls:
+          - url: https://ftp.gnu.org/gnu/bash/bash-5.3.tar.gz
+          - patch_file: files/bash53-001
+          - patch_file: files/bash53-002
+          - patch_file: files/bash53-003
+          - patch_file: files/bash53-004
+          - patch_file: files/bash53-005
+          - patch_file: files/bash53-006
+          - patch_file: files/bash53-007
+          - patch_file: files/bash53-008
+          - patch_file: files/bash53-009
+          - patch_file: files/bash53-010
+          - patch_file: files/bash53-011
+          - patch_file: files/bash53-012
+          - patch_file: files/bash53-013
+          - patch_file: files/bash53-014
+          - patch_file: files/bash53-015
+          - patch_file: files/bash53-016
+          - patch_file: files/bash53-017
+          - patch_file: files/bash53-018
+          - patch_file: files/bash53-019
+          - patch_file: files/bash53-020
     5.3.9:
       config:
         urls:
@@ -71,8 +97,6 @@ bash:
           - patch_file: files/bash53-007
           - patch_file: files/bash53-008
           - patch_file: files/bash53-009
-        configure_args:
-          - --bindir=${PREFIX}/libexec
 yq:
   type: sub_package
   shasums:
