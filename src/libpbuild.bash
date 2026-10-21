@@ -189,25 +189,12 @@ pbuild::post_install() {
 pbuild::module_is_avail() {
         local -- name=''
         local -- relstage=''
-        if [[ -v PMODULES_HOME ]]; then
-                local -r output=$(modulecmd bash avail -a -m "$1" 2>&1 1>/dev/null)
-                while read -r name relstage; do
-                        if [[ "${name}" == "$1" || "${name}" == "${1}.lua" ]]; then
-                                if (( $# > 1 )); then
-                                        local -n _relstage="$2"
-                                        _relstage="${relstage}"
-                                fi
-                                return 0
-                        fi
-                done <<<"${output}"
-                return 1
-        else
-                local output=''
-		output=$(modulecmd bash avail --all --output=tag --terse "$1" 2>&1)
-                while read -r name relstage; do
-                        if [[ "${name}" == "$1" || "${name}" == "${1}.lua" ]]; then
-                                case ${relstage} in
-                                        '<d>'|'<d:'*|*':d>'|*':d:'* )
+        local output=''
+	output=$(modulecmd bash avail --all --output=tag --terse "$1" 2>&1)
+        while read -r name relstage; do
+                if [[ "${name}" == "$1" || "${name}" == "${1}.lua" ]]; then
+                        case ${relstage} in
+                                '<d>'|'<d:'*|*':d>'|*':d:'* )
                                         relstage='deprecated'
                                         ;;
                                 '<u>'|'<u:'*|*':u>'|*':u:'* )
@@ -215,16 +202,15 @@ pbuild::module_is_avail() {
                                         ;;
                                 * )
                                         relstage='stable'
-                                esac
-                                if (( $# > 1 )); then
-                                        local -n _relstage="$2"
-                                        _relstage="${relstage}"
-                                fi
-                                return 0
+                        esac
+                        if (( $# > 1 )); then
+                                local -n _relstage="$2"
+                                _relstage="${relstage}"
                         fi
-                done <<<"${output}"
-                return 1
-        fi
+                        return 0
+                fi
+        done <<<"${output}"
+        return 1
 }
 readonly -f pbuild::module_is_avail
 
