@@ -13,7 +13,6 @@ modbuild:
   versions:
     2.2.1:
       config:
-        overlay: devel
         relstage: unstable
         docfiles: [LICENSE.txt]
         sub_packages:
