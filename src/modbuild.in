@@ -88,7 +88,6 @@ source "${prefix}/lib/libpbuild.bash"    || \
 unset prefix
 
 
-declare -r __MODULEFILES_DIR__='modulefiles'
 declare -g PMODULES_DISTFILESDIR PMODULES_TMPDIR
 
 declare -a Overlays=()
@@ -1304,7 +1303,7 @@ build::modules_compiler(){
                                 continue
                         fi
                 fi
-                pbcore::build 'BuildOpts' "${compiler}"
+                pbcore::build "${compiler}"
         done
 }
 
@@ -1329,7 +1328,7 @@ build::modules_hdf5_serial(){
                                         continue
                                 fi
                         fi
-                        pbcore::build 'BuildOpts' "${compiler}" "${hdf5_serial}"
+                        pbcore::build "${compiler}" "${hdf5_serial}"
                 done
         done
 }
@@ -1356,7 +1355,7 @@ build::modules_mpi(){
                                         continue
                                 fi
                         fi
-			pbcore::build 'BuildOpts' "${compiler}" "${mpi}"
+			pbcore::build "${compiler}" "${mpi}"
                 done
         done
 }
@@ -1391,7 +1390,7 @@ build::modules_hdf5(){
                                                 continue
                                         fi
                                 fi
-				pbcore::build 'BuildOpts' "${compiler}" "${mpi}" "${hdf5}"
+				pbcore::build "${compiler}" "${mpi}" "${hdf5}"
                         done
                 done
         done
